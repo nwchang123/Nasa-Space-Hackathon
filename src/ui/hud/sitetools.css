@@ -3,7 +3,7 @@
 
 .site-tools {
   position: absolute;
-  top: 118px;
+  top: calc(var(--hud-top-h, 90px) + 24px);
   right: var(--hud-gap, 16px);
   display: grid;
   justify-items: end;

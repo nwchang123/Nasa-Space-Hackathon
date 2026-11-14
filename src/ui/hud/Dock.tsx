@@ -414,10 +414,14 @@ function SiteDock() {
               </button>
             )}
           </p>
+          {/* Ingenuity answers after the machine's last section, "Still here", so the other three
+              sections stay one block of text and the dock stays low. */}
+          {story === 3 && (
+            <p className="inherit-line">
+              <span className="speaker">Ingenuity</span> {script.inheritance}
+            </p>
+          )}
         </div>
-        <p className="inherit-line">
-          <span className="speaker">Ingenuity</span> {script.inheritance}
-        </p>
       </div>
       <div className="dock-side">
         <SignatureControls stop={machine.id} />

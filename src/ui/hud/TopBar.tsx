@@ -1,5 +1,7 @@
-// The top HUD bar: the nine stops spread across the screen (pick any to fly straight there), then
-// where we are, the distance flown, the UTC clock, the flight camera and the sound.
+// The top HUD bar, one slim row: the beacon and "Flight 73", the nine stops spread across the middle
+// (pick any to fly straight there), then the distance flown, the UTC clock, the flight camera and
+// the sound. Where we are is shown by the amber stop (and spelled out by the dock and site card),
+// so the status line is for screen readers only.
 
 import { useMemo, useState } from 'react';
 import { MACHINE_BY_ID } from '../../data/machines';
@@ -20,40 +22,53 @@ export function TopBar() {
 
   return (
     <header className="hud-top hud-panel-in">
+      <div className="hud-where">
+        <span className="beacon" aria-hidden="true" />
+        <span className="hud-brand">Flight 73</span>
+        <span className="sr-only">{statusLine(flight)}</span>
+      </div>
       <RouteStrip />
-      <div className="hud-top-row">
-        <div className="hud-where">
-          <span className="beacon" aria-hidden="true" />
-          <span className="hud-brand">Flight 73</span>
-          <span className="hud-status">{statusLine(flight)}</span>
-        </div>
-        <div className="hud-tools">
-          <span className="tabular dim hud-km">
-            {formatKm(flownKm)} flown · route {formatKm(TOTAL_KM)}
+      <div className="hud-tools">
+        {/* While flying, the dock's odometer has the distance (and the camera toggle needs the room). */}
+        {flight.stage !== 'flying' && (
+          <span className="tabular dim hud-km" title={`${formatKm(flownKm)} flown of the ${formatKm(TOTAL_KM)} route`}>
+            {formatKm(flownKm)} flown
           </span>
-          <span className="tabular dim">{utc}</span>
-          {flight.stage === 'flying' && (
-            <div className="cam-toggle" role="group" aria-label="Flight camera">
-              <button type="button" className="icon-btn" aria-pressed={camMode === 'chase'} onClick={() => setCamMode('chase')}>
-                Orbit chase cam
-              </button>
-              <button type="button" className="icon-btn" aria-pressed={camMode === 'navcam'} onClick={() => setCamMode('navcam')}>
-                Navcam B&amp;W view
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => {
-              setMuted(!muted);
-              setMutedState(!muted);
-            }}
-            aria-pressed={muted}
-          >
-            {muted ? 'Sound off' : 'Sound on'}
-          </button>
-        </div>
+        )}
+        <span className="tabular dim">{utc}</span>
+        {flight.stage === 'flying' && (
+          <div className="cam-toggle" role="group" aria-label="Flight camera">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Orbit chase cam"
+              aria-pressed={camMode === 'chase'}
+              onClick={() => setCamMode('chase')}
+            >
+              Chase
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Navcam black and white view"
+              aria-pressed={camMode === 'navcam'}
+              onClick={() => setCamMode('navcam')}
+            >
+              Navcam
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => {
+            setMuted(!muted);
+            setMutedState(!muted);
+          }}
+          aria-pressed={muted}
+        >
+          {muted ? 'Sound off' : 'Sound on'}
+        </button>
       </div>
     </header>
   );
