@@ -7,16 +7,24 @@ import { skyLook } from '../src/scene/sites';
 import { applySiteFx } from '../src/scene/signatures/fx';
 import {
   buttonProgress,
+  decodeReadout,
   directSunlight,
   formatPercent,
+  holdCharge,
+  holdRunMs,
   LAST_SIGNAL_TAU,
   PARACHUTE_RINGS,
   ringsDecoded,
   ROVER_PATH,
+  SCOOP,
+  scoopReadout,
+  scoopState,
   sojournerPath,
   stormLook,
   stormReadout,
+  WAKE_PHOTO_STEP,
   WAKE_STEPS,
+  wakeReadout,
   wakeStepsDone,
 } from '../src/scene/signatures/logic';
 import { MACHINE_IDS } from '../src/types';
@@ -33,6 +41,55 @@ describe('buttonProgress', () => {
   });
   it('jumps to the end state with reduced motion', () => {
     expect(buttonProgress(1000, 2000, 1000, true)).toBe(1);
+  });
+});
+
+describe('hold controls', () => {
+  it('charge from 0 to 1 over chargeMs, rising fast then slowing, and clamp', () => {
+    expect(holdCharge(1000, 1000, 2000)).toBe(0);
+    expect(holdCharge(1000, 500, 2000)).toBe(0);
+    expect(holdCharge(1000, 2000, 2000)).toBeCloseTo(0.75, 12);
+    expect(holdCharge(1000, 3000, 2000)).toBe(1);
+    expect(holdCharge(1000, 9000, 2000)).toBe(1);
+    for (let t = 1000; t < 3000; t += 50) expect(holdCharge(1000, t + 50, 2000)).toBeGreaterThanOrEqual(holdCharge(1000, t, 2000));
+  });
+  it('run longer the stronger the charge, within 60–100 % of the duration', () => {
+    expect(holdRunMs(5000, 0)).toBe(3000);
+    expect(holdRunMs(5000, 1)).toBe(5000);
+    expect(holdRunMs(5000, 2)).toBe(5000);
+    expect(holdRunMs(5000, 0.5)).toBeGreaterThan(holdRunMs(5000, 0.2));
+  });
+});
+
+describe('Phoenix trench slider', () => {
+  it('opens the trench while digging, shows ice, then vaporises it over four sols', () => {
+    expect(scoopState(0)).toMatchObject({ trench: 0, ice: 0, sol: 0 });
+    expect(scoopState(SCOOP.lower).trench).toBe(0);
+    const dug = scoopState(SCOOP.dug);
+    expect(dug.trench).toBe(1);
+    expect(dug.ice).toBe(1);
+    expect(dug.sol).toBe(0);
+    expect(scoopState(SCOOP.raised + 0.01).sol).toBe(1);
+    expect(scoopState(SCOOP.gone - 0.001).sol).toBe(4);
+    const end = scoopState(1);
+    expect(end.sol).toBe(5);
+    expect(end.ice).toBe(0);
+    expect(end.trench).toBe(1);
+  });
+  it('moves forward only: trench never closes, sols never go back, ice only fades after digging', () => {
+    for (let p = 0; p < 1; p += 0.005) {
+      const a = scoopState(p);
+      const b = scoopState(p + 0.005);
+      expect(b.trench).toBeGreaterThanOrEqual(a.trench);
+      expect(b.sol).toBeGreaterThanOrEqual(a.sol);
+      expect(b.shrink).toBeLessThanOrEqual(a.shrink);
+      if (p >= SCOOP.raised) expect(b.ice).toBeLessThanOrEqual(a.ice + 1e-12);
+    }
+  });
+  it('reads out what the visitor sees', () => {
+    expect(scoopReadout(undefined)).toBeNull();
+    expect(scoopReadout(SCOOP.dug)).toContain('water ice');
+    expect(scoopReadout(1)).toContain('Four sols later');
   });
 });
 
@@ -99,6 +156,11 @@ describe('parachute decode', () => {
     expect(ringsDecoded(1)).toBe(4);
     for (let p = 0; p < 1; p += 0.01) expect(ringsDecoded(p + 0.01)).toBeGreaterThanOrEqual(ringsDecoded(p));
   });
+  it('reads out the words decoded so far', () => {
+    expect(decodeReadout(undefined)).toBeNull();
+    expect(decodeReadout(0.3)).toBe('DARE');
+    expect(decodeReadout(1)).toBe('DARE MIGHTY THINGS · JPL’s coordinates');
+  });
 });
 
 describe('Ingenuity wake routine', () => {
@@ -109,6 +171,12 @@ describe('Ingenuity wake routine', () => {
     expect(wakeStepsDone(0.9)).toBe(5);
     expect(wakeStepsDone(1)).toBe(5);
     for (let p = 0; p < 1; p += 0.01) expect(wakeStepsDone(p + 0.01)).toBeGreaterThanOrEqual(wakeStepsDone(p));
+  });
+  it('the photo is the fourth step, and the readout names the step just done', () => {
+    expect(WAKE_STEPS[WAKE_PHOTO_STEP - 1]).toMatch(/photo/);
+    expect(wakeReadout(undefined)).toBeNull();
+    expect(wakeReadout(0)).toBe('Asleep');
+    expect(wakeReadout(1)).toBe(`5/5 · ${WAKE_STEPS[4]}`);
   });
 });
 
@@ -153,8 +221,19 @@ describe('signature definitions', () => {
         expect(d.caption, d.key).toBeTruthy();
         if (d.kind === 'button') expect(d.durationMs, d.key).toBeGreaterThan(0);
         if (d.kind === 'slider') expect(d.max!, d.key).toBeGreaterThan(d.min!);
+        if (d.kind === 'hold') {
+          expect(d.chargeMs, d.key).toBeGreaterThan(0);
+          expect(d.durationMs, d.key).toBeGreaterThan(0);
+        }
       }
     }
+  });
+  it('every action is driven by hand: no click-and-watch buttons are left', () => {
+    for (const id of MACHINE_IDS) for (const d of SIGNATURES[id]!) expect(d.kind, `${id}:${d.key}`).not.toBe('button');
+  });
+  it('the converted actions keep their keys (the scene and the guide match on them)', () => {
+    const kinds = Object.fromEntries(MACHINE_IDS.flatMap(id => SIGNATURES[id]!.map(d => [d.key, d.kind])));
+    expect(kinds).toMatchObject({ scan: 'slider', drag: 'slider', scoop: 'slider', decode: 'slider', wake: 'slider', quake: 'hold', frost: 'toggle', larri: 'toggle', roll: 'slider', storm: 'slider' });
   });
   it('the storm readout is wired to the model', () => {
     const storm = SIGNATURES.opportunity!.find(d => d.key === 'storm')!;

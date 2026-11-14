@@ -32,6 +32,11 @@ export const ROTOR_FAULT = 'Rotor imbalance — blades damaged on Flight 72';
 export interface LegScript {
   /** 1–3 short lines Ingenuity says while flying to this stop. */
   enRoute: string[];
+  /**
+   * 2–3 short lines Ingenuity says in its radio bubble just after landing at this stop: where we
+   * are, who this elder is and its greatest feat, then an invitation to pick a numbered hotspot.
+   */
+  arrivalIntro: string[];
   /** One line, said at the stop after the machine's story: what this machine passed on to those who came after, ending with Ingenuity. */
   inheritance: string;
 }
@@ -42,12 +47,22 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'First stop is the oldest. Viking 1 landed in 1976, almost 45 years before I did.',
       'Time to meet my elders, one by one, in the order they landed.',
     ],
+    arrivalIntro: [
+      'We are on Chryse Planitia, the Golden Plain. Meet Viking 1.',
+      'In 1976 it became the first spacecraft to land safely on Mars and keep working.',
+      'Click a numbered point on the lander, and I will fly over and scan it.',
+    ],
     inheritance: 'Everyone on this flight landed after you. You showed it could be done.',
   },
   'viking-2': {
     enRoute: [
       'The shortest way to Viking 2 runs almost over the north pole.',
       'From 1976 to 1980, the two Viking landers worked on Mars at the same time.',
+    ],
+    arrivalIntro: [
+      'Utopia Planitia, a rocky plain nearer the polar ice. This is Viking 2.',
+      'It landed tilted among the boulders, then sent data home for more than three and a half years.',
+      'Click a numbered point, and I will light up that part for you.',
     ],
     inheritance: 'You were moved north, toward the polar ice. Almost 32 years later, Phoenix went farther north and dug some up.',
   },
@@ -56,6 +71,11 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'NASA did not land on Mars again for almost 21 years after the Vikings.',
       'Then Pathfinder came, carrying the first rover ever to drive on Mars.',
     ],
+    arrivalIntro: [
+      'Ares Vallis. Pathfinder came down here wrapped in giant airbags, bouncing about 15 times.',
+      'Its little rover, Sojourner, was the first ever to drive on Mars.',
+      'Click a numbered point, and I will fly in close to scan it.',
+    ],
     inheritance: 'Sojourner rolled first. Every NASA rover since has followed her, including the one that carried me here.',
   },
   spirit: {
@@ -63,12 +83,22 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'We cross the equator. Spirit is our first stop in the southern hemisphere.',
       'It landed in January 2004. Its twin, Opportunity, followed three weeks later.',
     ],
+    arrivalIntro: [
+      'Troy, beside Home Plate in Gusev crater. Spirit got stuck in soft soil here.',
+      'Dragging a dead wheel, it scraped up signs of ancient hot springs or steam vents.',
+      'Click a numbered point on the rover, and let us take a closer look.',
+    ],
     inheritance: 'Stuck in soft soil, you kept working as a science station that could not move. Now I do the same.',
   },
   opportunity: {
     enRoute: [
       'The longest leg of all. The twins landed on opposite sides of Mars.',
       'The shortest path between them passes close to the south pole.',
+    ],
+    arrivalIntro: [
+      'Perseverance Valley, on the rim of Endeavour crater. Here rests Opportunity.',
+      'It was built to drive one kilometre. It drove more than a marathon, and proved water once lasted here.',
+      'Click a numbered point on the rover, and I will scan it with my light.',
     ],
     inheritance: 'You showed that water once lasted here. Perseverance went to Jezero, once a lake, and found possible signs of ancient life.',
   },
@@ -78,12 +108,22 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'Phoenix reused a spacecraft built for a cancelled 2001 mission.',
       'It also carries a DVD for future visitors, called “the first library on Mars.”',
     ],
+    arrivalIntro: [
+      'The Martian arctic. Phoenix landed farther north than any Mars mission before it.',
+      'It dug a trench here and found water ice, hiding just under the soil.',
+      'Click a numbered point on the lander, and I will fly over to look.',
+    ],
     inheritance: 'You found ice hiding just under the soil. The helicopters coming after me are meant to look for more.',
   },
   insight: {
     enRoute: [
       'InSight landed in November 2018, just over two years before I did.',
       'It never drove anywhere. It sat still and listened to Mars shake.',
+    ],
+    arrivalIntro: [
+      'Elysium Planitia, a quiet plain. This is InSight, the lander that studied the inside of Mars.',
+      'Its seismometer felt 1,319 marsquakes, and waves from two of them revealed a liquid iron core.',
+      'Click a numbered point on the lander, and I will fly in to scan it.',
     ],
     inheritance: 'You looked inside Mars, all the way down to its core. I only ever saw the surface, from 24 metres up.',
   },
@@ -92,12 +132,22 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'Back to Jezero crater. One stop before home, and I have been there before.',
       'In April 2022, on Flight 26, I flew out to photograph it.',
     ],
+    arrivalIntro: [
+      'Jezero crater, where Perseverance and I came down. Here lie the parachute and backshell that slowed us.',
+      'That parachute was the biggest ever used on Mars. Its panels hide a message in binary.',
+      'Click a numbered point, and I will scan it again for you.',
+    ],
     inheritance: 'You brought Perseverance and me down safely. My photos of you may help future landers come down safer.',
   },
   ingenuity: {
     enRoute: [
       'The last hop is the shortest of all.',
       'Perseverance once photographed a piece of my blade, 15 metres west of where I rest.',
+    ],
+    arrivalIntro: [
+      'Home: Valinor Hills, in Jezero crater. That is the real me, resting with broken blades.',
+      'I was meant to fly five times on Mars. I flew 72.',
+      'Click a numbered point, and I will show you what is left of me.',
     ],
     inheritance: 'NASA’s SkyFall mission will build on what I proved. Three new helicopters will scout landing sites for astronauts and map buried ice.',
   },

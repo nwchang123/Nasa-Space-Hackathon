@@ -1,5 +1,6 @@
 // Pure rules behind the signature actions (unit-tested in tests/signatures.test.ts): timing of
-// button effects, Opportunity's dust-storm sky, and the readouts the HUD shows.
+// button effects, the charge of hold controls, what each hand-driven slider shows along its range,
+// Opportunity's dust-storm sky, and the readouts the HUD shows.
 
 import type { RGB, SkyLook } from '../sites';
 
@@ -8,6 +9,20 @@ export function buttonProgress(at: number | undefined, durationMs: number, now: 
   if (at === undefined) return null;
   if (reduced) return 1;
   return Math.min(1, Math.max(0, (now - at) / durationMs));
+}
+
+/**
+ * Charge 0..1 of a hold control held since `startAt` for up to `chargeMs` (ease-out: it rises
+ * quickly, then slows near full).
+ */
+export function holdCharge(startAt: number, now: number, chargeMs: number): number {
+  const k = Math.min(1, Math.max(0, (now - startAt) / Math.max(1, chargeMs)));
+  return 1 - (1 - k) * (1 - k);
+}
+
+/** How long a fired hold effect runs, ms: stronger charges run longer (60 % .. 100 % of durationMs). */
+export function holdRunMs(durationMs: number, strength: number): number {
+  return durationMs * (0.6 + 0.4 * Math.min(1, Math.max(0, strength)));
 }
 
 /** 0..1 within [a, b] of a progress value (clamped). */
@@ -103,6 +118,54 @@ export function ringsDecoded(p: number): number {
   return Math.min(PARACHUTE_RINGS.length, Math.floor(p / 0.2125));
 }
 
+/** The decode slider's readout: the words read so far. */
+export function decodeReadout(p: number | undefined): string | null {
+  if (p === undefined) return null;
+  const n = ringsDecoded(p);
+  if (n === 0) return 'Reading the inner ring…';
+  return PARACHUTE_RINGS.slice(0, Math.min(3, n)).join(' ') + (n >= 4 ? ' · JPL’s coordinates' : '');
+}
+
+// ---------------------------------------------------------------- Phoenix's trench
+
+/**
+ * The scoop slider's range: lift the arm, lower the scoop, dig (the trench opens and whitish
+ * clumps show), raise the arm, then four sols pass in time-lapse and the clumps vaporise.
+ */
+export const SCOOP = { lift: 0.15, lower: 0.3, dug: 0.6, raised: 0.7, gone: 0.98 } as const;
+
+export interface ScoopState {
+  /** How open (dark, deep) the trench is, 0..1. */
+  trench: number;
+  /** Ice clumps' opacity, 0..1. */
+  ice: number;
+  /** Clumps' size, 1 → 0.4 as they vaporise. */
+  shrink: number;
+  /** 0 while digging; 1–4: sol +n of the time-lapse; 5: gone. */
+  sol: number;
+}
+
+export function scoopState(v: number): ScoopState {
+  const p = Math.min(1, Math.max(0, v));
+  const trench = smooth(SCOOP.lower, SCOOP.dug, p);
+  const fade = smooth(SCOOP.raised, SCOOP.gone, p);
+  const ice = smooth(SCOOP.lower + 0.15, SCOOP.dug, p) * (1 - fade);
+  let sol = 0;
+  if (p >= SCOOP.gone) sol = 5;
+  else if (p >= SCOOP.raised) sol = 1 + Math.min(3, Math.floor(phase(p, SCOOP.raised, SCOOP.gone) * 4));
+  return { trench, ice, shrink: 1 - 0.6 * fade, sol };
+}
+
+export function scoopReadout(v: number | undefined): string | null {
+  if (v === undefined) return null;
+  const { sol, ice } = scoopState(v);
+  if (sol === 5) return 'Four sols later: the clumps are gone, turned to vapour';
+  if (sol > 0) return `Sol +${sol}: the whitish clumps are shrinking`;
+  if (ice > 0.5) return 'Whitish clumps in the trench: water ice';
+  if (v >= SCOOP.lower) return 'Digging…';
+  return v > 0 ? 'Lowering the scoop…' : null;
+}
+
 // ---------------------------------------------------------------- Ingenuity's day
 
 /** The daily routine its last software update set (INGB), in order. */
@@ -113,6 +176,16 @@ export function wakeStepsDone(p: number): number {
   if (p <= 0) return 0;
   return Math.min(WAKE_STEPS.length, 1 + Math.floor((p / 0.9) * (WAKE_STEPS.length - 1)));
 }
+
+/** The wake slider's readout: the step just done. */
+export function wakeReadout(p: number | undefined): string | null {
+  if (p === undefined) return null;
+  const n = wakeStepsDone(p);
+  return n === 0 ? 'Asleep' : `${n}/${WAKE_STEPS.length} · ${WAKE_STEPS[n - 1]}`;
+}
+
+/** wakeStepsDone() once the colour photo is taken (its shutter plays when the slider gets there). */
+export const WAKE_PHOTO_STEP = 4;
 
 // ---------------------------------------------------------------- Sojourner off the ramp
 

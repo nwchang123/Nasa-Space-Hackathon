@@ -358,7 +358,7 @@ export function chaseGoal(i: ChaseInput): ChaseGoal {
 /** Lowest and highest camera elevation above a site's ground while the visitor orbits, degrees. */
 export const ORBIT_MIN_ELEV = 4;
 export const ORBIT_MAX_ELEV = 65;
-export const ORBIT_ZOOM: [number, number] = [0.6, 1.8];
+export const ORBIT_ZOOM: [number, number] = [0.35, 1.8];
 
 /**
  * A site camera offset (camera − target) turned by the visitor's orbit: `az` radians about `up`,

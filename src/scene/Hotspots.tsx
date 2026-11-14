@@ -4,10 +4,12 @@
 // antenna asks the HUD to place the call (store.requestCall). Shown only once the camera has
 // settled at the site. Mounted inside the machine's group (its own frame, front = +Z), or at the
 // diorama's centre at home, where 03 follows the end of Ingenuity's broken blade.
+// Each frame it also publishes where the hotspots are (live.targets, world space) and the machine's
+// bounding box (live.machine), for the close-up camera, the autopilot and the scout camera.
 
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Box3, Matrix4, Vector3, type Group, type Mesh, type Object3D } from 'three';
 import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
@@ -81,6 +83,7 @@ export function Hotspots({ stop }: { stop: MachineId }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const story = useApp(s => s.story);
   const setStory = useApp(s => s.setStory);
+  const setFocus = useApp(s => s.setFocus);
   const requestCall = useApp(s => s.requestCall);
   const machine = MACHINE_BY_ID[stop];
   const canCall = !machine.noRadio && stop !== HOME;
@@ -88,17 +91,33 @@ export function Hotspots({ stop }: { stop: MachineId }) {
   const antenna: Vec3 = SITE_PRESETS[stop].antenna;
   const st = useRef({ frame: 0, meshes: -1, box: new Box3(), ready: false, shown: -1 });
 
+  useEffect(
+    () => () => {
+      for (const key of ['hs:0', 'hs:1', 'hs:2', 'hs:3', 'hs:call']) live.targets.delete(key);
+      if (live.machine.site === stop) live.machine.valid = false;
+    },
+    [stop],
+  );
+
   useFrame(() => {
     const g = group.current;
     if (!g) return;
     const s = st.current;
     const fade = hotspotFade(stop);
 
-    // Measure the model (NASA models arrive after a placeholder), then place the anchors.
-    const needsBox = spots.some(p => 'box' in p);
+    // Measure the model (NASA models arrive after a placeholder), then place the anchors. The box
+    // is also published (live.machine) for the close-up camera and the free-flying Ingenuity: the
+    // machine as it arrived, at rest (a signature action moving a part, Sojourner driving off,
+    // does not stretch it over open ground).
     if (fade > 0 && g.parent && (s.frame++ % 20 === 0 || !s.ready)) {
-      const n = needsBox ? localBox(g.parent, g, s.box) : 0;
-      if (n !== s.meshes || !s.ready) {
+      const n = localBox(g.parent, g, s.box);
+      const m = live.machine;
+      const changed = n !== s.meshes || !s.ready;
+      if (changed || m.site !== stop) m.box.copy(s.box);
+      m.site = stop;
+      m.valid = stop !== HOME && n > 0 && !m.box.isEmpty();
+      m.yaw = g.parent.rotation.y;
+      if (changed) {
         s.meshes = n;
         let ok = true;
         spots.forEach((spot, i) => {
@@ -119,6 +138,17 @@ export function Hotspots({ stop }: { stop: MachineId }) {
         tip.getWorldPosition(tmp);
         a.position.copy(g.worldToLocal(tmp));
       }
+    }
+
+    // Where each hotspot is, world space, for the close-up camera, the autopilot and the scout camera.
+    if (fade > 0 && s.ready) {
+      anchors.current.forEach((a, i) => {
+        if (!a) return;
+        const key = i === 4 ? 'hs:call' : `hs:${i}`;
+        let v = live.targets.get(key);
+        if (!v) live.targets.set(key, (v = new Vector3()));
+        a.getWorldPosition(v);
+      });
     }
 
     const k = s.ready ? Math.round(fade * 100) / 100 : 0;
@@ -146,7 +176,11 @@ export function Hotspots({ stop }: { stop: MachineId }) {
               tabIndex={-1}
               aria-pressed={story === i}
               aria-label={`${String(i + 1).padStart(2, '0')} ${LABELS[i]}`}
-              onClick={() => setStory(i)}
+              onClick={() => {
+                // The close-up first (also when it is already the section shown), then the story.
+                setFocus({ kind: 'hotspot', id: String(i), strength: 1 });
+                setStory(i);
+              }}
             >
               <span className="hs-dot" aria-hidden="true" />
               <span className="hs-num">{String(i + 1).padStart(2, '0')}</span>

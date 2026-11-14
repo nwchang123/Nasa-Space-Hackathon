@@ -11,9 +11,11 @@ import {
   SKIP_CRUISE_MS,
   SKIP_DESCENT_MS,
   skipClock,
-  SPINUP_MS,
-  STALL_SPEED,
+  FAULT_FROM_SPEED,
   FAULT_SPINDOWN_MS,
+  TEST_MAX_SPEED,
+  TEST_RED_ZONE,
+  testRotor,
   type Shot,
 } from '../src/scene/choreo';
 import { phantomLook, PHANTOM_RISE_MS } from '../src/scene/phantom';
@@ -32,6 +34,7 @@ import {
   orbitOffset,
   ORBIT_MAX_ELEV,
   ORBIT_MIN_ELEV,
+  ORBIT_ZOOM,
   realSizeScale,
   ROUTE_BASE,
   siteFrame,
@@ -297,25 +300,54 @@ describe('boost', () => {
 });
 
 describe('prologue rotor test', () => {
-  it('spins up, stalls short of flight speed, then winds down after the fault', () => {
-    expect(rotorTest('ready', 500).rotor).toBe(0);
-    expect(rotorTest('spinning', 0).rotor).toBe(0);
-    expect(rotorTest('spinning', SPINUP_MS / 2).rotor).toBeGreaterThan(0.2);
-    const stalled = rotorTest('spinning', SPINUP_MS * 3).rotor;
-    expect(stalled).toBeGreaterThan(STALL_SPEED - 0.05);
-    expect(stalled).toBeLessThan(STALL_SPEED + 0.05);
+  it('follows the throttle the visitor holds, short of flight speed', () => {
+    expect(rotorTest('ready', 500, 0.6).rotor).toBe(0);
+    expect(rotorTest('spinning', 0, 0).rotor).toBe(0);
+    expect(rotorTest('spinning', 800, 0).rotor).toBe(0);
+    // Below the wobble band the speed is exactly the throttle's.
+    expect(rotorTest('spinning', 1234, 0.5).rotor).toBeCloseTo(testRotor(0.5), 9);
+    expect(rotorTest('spinning', 1234, 0.5).judder).toBe(0);
+    // More throttle, more speed; never flight speed.
+    let prev = -1;
+    for (let k = 0; k <= 1.0001; k += 0.05) {
+      const base = testRotor(k);
+      expect(base).toBeGreaterThanOrEqual(prev);
+      prev = base;
+      for (const t of [0, 137, 900, 4321]) {
+        const r = rotorTest('spinning', t, k).rotor;
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(r).toBeLessThan(0.85);
+        expect(Math.abs(r - base)).toBeLessThanOrEqual(0.053);
+      }
+    }
+    expect(testRotor(1)).toBe(TEST_MAX_SPEED);
+    expect(testRotor(2)).toBe(TEST_MAX_SPEED);
+  });
+
+  it('judders only in the red zone', () => {
+    expect(rotorTest('spinning', 500, TEST_RED_ZONE - 0.01).judder).toBe(0);
+    expect(rotorTest('spinning', 500, 0.95).judder).toBeGreaterThan(0.1);
+    expect(rotorTest('spinning', 500, 1).judder).toBeCloseTo(0.3, 9);
+  });
+
+  it('winds down after the fault from about where the red zone failed', () => {
+    expect(FAULT_FROM_SPEED).toBeGreaterThan(testRotor(TEST_RED_ZONE));
+    expect(FAULT_FROM_SPEED).toBeLessThanOrEqual(TEST_MAX_SPEED);
     expect(rotorTest('fault', 0).judder).toBe(1);
-    expect(rotorTest('fault', 0).rotor).toBeCloseTo(STALL_SPEED, 9);
+    expect(rotorTest('fault', 0).rotor).toBeCloseTo(FAULT_FROM_SPEED, 9);
     expect(rotorTest('fault', FAULT_SPINDOWN_MS).rotor).toBe(0);
     expect(rotorTest('fault', FAULT_SPINDOWN_MS).judder).toBe(0);
-    expect(rotorTest('imagine', 0).rotor).toBe(0);
+    expect(rotorTest('imagine', 0, 1).rotor).toBe(0);
   });
+
   it('drives the shot in the prologue', () => {
     const c = new Choreographer();
     const f: FlightState = { leg: -1, stage: 'prologue', from: 'ingenuity', stageStartedAt: 0, flyMs: 0 };
-    const shot = c.update('flight', f, 5000, false, { prologue: { step: 'spinning', at: 5000 - SPINUP_MS * 2 } });
-    expect(shot.rotor).toBeGreaterThan(0.45);
-    const still = new Choreographer().update('flight', f, 5000, true, { prologue: { step: 'spinning', at: 4000 } });
+    const shot = c.update('flight', f, 5000, false, { prologue: { step: 'spinning', at: 3000, throttle: 0.8 } });
+    expect(shot.rotor).toBeGreaterThan(0.55);
+    const idle = new Choreographer().update('flight', f, 5000, false, { prologue: { step: 'spinning', at: 3000 } });
+    expect(idle.rotor).toBe(0); // no throttle given: nothing turns
+    const still = new Choreographer().update('flight', f, 5000, true, { prologue: { step: 'spinning', at: 4000, throttle: 1 } });
     expect(still.rotor).toBe(0); // reduced motion
   });
 });
@@ -363,8 +395,10 @@ describe('orbiting a site', () => {
   it('clamps the elevation and the zoom', () => {
     expect(elev(orbitOffset(off, up, 0, -2, 1))).toBeCloseTo(ORBIT_MIN_ELEV, 6);
     expect(elev(orbitOffset(off, up, 0, 2, 1))).toBeCloseTo(ORBIT_MAX_ELEV, 6);
-    expect(len(orbitOffset(off, up, 0, 0, 5))).toBeCloseTo(1.8, 9);
-    expect(len(orbitOffset(off, up, 0, 0, 0.1))).toBeCloseTo(0.6, 9);
+    expect(len(orbitOffset(off, up, 0, 0, 5))).toBeCloseTo(ORBIT_ZOOM[1], 9);
+    expect(len(orbitOffset(off, up, 0, 0, 0.1))).toBeCloseTo(ORBIT_ZOOM[0], 9);
+    // Close enough to read a machine's details.
+    expect(ORBIT_ZOOM[0]).toBeLessThanOrEqual(0.35);
   });
   it('is the composed shot when untouched', () => {
     const o = orbitOffset(off, up, 0, 0, 1);

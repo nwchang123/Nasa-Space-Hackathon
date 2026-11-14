@@ -8,11 +8,13 @@
 // full one: as it sets the shadow fades, so the night key never throws a hard black shadow across
 // the sand. At night a soft fill from just beside the camera picks out Ingenuity's dark carbon
 // rotors against the dark sky. Both lights are always present (intensity 0 when unused).
+// So is Ingenuity's searchlight: a spotlight under its belly while the visitor flies it at a site,
+// pointing down at the sand, or at the part it is scanning (live.scan). Strong at night, faint by day.
 
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { Color, Object3D, SRGBColorSpace, Vector3, type DirectionalLight, type HemisphereLight } from 'three';
-import { SITE_SCALE } from './layout';
+import { Color, Object3D, SRGBColorSpace, Vector3, type DirectionalLight, type HemisphereLight, type SpotLight } from 'three';
+import { smoothstep, SITE_SCALE } from './layout';
 import { live } from './registry';
 import { SITE_PRESETS } from './sites';
 
@@ -37,19 +39,32 @@ const flat = new Vector3();
 const lifted = new Vector3();
 const toCam = new Vector3();
 const side = new Vector3();
+/** Searchlight: warm white, intensity at night and by day (the Sun is 3.2), cone half-angle. */
+const SEARCH_COLOR = new Color('#ffe6c2');
+const SEARCH_NIGHT = 4.5;
+const SEARCH_DAY = 0.9;
+const SEARCH_ANGLE = 0.62;
+/** The lamp sits this far above Ingenuity's feet, m. */
+const BELLY_M = 0.16;
+const down = new Vector3();
 
 export function Lights() {
   const sun = useRef<DirectionalLight>(null);
   const hemi = useRef<HemisphereLight>(null);
   const fill = useRef<DirectionalLight>(null);
+  const search = useRef<SpotLight>(null);
   const target = useMemo(() => new Object3D(), []);
+  const searchTarget = useMemo(() => new Object3D(), []);
   const lastBounds = useRef('');
+  const aim = useRef(0);
 
-  useFrame(state => {
+  useFrame((state, delta) => {
     const s = sun.current;
     const h = hemi.current;
     const f = fill.current;
-    if (!s || !h || !f) return;
+    const sl = search.current;
+    if (!s || !h || !f || !sl) return;
+    searchLight(sl, searchTarget, aim, Math.min(0.1, delta));
     const shot = live.shot;
     const look = live.siteLook;
     const w = shot.siteId && live.site.valid && look ? shot.blend : 0;
@@ -128,9 +143,32 @@ export function Lights() {
   return (
     <>
       <primitive object={target} />
+      <primitive object={searchTarget} />
       <directionalLight ref={sun} target={target} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} />
       <directionalLight ref={fill} target={target} color={FILL_COLOR} intensity={0} />
+      <spotLight ref={search} target={searchTarget} color={SEARCH_COLOR} intensity={0} angle={SEARCH_ANGLE} penumbra={0.6} decay={0} distance={0} />
       <hemisphereLight ref={hemi} />
     </>
   );
+}
+
+/** Ingenuity's searchlight: on while it flies at a site, aimed down or (scanning) at the part. */
+function searchLight(sl: SpotLight, target: Object3D, aim: { current: number }, dt: number) {
+  const shot = live.shot;
+  const fl = live.flyer;
+  const look = live.siteLook;
+  if (!shot.siteId || !live.site.valid || !look || fl.site !== shot.siteId) {
+    sl.intensity = 0;
+    aim.current = 0;
+    return;
+  }
+  const up = live.site.up;
+  sl.position.copy(live.flyerWorld).addScaledVector(up, BELLY_M * SITE_SCALE);
+  aim.current += ((live.scan.k > 0 ? 1 : 0) - aim.current) * (1 - Math.exp(-4 * dt));
+  down.copy(sl.position).addScaledVector(up, -SITE_SCALE);
+  target.position.copy(down).lerp(live.scan.point, smoothstep(0, 1, aim.current));
+  target.updateMatrixWorld();
+  const airborne = Math.max(smoothstep(0.15, 0.9, fl.alt), aim.current);
+  const night = look.nightKey;
+  sl.intensity = airborne * (SEARCH_DAY + (SEARCH_NIGHT - SEARCH_DAY) * night) * smoothstep(0.9, 1, shot.blend);
 }

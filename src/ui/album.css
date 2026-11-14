@@ -1,0 +1,58 @@
+/* The flight log's scout camera album (src/ui/Report.tsx): small photos from Ingenuity, labelled
+   with the stop and the story hotspot in frame. */
+
+.album {
+  margin-top: 28px;
+  margin-bottom: 28px;
+}
+.album h3 {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 24px;
+}
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.album-grid li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.album-grid a {
+  display: block;
+  border: 1px solid var(--line-soft);
+  line-height: 0;
+  transition: border-color 0.2s ease;
+}
+.album-grid a:hover,
+.album-grid a:focus-visible {
+  border-color: var(--amber);
+  outline: none;
+}
+.album-grid img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  filter: grayscale(0.15) contrast(1.05);
+}
+.album-cap {
+  overflow: hidden;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--bone);
+}
+.album-time {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--bone-dim);
+}

@@ -2,22 +2,38 @@
 // flown, one section of a machine's story, the way home), with the main action always at its
 // right. It never scrolls.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { EPILOGUE, LEG_SCRIPTS, PROLOGUE, PROLOGUE_TEST_AT, ROTOR_FAULT } from '../../data/flight';
 import { MACHINE_BY_ID } from '../../data/machines';
 import { LEGS, compass, flyDurationMs, hop } from '../../flight/route';
 import { BOOST_FACTOR, STORY_KEYS, stageElapsed, useApp, type StorySection } from '../../store';
 import { MACHINE_IDS } from '../../types';
 import { formatKm } from '../callPlan';
-import { playFault, playSpinUp } from '../sound';
+import { testRotor } from '../../scene/choreo';
+import { playFault } from '../sound';
+import { RED_ZONE, useThrottle } from '../throttle';
 import { prefersReducedMotion } from '../useClock';
 import { SignatureControls } from './Signature';
+import './throttle.css';
 
 /** Ingenuity's 72 real flights covered 17.0 km in total (docs/FACT_CHECK.md, ingenuity). */
 const REAL_FLIGHT_KM = 17.0;
-/** Rotor test: spin-up until the stall, then the fault until the turn to fiction, ms. */
-export const SPIN_UP_MS = 1400;
+/** Rotor test: from the fault to the turn to fiction, ms. */
 export const FAULT_MS = 2400;
+/**
+ * The rotor test's throttle, held open by the visitor: how fast it opens while held and closes when
+ * let go (per second), and how long a hold in the red zone lasts before the damaged blades fail, ms.
+ */
+const THROTTLE_RISE = 0.45;
+const THROTTLE_FALL = 0.7;
+const RED_HOLD_MS = 700;
+
+const smooth = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const isTyping = (t: EventTarget | null) =>
+  t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
 
 const STORY_LABELS = ['Why I came', 'What I found', 'My last day', 'Still here'] as const;
 
@@ -53,36 +69,174 @@ function PrologueDock() {
   const setPrologue = useApp(s => s.setPrologue);
   const flyTo = useApp(s => s.flyTo);
   const reduced = useMemo(prefersReducedMotion, []);
+  const throttle = useThrottle(s => s.throttle);
+  const holding = useThrottle(s => s.holding);
+  const setHolding = useThrottle(s => s.setHolding);
   const { step, at } = prologue;
 
-  // The test runs on its own once started: stall, fault, then the turn to fiction. Timed from the
-  // step's start, so it survives a remount.
+  // After the fault, the turn to fiction. Timed from the step's start, so it survives a remount.
   useEffect(() => {
-    if (step === 'spinning') {
-      const id = window.setTimeout(() => {
-        setPrologue('fault');
-        playFault();
-      }, Math.max(0, at + SPIN_UP_MS - Date.now()));
-      return () => window.clearTimeout(id);
-    }
-    if (step === 'fault') {
-      const id = window.setTimeout(() => setPrologue('imagine'), Math.max(0, at + FAULT_MS - Date.now()));
-      return () => window.clearTimeout(id);
-    }
+    if (step !== 'fault') return;
+    const id = window.setTimeout(() => setPrologue('imagine'), Math.max(0, at + FAULT_MS - Date.now()));
+    return () => window.clearTimeout(id);
   }, [step, at, setPrologue]);
 
-  const spinUp = () => {
-    if (reduced) {
-      setPrologue('imagine');
-      return;
-    }
-    setPrologue('spinning');
-    playSpinUp(SPIN_UP_MS);
-  };
+  // A closed throttle for this prologue, and closed again once it is left.
+  useEffect(() => {
+    const close = () => {
+      const t = useThrottle.getState();
+      t.setHolding(false);
+      t.setThrottle(0);
+    };
+    close();
+    return close;
+  }, []);
+
+  // The throttle, time-based: it opens while held (slower near the top, wobbling once above 0.7)
+  // and closes when let go. Any throttle is the 'spinning' step; held in the red zone, the damaged
+  // blades fail.
+  useEffect(() => {
+    if (reduced) return;
+    let raf = 0;
+    let last = performance.now();
+    let base = useThrottle.getState().throttle;
+    let redSince: number | null = null;
+    const tick = (now: number) => {
+      const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
+      last = now;
+      const th = useThrottle.getState();
+      const app = useApp.getState();
+      const st = app.prologue.step;
+      const open = th.holding && (st === 'ready' || st === 'spinning');
+      if (open) base = Math.min(1, base + THROTTLE_RISE * (1 - 0.6 * smooth(0.6, 1, base)) * dt);
+      else base = Math.max(0, base - THROTTLE_FALL * dt);
+      const wobble = open ? 0.012 * smooth(0.7, 0.9, base) * Math.sin(now * 0.023) * Math.sin(now * 0.0071 + 1) : 0;
+      const value = Math.min(1, Math.max(0, base + wobble));
+      if (Math.abs(value - th.throttle) > 1e-4 || (value === 0 && th.throttle !== 0)) th.setThrottle(value);
+      if (st === 'ready' && base > 0) app.setPrologue('spinning');
+      else if (st === 'spinning' && base === 0) app.setPrologue('ready');
+      if (open && base >= RED_ZONE) {
+        redSince ??= now;
+        if (now - redSince >= RED_HOLD_MS || base >= 1) {
+          redSince = null;
+          th.setHolding(false);
+          app.setPrologue('fault');
+          playFault();
+        }
+      } else redSince = null;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduced]);
+
+  // Hold Space to open the throttle (not while typing; key repeats ignored), let go to close it.
+  useEffect(() => {
+    if (reduced) return;
+    const testing = () => {
+      const s = useApp.getState();
+      return s.phase === 'flight' && s.flight.stage === 'prologue' && (s.prologue.step === 'ready' || s.prologue.step === 'spinning');
+    };
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || isTyping(e.target) || !testing()) return;
+      e.preventDefault();
+      if (!e.repeat) useThrottle.getState().setHolding(true);
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || !useThrottle.getState().holding) return;
+      e.preventDefault();
+      useThrottle.getState().setHolding(false);
+    };
+    const release = () => useThrottle.getState().setHolding(false);
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', release);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', release);
+      release();
+    };
+  }, [reduced]);
 
   const before = PROLOGUE.slice(0, PROLOGUE_TEST_AT);
   const after = PROLOGUE.slice(PROLOGUE_TEST_AT);
   const imagine = step === 'imagine';
+  const fault = step === 'fault';
+  const pct = Math.round(throttle * 100);
+  const red = throttle >= RED_ZONE;
+
+  let action;
+  if (imagine) {
+    action = (
+      <button type="button" className="primary dock-primary imagine reveal" onClick={() => flyTo(0, reduced ? 0 : flyDurationMs(LEGS[0].distanceKm))}>
+        Imagine Flight 73 · Lift off <span aria-hidden="true">→</span>
+      </button>
+    );
+  } else if (reduced) {
+    // Reduced motion: one click, straight to the fault's outcome.
+    action = (
+      <button type="button" className="primary dock-primary spin" onClick={() => setPrologue('imagine')}>
+        Spin up rotors · test flight
+      </button>
+    );
+  } else {
+    const release = () => setHolding(false);
+    action = (
+      <>
+        <div
+          className={`thr-gauge${red ? ' thr-in-red' : ''}${fault ? ' thr-fault' : ''}`}
+          style={{ '--thr-red': `${RED_ZONE * 100}%` } as CSSProperties}
+          role="meter"
+          aria-label="Rotor throttle"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+        >
+          <div className="thr-head">
+            <span className="thr-title">Throttle</span>
+            <span className="thr-rpm">
+              RPM <b>{Math.round(testRotor(throttle) * 100)} %</b> of flight speed
+            </span>
+          </div>
+          <div className="thr-track">
+            <span className="thr-fill" style={{ width: `${throttle * 100}%` }} />
+            <span className="thr-needle" style={{ left: `${throttle * 100}%` }} />
+          </div>
+          <p className="thr-red-label">RED ZONE — blades damaged on Flight 72</p>
+        </div>
+        <button
+          type="button"
+          className={`primary dock-primary spin thr-hold${holding ? ' thr-holding' : ''}${fault ? ' busy' : ''}`}
+          disabled={fault}
+          aria-pressed={holding}
+          onPointerDown={e => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            e.preventDefault();
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+              /* not capturable: releasing over the button still works */
+            }
+            setHolding(true);
+          }}
+          onPointerUp={release}
+          onPointerCancel={release}
+          onLostPointerCapture={release}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.repeat) setHolding(true);
+          }}
+          onKeyUp={e => {
+            if (e.key === 'Enter') release();
+          }}
+          onContextMenu={e => e.preventDefault()}
+        >
+          {fault ? 'Rotor fault' : holding ? `Holding… throttle ${pct} %` : 'Hold to spin up'}
+        </button>
+        <p className="thr-hint">Hold Space or the button. Let go to throttle back.</p>
+      </>
+    );
+  }
 
   return (
     <div className="dock-grid">
@@ -98,21 +252,7 @@ function PrologueDock() {
         )}
       </div>
       <div className="dock-side">
-        {imagine ? (
-          <button type="button" className="primary dock-primary imagine reveal" onClick={() => flyTo(0, reduced ? 0 : flyDurationMs(LEGS[0].distanceKm))}>
-            Imagine Flight 73 · Lift off <span aria-hidden="true">→</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={`primary dock-primary spin${step !== 'ready' ? ' busy' : ''}`}
-            onClick={spinUp}
-            disabled={step !== 'ready'}
-            aria-live="polite"
-          >
-            {step === 'ready' ? 'Spin up rotors · test flight' : step === 'spinning' ? 'Spinning up…' : 'Rotor fault'}
-          </button>
-        )}
+        {action}
         <p className="jump-hint">Short on time? Pick any stop on the route above to fly straight there.</p>
       </div>
     </div>
@@ -266,12 +406,14 @@ function SiteDock() {
           ))}
         </div>
         <div id="story-panel" role="tabpanel" aria-labelledby={`story-tab-${story}`} className={`story-panel${reduced ? ' instant' : ''}`} key={story}>
-          <p className="story-text">{machine.story[STORY_KEYS[story]]}</p>
-          {story < 3 && (
-            <button type="button" className="text-btn story-next" onClick={() => setStory((story + 1) as StorySection)}>
-              Next · {STORY_LABELS[story + 1]} <span aria-hidden="true">›</span>
-            </button>
-          )}
+          <p className="story-text">
+            {machine.story[STORY_KEYS[story]]}
+            {story < 3 && (
+              <button type="button" className="text-btn story-next" onClick={() => setStory((story + 1) as StorySection)}>
+                Next · {STORY_LABELS[story + 1]} <span aria-hidden="true">›</span>
+              </button>
+            )}
+          </p>
         </div>
         <p className="inherit-line">
           <span className="speaker">Ingenuity</span> {script.inheritance}

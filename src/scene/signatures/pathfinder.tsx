@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Euler, Mesh, Vector3, type Group, type InstancedMesh, type Object3D } from 'three';
 import { useReducedMotion } from '../useReducedMotion';
-import { findMachine, groundAt, SigTag, siteShown, sigNow, type SiteSignatureProps } from './common';
+import { findMachine, groundAt, SigFocus, SigTag, siteShown, sigNow, type SiteSignatureProps } from './common';
 import { ROVER_PATH, sojournerPath } from './logic';
 
 // The procedural lander's ramp (models.ts, pathfinder()): its top and foot, machine-local.
@@ -58,6 +58,8 @@ export function SojournerRoll({ stop, ground, lay }: SiteSignatureProps) {
   useEffect(() => () => restore(), []);
 
   const pos = useMemo(() => new Vector3(), []);
+  /** What the close-up follows: Sojourner itself (a little above its deck), down the ramp and on. */
+  const roverFocus = useMemo(() => RAMP_TOP.clone(), []);
   useFrame((_, dt) => {
     const v = sigNow('roll');
     shown.current = v === undefined ? 0 : siteShown(stop);
@@ -92,11 +94,13 @@ export function SojournerRoll({ stop, ground, lay }: SiteSignatureProps) {
     }
     obj.position.copy(pos);
     obj.rotation.set(0, yaw, pitch);
+    roverFocus.copy(pos).y += 0.12;
   });
 
   return (
     <group ref={anchor} rotation-y={lay.machineYaw}>
       {rock && <primitive object={rock} />}
+      <SigFocus sigKey="roll" position={roverFocus} />
       <SigTag position={rampMid} show={() => shown.current} tone="faint">
         Rear ramp
       </SigTag>

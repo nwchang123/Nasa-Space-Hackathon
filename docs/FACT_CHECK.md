@@ -226,6 +226,21 @@ Short source keys:
 | ingenuity | Perseverance photographed part of a rotor blade ~15 m (49 ft) west of Ingenuity (image 24 Feb 2024) | INGB, INGX |
 | ingenuity | SkyFall will build on Ingenuity; a trio of next-gen helicopters, deployed mid-air, to scout human landing sites and map subsurface water ice | ING |
 
+### Arrival intros (`arrivalIntro`, Ingenuity's radio bubble at each stop)
+| Stop | Line / claim | Source |
+|---|---|---|
+| viking-1 | Chryse Planitia, the Golden Plain; in 1976 the first spacecraft to land safely on Mars and keep working | V1 |
+| viking-2 | Utopia Planitia, nearer the polar ice; landed tilted (8.5°) among boulders; data home for more than three and a half years (3 Sep 1976 → 12 Apr 1980 = 3.6 y) | V2 / derived |
+| pathfinder | Ares Vallis; came down in giant airbags, about 15 bounces; Sojourner the first rover to drive on Mars | MPF |
+| spirit | Troy, beside Home Plate, Gusev crater; stuck in soft soil there; the dragged wheel exposed nearly pure silica → ancient hot springs or steam vents | SPI, TROY |
+| opportunity | Perseverance Valley, Endeavour crater rim; designed to drive 1,000 m, drove 45.16 km (more than a marathon); showed water lasted on the surface | OPP, MER |
+| phoenix | The Martian arctic; landed farther north than any Mars mission before it; its trench exposed water ice just under the soil | PHX15 |
+| insight | Elysium Planitia; sent to study the inside of Mars; 1,319 marsquakes; waves from two far-side quakes revealed a liquid iron core | INS, INSR, INSC |
+| mars2020-edl | Jezero crater; the parachute and backshell slowed Perseverance (Ingenuity under its belly); biggest parachute ever used on Mars; its gores spell a message in binary | JPL2022, ING, DECODER |
+| ingenuity | Valinor Hills, Jezero crater; the real Ingenuity rests there with broken blades; planned up to five flights, flew 72 | ING, INGB |
+| every stop | The last line invites the visitor to click a numbered hotspot, which Ingenuity flies to and scans: the app's own interaction and part of the imagined flight, covered by `FICTION_NOTE` | — |
+| every stop | Reactions to a signature action replay the stop's `inheritance` line (sourced above) | — |
+
 ### Epilogue
 | Line / claim | Source |
 |---|---|

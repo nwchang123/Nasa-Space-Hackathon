@@ -1,7 +1,9 @@
 // Look around the machine at a site: drag on the 3D view to orbit, wheel to move in or out,
-// double-click to go back to the composed shot. Writes live.siteOrbit (eased, so a drag or a
-// reset never jumps); the CameraRig applies it on top of the site pose. Active only at this stop's
-// site stage once the camera has settled; leaving the stage eases it back to the composed shot.
+// double-click (or "Reset wide view", store.resetView) to go back to the composed shot. During a
+// close-up the orbit turns about the focused part. Drags and the wheel write live.siteOrbitGoal (a
+// HUD control may too); this eases live.siteOrbit toward it, so a drag or a reset never jumps, and
+// the CameraRig applies that on top of the site pose. Active only at this stop's site stage once
+// the camera has settled; leaving the stage eases it back to the composed shot.
 //
 // Conventions: az = radians the camera turns about the site's up (right-hand rule, so positive
 // is counter-clockwise seen from above); dragging right turns the camera clockwise, as if the
@@ -10,6 +12,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
+import { HOME } from '../flight/route';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { live } from './registry';
@@ -20,13 +23,16 @@ const FOLLOW = 14;
 
 function orbitActive(stop: MachineId): boolean {
   const s = useApp.getState();
-  if (s.phase !== 'flight' || s.flight.stage !== 'site' || currentStop(s.flight) !== stop) return false;
+  if (s.phase !== 'flight') return false;
+  const f = s.flight;
+  // At a stop; or at home before lift-off and after landing back, to look round the broken blades.
+  const here = (f.stage === 'site' && currentStop(f) === stop) || (stop === HOME && (f.stage === 'prologue' || f.stage === 'epilogue'));
+  if (!here) return false;
   return live.shot.siteId === stop && live.site.valid && live.shot.blend > 0.95 && live.black < 0.3;
 }
 
 export function SiteOrbitInput({ stop }: { stop: MachineId }) {
   const gl = useThree(s => s.gl);
-  const target = useRef({ az: 0, el: 0, zoom: 1 });
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const active = useRef(false);
 
@@ -45,7 +51,7 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
     const move = (e: PointerEvent) => {
       const d = drag.current;
       if (!d || d.id !== e.pointerId) return;
-      target.current = orbitAfterDrag(target.current, e.clientX - d.x, e.clientY - d.y);
+      Object.assign(live.siteOrbitGoal, orbitAfterDrag(live.siteOrbitGoal, e.clientX - d.x, e.clientY - d.y));
       d.x = e.clientX;
       d.y = e.clientY;
     };
@@ -58,11 +64,15 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
     const wheel = (e: WheelEvent) => {
       if (!active.current) return;
       e.preventDefault();
-      target.current = orbitAfterWheel(target.current, e.deltaY);
+      Object.assign(live.siteOrbitGoal, orbitAfterWheel(live.siteOrbitGoal, e.deltaY));
     };
+    // Double-click: the same as "Reset wide view" (no orbit, no close-up, Ingenuity flies home).
     const reset = () => {
-      if (active.current) target.current = { az: 0, el: 0, zoom: 1 };
+      if (active.current) useApp.getState().resetView();
     };
+    const unsub = useApp.subscribe((s, prev) => {
+      if (s.viewResetAt !== prev.viewResetAt) Object.assign(live.siteOrbitGoal, { az: 0, el: 0, zoom: 1 });
+    });
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
@@ -70,6 +80,7 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
     el.addEventListener('wheel', wheel, { passive: false });
     el.addEventListener('dblclick', reset);
     return () => {
+      unsub();
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
@@ -81,6 +92,7 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
       live.siteOrbit.az = 0;
       live.siteOrbit.el = 0;
       live.siteOrbit.zoom = 1;
+      Object.assign(live.siteOrbitGoal, { az: 0, el: 0, zoom: 1 });
     };
   }, [gl]);
 
@@ -90,14 +102,14 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
       active.current = on;
       if (!on) {
         // Leaving the stage (or the shot): back to the composed view.
-        target.current = { az: 0, el: 0, zoom: 1 };
+        Object.assign(live.siteOrbitGoal, { az: 0, el: 0, zoom: 1 });
         drag.current = null;
       }
       gl.domElement.style.cursor = on ? 'grab' : '';
     }
     if (live.shot.siteId !== stop) return;
     const o = live.siteOrbit;
-    const t = target.current;
+    const t = live.siteOrbitGoal;
     const k = 1 - Math.exp(-Math.min(delta, 0.1) * FOLLOW);
     o.az += (t.az - o.az) * k;
     o.el += (t.el - o.el) * k;

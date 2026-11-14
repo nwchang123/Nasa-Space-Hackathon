@@ -19,6 +19,7 @@ import { blendAbout, GLOBE_R, smoothstep, SITE_SCALE, type Vec3 } from './layout
 import { buildIngenuity, INGENUITY_ROTOR_M, ingenuityFromGltf, MODEL_REGISTRY, type IngenuityRig } from './models';
 import { phantomLook, phantomMaterial } from './phantom';
 import { live } from './registry';
+import { FLY_SPEED_MS } from './freeFlight';
 import { SITE_PRESETS, siteLayout } from './sites';
 import { useReducedMotion } from './useReducedMotion';
 
@@ -61,6 +62,10 @@ function asPhantom(rig: IngenuityRig, ownsMaterials: boolean): Rig {
     if (!m.isMesh) return;
     m.castShadow = false;
     m.receiveShadow = false;
+    // After the site's ground: that is transparent too (it fades in with the dive), and its centre
+    // (127 m round) can sort nearer than Ingenuity in a close-up, painting over the hologram. The
+    // ground writes depth, so it still hides the phantom where it really is in front.
+    m.renderOrder = 1;
     if (blur.has(m)) {
       (m.material as MeshBasicMaterial).color.set('#f2a93b');
       return;
@@ -152,6 +157,10 @@ const posB = new Vector3();
 const quatB = new Quaternion();
 const yawQ = new Quaternion();
 const shakeQ = new Quaternion();
+const tiltQ = new Quaternion();
+const tiltAxis = new Vector3();
+/** Lean into the motion at full cruise speed, radians. */
+const MAX_TILT = 0.2;
 const Y = new Vector3(0, 1, 0);
 const X = new Vector3(1, 0, 0);
 const Z = new Vector3(0, 0, 1);
@@ -205,12 +214,22 @@ export function Ingenuity() {
         posA.copy(live.rest.pos);
         quatA.copy(live.rest.quat);
       }
-      // Site end: hovering over / standing on its spot, at real size.
+      // Site end: hovering over / standing on its spot, at real size; or wherever the visitor has
+      // flown it (live.flyer), tilted into its motion.
       if (shot.siteId && shot.blend > 0 && live.site.valid) {
         const w = shot.blend;
         const lay = siteLayout(SITE_PRESETS[shot.siteId]);
-        posB.set(lay.ingenuity[0], shot.hover, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
-        quatB.copy(live.site.quat).multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
+        const fl = live.flyer;
+        if (fl.site === shot.siteId) {
+          posB.set(fl.x, fl.ground + Math.max(shot.hover, fl.alt), fl.z).applyMatrix4(live.site.matrix);
+          quatB.copy(live.site.quat);
+          const v = Math.hypot(fl.vx, fl.vz);
+          if (v > 1e-3) quatB.multiply(tiltQ.setFromAxisAngle(tiltAxis.set(fl.vz / v, 0, -fl.vx / v), Math.min(MAX_TILT, (v / FLY_SPEED_MS) * MAX_TILT)));
+          quatB.multiply(yawQ.setFromAxisAngle(Y, fl.yaw));
+        } else {
+          posB.set(lay.ingenuity[0], shot.hover, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
+          quatB.copy(live.site.quat).multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
+        }
         const pivot: Vec3 = [live.site.point.x, live.site.point.y, live.site.point.z];
         g.position.set(...blendAbout([posA.x, posA.y, posA.z], [posB.x, posB.y, posB.z], w, pivot));
         g.quaternion.slerpQuaternions(quatA, quatB, smoothstep(0, 1, w));
@@ -229,8 +248,10 @@ export function Ingenuity() {
         g.quaternion.multiply(shakeQ);
       }
       g.scale.setScalar(scale);
+      live.flyerWorld.copy(g.position);
 
-      const speed = reduced ? 0 : shot.rotor;
+      const flown = live.flyer.site !== null && live.flyer.site === shot.siteId ? live.flyer.rotor : 0;
+      const speed = reduced ? 0 : Math.max(shot.rotor, flown);
       angle.current += SPIN * speed * delta;
       const real = flyerReal.current;
       const ph = flyerPhantom.current;

@@ -1,5 +1,6 @@
-// The twin rovers. Spirit: drive backwards dragging the jammed right-front wheel, which scrapes up
-// a bright trench of nearly pure silica (2006-2007). Opportunity: dust in the air for the 2018
+// The twin rovers. Spirit: the visitor drives it backwards with a slider, dragging the jammed
+// right-front wheel, which scrapes up a bright trench of nearly pure silica (2006-2007); dust puffs
+// from the wheel while it moves. Opportunity: dust in the air for the 2018
 // storm (the sky and light themselves change through applySiteFx, fx.ts).
 
 import { useFrame } from '@react-three/fiber';
@@ -19,13 +20,14 @@ import {
 import { SITE_SCALE, smoothstep } from '../layout';
 import { live } from '../registry';
 import { useReducedMotion } from '../useReducedMotion';
-import { boxPoint, findMachine, groundAt, localBox, rightFrontFoot, SigTag, siteShown, sigNow, softDot, useButtonClock, type SiteSignatureProps } from './common';
-import { easeInOut, LAST_SIGNAL_TAU, phase, STORM_TAU_MAX, STORM_TAU_MIN } from './logic';
+import { playScrape } from '../../ui/sound';
+import { boxPoint, findMachine, groundAt, localBox, rightFrontFoot, SigFocus, SigTag, siteShown, sigNow, softDot, type SiteSignatureProps } from './common';
+import { Puffs, useSliderDrive } from './drive';
+import { LAST_SIGNAL_TAU, STORM_TAU_MAX, STORM_TAU_MIN } from './logic';
 
 // ---------------------------------------------------------------- Spirit
 
-const DRAG_MS = 6000;
-/** How far the re-enactment backs up (illustrative). */
+/** How far the re-enactment backs up at the slider's end (illustrative). */
 const BACK_M = 0.7;
 const TRENCH_W = 0.17;
 const TRENCH_SEGS = 28;
@@ -71,6 +73,8 @@ export function SpiritDrag({ stop, ground, lay }: SiteSignatureProps) {
   const machine = useRef<Object3D | null>(null);
   const shown = useRef(0);
   const label = useMemo(() => new Vector3(), []);
+  const wheelAt = useMemo(() => new Vector3(), []);
+  const puffAt = useMemo(() => new Vector3(), []);
   const mat = useMemo(
     () =>
       new MeshStandardMaterial({
@@ -93,8 +97,10 @@ export function SpiritDrag({ stop, ground, lay }: SiteSignatureProps) {
     m.renderOrder = 1;
     return m;
   }, [mat]);
-  const builtFor = useRef<number | undefined>(undefined);
-  const clock = useButtonClock('drag', DRAG_MS, reduced);
+  const puffs = useMemo(() => new Puffs(70, '#c99a74', 0.06), []);
+  const built = useRef(false);
+  const last = useRef<{ back: number; sound: number }>({ back: 0, sound: 0 });
+  const drive = useSliderDrive('drag', reduced);
 
   const park = () => {
     machine.current?.position.set(0, 0, 0);
@@ -104,46 +110,69 @@ export function SpiritDrag({ stop, ground, lay }: SiteSignatureProps) {
       park();
       trench.geometry.dispose();
       mat.dispose();
+      puffs.dispose();
     },
-    [trench, mat],
+    [trench, mat, puffs],
   );
 
-  useFrame(() => {
-    const p = clock();
+  useFrame((_, dt) => {
+    const p = drive(dt);
     if (!machine.current) machine.current = findMachine(anchor.current);
     const m = machine.current;
     if (!m) return;
+    const site = siteShown(stop);
+    puffs.update(dt, site);
     if (p === null) {
-      if (builtFor.current !== undefined) park();
-      builtFor.current = undefined;
+      if (built.current) park();
+      built.current = false;
       trench.visible = false;
       shown.current = 0;
       return;
     }
-    const at = sigNow('drag');
-    if (builtFor.current !== at) {
-      // New press: put Spirit back where it was, find its right-front wheel (right = −X, front
-      // = +Z in the machine's frame), and lay out the trench behind it.
+    if (!built.current) {
+      // First use: with Spirit where it stands, find its right-front wheel (right = −X, front = +Z
+      // in the machine's frame) and lay out the trench behind it.
       park();
-      builtFor.current = at;
+      built.current = true;
       const b = localBox(m, m);
       const wheel = rightFrontFoot(m) ?? boxPoint(b, [-0.54, 0, 0.6]);
+      wheelAt.copy(wheel);
       trench.geometry.dispose();
       trench.geometry = trenchGeometry(wheel.x, wheel.z, BACK_M, (x, z) => groundAt(ground, lay, x, z));
       label.set(wheel.x, groundAt(ground, lay, wheel.x, wheel.z - BACK_M * 0.5), wheel.z - BACK_M * 0.5);
+      last.current.back = 0;
     }
-    const back = BACK_M * easeInOut(phase(p, 0.05, 0.8));
+    // The slider is the distance driven backwards: the rover, and the trench behind its wheel.
+    const k = Math.min(1, Math.max(0, p));
+    const back = BACK_M * k;
     const yaw = lay.machineYaw;
     m.position.set(-Math.sin(yaw) * back, 0, -Math.cos(yaw) * back);
-    const rows = Math.ceil((back / BACK_M) * TRENCH_SEGS);
+    const rows = Math.ceil(k * TRENCH_SEGS);
     trench.visible = rows > 0;
     trench.geometry.setDrawRange(0, rows * (ACROSS.length - 1) * 6);
-    shown.current = smoothstep(0.55, 0.75, p) * siteShown(stop);
+    shown.current = smoothstep(0.55, 0.75, k) * site;
+
+    // Dust off the dragged wheel while it moves, and its grinding, in step with the hand.
+    const moved = Math.abs(back - last.current.back);
+    last.current.back = back;
+    if (moved > 1e-4 && site > 0.5) {
+      if (!reduced) {
+        puffAt.set(wheelAt.x, groundAt(ground, lay, wheelAt.x, wheelAt.z - back) + 0.03, wheelAt.z - back);
+        puffs.emit(puffAt, Math.min(6, 1 + Math.round(moved * 400)), 0.12, 0.35);
+      }
+      const now = performance.now();
+      if (now - last.current.sound > 420) {
+        last.current.sound = now;
+        playScrape(450);
+      }
+    }
   });
 
   return (
     <group ref={anchor} rotation-y={lay.machineYaw}>
       <primitive object={trench} />
+      <primitive object={puffs.points} />
+      <SigFocus sigKey="drag" position={label} />
       <SigTag position={label} show={() => shown.current} tone="white">
         Nearly pure silica
         <small>scraped up by the dragged wheel · 2007</small>
@@ -239,6 +268,7 @@ export function StormDust({ stop, lay }: SiteSignatureProps) {
   return (
     <group ref={anchor} rotation-y={lay.machineYaw}>
       <primitive object={points} />
+      <SigFocus sigKey="storm" position={tagAt} />
       <SigTag position={tagAt} show={() => lastTag.current} tone="white">
         Last signal · 10 June 2018
       </SigTag>

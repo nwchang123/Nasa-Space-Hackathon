@@ -1,7 +1,7 @@
 // Live, per-frame values shared between scene components. The Director writes them first every
 // frame (useFrame priority DIRECTOR_PRIORITY); everyone else reads them. Never rendered by React.
 
-import { Matrix4, Quaternion, Vector3, type Group, type Object3D } from 'three';
+import { Box3, Matrix4, Quaternion, Vector3, type Group, type Object3D } from 'three';
 import type { Shot } from './choreo';
 import { HOME_YAW } from './layout';
 import type { SkyLook } from './sites';
@@ -56,8 +56,42 @@ export const live = {
    */
   siteOrbit: { az: 0, el: 0, zoom: 1 },
   /**
+   * Where the site orbit is heading (same units as siteOrbit): pointer drags and the wheel write it,
+   * and so may a HUD control (a bearing bar). The site orbit input eases siteOrbit toward it, and
+   * resets it to 0/0/1 on "Reset wide view", on leaving the stage and when the site changes.
+   */
+  siteOrbitGoal: { az: 0, el: 0, zoom: 1 },
+  /** Compass heading the camera faces at a site, degrees (0 = north, 90 = east); NaN elsewhere. Written by the CameraRig. */
+  camHeadingDeg: NaN,
+  /**
    * The Sun as the diorama shows it, world space: the real Sun now, or the hour picked on the sun
    * scrubber. Written by the Diorama (valid only while a diorama is in use); Lights uses it there.
    */
   siteSun: new Vector3(0, 1, 0),
+  /**
+   * Things the site camera can look at close up, world space, by key: 'hs:0'..'hs:3' and 'hs:call'
+   * (written by the Hotspots every frame while shown), 'sig:<key>' (by a signature effect's
+   * SigFocus). Stale keys are harmless: the camera only reads the focused one.
+   */
+  targets: new Map<string, Vector3>(),
+  /**
+   * The machine at the site in use, measured by the Hotspots: its bounding box in the machine's own
+   * frame (the diorama turned by `yaw` about +Y), for the close-up distance and for keeping the
+   * free-flying Ingenuity out of it. Invalid at home (no machine) and until the model is measured.
+   */
+  machine: { site: null as string | null, valid: false, box: new Box3(), yaw: 0 },
+  /**
+   * Ingenuity flown by the visitor at a site (src/scene/SiteFlight.tsx), diorama-local metres.
+   * `site` is the diorama this belongs to (null = not in use: Ingenuity sits on its landing spot).
+   * x/z: where it is; alt: height above the ground; vx/vz: velocity (for the tilt); rotor 0..1.
+   * `ground` is the ground height under it (relative to its landing spot); `yaw` its heading about
+   * +Y. `follow` 0..1: how much the camera should follow it (the CameraRig eases toward it).
+   */
+  flyer: { site: null as string | null, x: 0, z: 0, alt: 0, ground: 0, vx: 0, vz: 0, rotor: 0, yaw: 0, follow: 0 },
+  /** Ingenuity scanning a part close up: k 0..1 (beam and searchlight on it), the part, world space. */
+  scan: { k: 0, point: new Vector3() },
+  /** The story hotspot inside the scout camera's viewfinder right now ('0'..'3'), or null. */
+  scoutTarget: null as string | null,
+  /** Ingenuity's position this frame, world space (written by Ingenuity; the searchlight reads it). */
+  flyerWorld: new Vector3(),
 };

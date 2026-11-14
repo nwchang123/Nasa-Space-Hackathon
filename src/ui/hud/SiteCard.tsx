@@ -1,8 +1,10 @@
-// Bottom-left site telemetry card: what the machine is, where and when, its key facts, the 24 h
-// local solar time scrubber (the scene relights the site for the picked hour), and the radio
-// call from Earth with tonight's real light time.
+// Bottom-left site card, kept small so the site itself fills the screen. Always shown: the
+// machine's name, one line of where it is, the 24 h local solar time scrubber (the scene relights
+// the site for the picked hour) and a compact radio call from Earth with tonight's real light
+// time. Everything else (kind, dates, facts, model note, radio details, sources) sits in a
+// "Specs & Dossier" fold, closed by default, that scrolls inside the card when open.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { siteSky, siteSkyAtHour } from '../../astro';
 import { MODEL_NOTES } from '../../data/modelNotes';
 import { HOME } from '../../flight/route';
@@ -11,59 +13,98 @@ import type { Machine } from '../../types';
 import { formatDate, formatDistance, formatDuration, formatSolarTime, formatSpeedup, planCall, silenceLine, skyWords } from '../callPlan';
 import { playSend, playSilence } from '../sound';
 
+const NO_RADIO_SHORT = 'No radio of its own: nobody to call.';
+const NO_RADIO_LONG = 'It never had a radio of its own, so there is nobody to call. It can still tell you its story.';
+const HOME_SHORT = 'No direct line from Earth: it only talked to Perseverance.';
+const HOME_LONG =
+  'Ingenuity can’t be called from Earth directly. It only ever talked to Perseverance, its base station, which relayed messages to and from Earth.';
+
+const coords = (m: Machine) =>
+  `${Math.abs(m.lat).toFixed(2)}°${m.lat >= 0 ? 'N' : 'S'} ${Math.abs(m.lon).toFixed(2)}°${m.lon >= 0 ? 'E' : 'W'}${m.approxPosition ? ' (approx.)' : ''}`;
+
 export function SiteCard({ machine, standing }: { machine: Machine; standing: boolean }) {
   const isHome = machine.id === HOME;
   const canCall = standing && !machine.noRadio && !isHome;
+  const [open, setOpen] = useState(false);
+  const dossierId = useId();
   return (
-    <aside className="site-card hud-panel hud-panel-in" aria-labelledby="site-card-name">
-      <p className="card-kind">{machine.kind}</p>
-      <h2 id="site-card-name" className="card-name">
-        {machine.name}
-      </h2>
-      <p className="card-site">
-        {machine.site}
-        <span className="dim tabular">
-          {' '}
-          · {Math.abs(machine.lat).toFixed(2)}°{machine.lat >= 0 ? 'N' : 'S'} {Math.abs(machine.lon).toFixed(2)}°{machine.lon >= 0 ? 'E' : 'W'}
-          {machine.approxPosition ? ' (approx.)' : ''}
-        </span>
-      </p>
-      <dl className="card-dates">
-        <div>
-          <dt>Arrived</dt>
-          <dd>{formatDate(machine.arrived)}</dd>
-        </div>
-        <div>
-          <dt>{machine.lastContactLabel ?? 'Last signal'}</dt>
-          <dd>{formatDate(machine.lastContact)}</dd>
-        </div>
-      </dl>
-      <ul className="chips">
-        {machine.facts.map(f => (
-          <li key={f}>{f}</li>
-        ))}
-      </ul>
-      {MODEL_NOTES[machine.id] && <p className="model-note">{MODEL_NOTES[machine.id]}</p>}
-      <SunScrubber machine={machine} />
-      {canCall && <RadioCall machine={machine} />}
-      {standing && machine.noRadio && (
-        <p className="channel-note">It never had a radio of its own, so there is nobody to call. It can still tell you its story.</p>
-      )}
-      {isHome && (
-        <p className="channel-note">
-          Ingenuity can’t be called from Earth directly. It only ever talked to Perseverance, its base station, which relayed messages to and from
-          Earth.
+    <aside className={`site-card hud-panel hud-panel-in${open ? ' open' : ''}`} aria-labelledby="site-card-name">
+      <div className="card-fixed">
+        <h2 id="site-card-name" className="card-name">
+          {machine.name}
+        </h2>
+        <p className="card-site" title={`${machine.site} · ${coords(machine)}`}>
+          {machine.site} <span className="dim tabular">· {coords(machine)}</span>
         </p>
-      )}
-      <p className="card-sources">
-        <span>Sources</span>
-        {machine.sources.map((s, i) => (
-          <a key={s.url} href={s.url} target="_blank" rel="noreferrer" title={s.label} aria-label={`Source: ${s.label}`}>
-            [{i + 1}]
-          </a>
-        ))}
-      </p>
+        <SunScrubber machine={machine} />
+        {canCall && <RadioCall machine={machine} />}
+        {standing && machine.noRadio && <p className="card-line">{NO_RADIO_SHORT}</p>}
+        {isHome && <p className="card-line">{HOME_SHORT}</p>}
+        <button type="button" className="dossier-toggle" aria-expanded={open} aria-controls={dossierId} onClick={() => setOpen(o => !o)}>
+          <span aria-hidden="true">{open ? '−' : '+'}</span> Specs &amp; Dossier
+        </button>
+      </div>
+      <div id={dossierId} className="dossier" hidden={!open} role="region" aria-label={`${machine.shortName}: specs and dossier`}>
+        <p className="card-kind">{machine.kind}</p>
+        <dl className="card-dates">
+          <div>
+            <dt>Arrived</dt>
+            <dd>{formatDate(machine.arrived)}</dd>
+          </div>
+          <div>
+            <dt>{machine.lastContactLabel ?? 'Last signal'}</dt>
+            <dd>{formatDate(machine.lastContact)}</dd>
+          </div>
+          <div>
+            <dt>Planned</dt>
+            <dd>{machine.plannedLife}</dd>
+          </div>
+          <div>
+            <dt>Lasted</dt>
+            <dd>{machine.actualLife}</dd>
+          </div>
+        </dl>
+        <ul className="chips">
+          {machine.facts.map(f => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
+        {MODEL_NOTES[machine.id] && <p className="model-note">{MODEL_NOTES[machine.id]}</p>}
+        {canCall && <RadioDetails machine={machine} />}
+        {standing && machine.noRadio && <p className="channel-note">{NO_RADIO_LONG}</p>}
+        {isHome && <p className="channel-note">{HOME_LONG}</p>}
+        <p className="card-sources">
+          <span>Sources</span>
+          {machine.sources.map((s, i) => (
+            <a key={s.url} href={s.url} target="_blank" rel="noreferrer" title={s.label} aria-label={`Source: ${s.label}`}>
+              [{i + 1}]
+            </a>
+          ))}
+        </p>
+      </div>
     </aside>
+  );
+}
+
+/** The radio path tonight, in full (the card's call button shows only the round trip). */
+function RadioDetails({ machine }: { machine: Machine }) {
+  const nowMs = useApp(s => s.nowMs);
+  const plan = useMemo(() => planCall(machine, new Date(nowMs)), [machine, nowMs]);
+  return (
+    <dl className="live card-live">
+      <div className="live-row">
+        <dt>Earth to Mars now</dt>
+        <dd>{plan.path.distanceKm === null ? 'No reliable estimate' : formatDistance(plan.path.distanceKm)}</dd>
+      </div>
+      <div className="live-row">
+        <dt>Radio round trip</dt>
+        <dd>
+          {plan.path.roundTripS === null ? '—' : formatDuration(plan.path.roundTripS)}
+          {plan.speedup !== null && plan.speedup > 1 && <span className="dim"> · played {formatSpeedup(plan.speedup)} faster</span>}
+        </dd>
+      </div>
+      <p className="live-note">{plan.path.note}</p>
+    </dl>
   );
 }
 
@@ -80,14 +121,16 @@ function SunScrubber({ machine }: { machine: Machine }) {
   return (
     <div className={`scrub${siteHour === null ? ' is-live' : ''}`}>
       <div className="scrub-head">
-        <span className="scrub-label">Local solar time</span>
+        <span className="scrub-label">
+          Local solar time <span className="scrub-time tabular">{formatSolarTime(hour)}</span>
+        </span>
         {siteHour === null ? (
           <span className="live-pill">
             <span className="beacon" aria-hidden="true" /> Live now
           </span>
         ) : (
-          <button type="button" className="icon-btn" onClick={() => setSiteHour(null)}>
-            Reset to live
+          <button type="button" className="icon-btn" onClick={() => setSiteHour(null)} title="Reset to live" aria-label="Reset to live">
+            <span aria-hidden="true">↺</span> Live
           </button>
         )}
       </div>
@@ -111,8 +154,8 @@ function SunScrubber({ machine }: { machine: Machine }) {
         <span>18</span>
         <span>24:00</span>
       </div>
-      <p className="scrub-read tabular" aria-live="off">
-        {skyWords(el, hour)}
+      <p className="scrub-read" aria-live="off">
+        {skyWords(el, undefined)}
       </p>
     </div>
   );
@@ -157,23 +200,21 @@ function RadioCall({ machine }: { machine: Machine }) {
 
   return (
     <section className="radio card-radio" aria-label="Radio call">
-      <dl className="live">
-        <div className="live-row">
-          <dt>Earth to Mars now</dt>
-          <dd>{plan.path.distanceKm === null ? 'No reliable estimate' : formatDistance(plan.path.distanceKm)}</dd>
-        </div>
-        <div className="live-row">
-          <dt>Radio round trip</dt>
-          <dd>
-            {plan.path.roundTripS === null ? '—' : formatDuration(plan.path.roundTripS)}
-            {plan.speedup !== null && plan.speedup > 1 && <span className="dim"> · played {formatSpeedup(plan.speedup)} faster</span>}
-          </dd>
-        </div>
-        <p className="live-note">{plan.path.note}</p>
-      </dl>
-      <button type="button" className="call radio" onClick={call} disabled={inFlight}>
-        <span className="call-label">{active?.result ? 'Call again' : 'Call it from Earth'}</span>
-        <span className="call-sub">Deep Space Network radio</span>
+      <button type="button" className="call radio card-call" onClick={call} disabled={inFlight}>
+        <span className="call-label">
+          <span aria-hidden="true">📡</span> {active?.result ? 'Call again' : 'Call from Earth'}
+        </span>
+        <span className="call-sub tabular">
+          {plan.path.roundTripS === null ? (
+            'No estimate'
+          ) : (
+            <>
+              <span aria-hidden="true">⇄ </span>
+              {formatDuration(plan.path.roundTripS)}
+              <span className="sr-only"> radio round trip</span>
+            </>
+          )}
+        </span>
       </button>
       {active && active.result === null && <SignalMeter plan={plan} startedAt={active.startedAt} />}
       <div aria-live="polite">{active?.result && <p className="result silent">{silenceLine(machine)}</p>}</div>
@@ -205,6 +246,7 @@ function SignalMeter({ plan, startedAt }: { plan: ReturnType<typeof planCall>; s
       </div>
       <div className="meter-read tabular">
         {k < 0.5 ? 'Signal on its way' : 'Listening for a reply'} · {realS !== null ? `t+${formatDuration(realS)}` : 'distance unknown'}
+        {plan.speedup !== null && plan.speedup > 1 && <span className="dim"> · {formatSpeedup(plan.speedup)} faster</span>}
       </div>
     </div>
   );

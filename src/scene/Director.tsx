@@ -15,6 +15,7 @@ import { HOME } from '../flight/route';
 import { latLonToVec3 } from '../geo';
 import { BOOST_FACTOR, useApp } from '../store';
 import type { MachineId } from '../types';
+import { useThrottle } from '../ui/throttle';
 import { Choreographer, type Shot } from './choreo';
 import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE, titleSunOffsetDeg } from './layout';
 import { MODEL_REGISTRY } from './models';
@@ -82,7 +83,10 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
       s = useApp.getState();
     }
     boostK.current += ((boosting ? 1 : 0) - boostK.current) * (1 - Math.exp(-dt * 4));
-    const shot = choreo.current.update(s.phase, s.flight, now, reduced, { boostMs: s.boostMs, prologue: s.prologue });
+    const shot = choreo.current.update(s.phase, s.flight, now, reduced, {
+      boostMs: s.boostMs,
+      prologue: { ...s.prologue, throttle: useThrottle.getState().throttle },
+    });
 
     // Reduced motion: every change of view is a step, covered by a short dip to black.
     if (!shown.current) shown.current = shot;

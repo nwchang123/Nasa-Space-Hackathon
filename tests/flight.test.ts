@@ -22,7 +22,7 @@ const legLats = (id: MachineId) => {
 const allLines: string[] = [
   ...PROLOGUE,
   ...EPILOGUE,
-  ...MACHINE_IDS.flatMap(id => [...LEG_SCRIPTS[id].enRoute, LEG_SCRIPTS[id].inheritance]),
+  ...MACHINE_IDS.flatMap(id => [...LEG_SCRIPTS[id].enRoute, ...LEG_SCRIPTS[id].arrivalIntro, LEG_SCRIPTS[id].inheritance]),
 ];
 
 function checkLine(line: string) {
@@ -46,6 +46,10 @@ describe('Flight 73 script: shape and voice', () => {
       const s = LEG_SCRIPTS[id];
       expect(s.enRoute.length, id).toBeGreaterThanOrEqual(1);
       expect(s.enRoute.length, id).toBeLessThanOrEqual(3);
+      expect(s.arrivalIntro.length, id).toBeGreaterThanOrEqual(2);
+      expect(s.arrivalIntro.length, id).toBeLessThanOrEqual(3);
+      // The intro ends by inviting the visitor to pick a numbered hotspot.
+      expect(s.arrivalIntro[s.arrivalIntro.length - 1], id).toMatch(/numbered point/);
       expect(typeof s.inheritance).toBe('string');
     }
   });

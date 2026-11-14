@@ -1,6 +1,8 @@
-// Phoenix: the arm digs a trench that shows whitish clumps of water ice, which vanish over four
-// sols (time-lapse); meanwhile snow falls from above and vaporises before reaching the ground, as
-// Phoenix's laser saw. Heights are compressed: the real clouds were about 4 km up.
+// Phoenix: the visitor drives the arm with a slider: lift, lower the scoop, dig (soil flies, the
+// trench opens and shows whitish clumps of water ice), raise it, then the slider's last part is a
+// four-sol time-lapse in which the clumps vaporise. Meanwhile snow falls from above and vaporises
+// before reaching the ground, as Phoenix's laser saw. Heights are compressed: the real clouds were
+// about 4 km up.
 
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,10 +24,11 @@ import {
 import { PHOENIX_SHOULDER } from '../models';
 import { SITE_SCALE, smoothstep } from '../layout';
 import { useReducedMotion } from '../useReducedMotion';
-import { findMachine, groundAt, SigTag, siteShown, sigNow, softDot, type SiteSignatureProps } from './common';
-import { buttonProgress, easeInOut, phase } from './logic';
+import { playDig } from '../../ui/sound';
+import { findMachine, groundAt, SigFocus, SigTag, siteShown, softDot, type SiteSignatureProps } from './common';
+import { Puffs, useSliderDrive } from './drive';
+import { easeInOut, phase, SCOOP, scoopState } from './logic';
 
-const SCOOP_MS = 8000;
 /** The arm's lift axis: level, across the arm's reach (models.ts phoenixArm). */
 const AXIS = new Vector3(0.988, 0, 0.152).normalize();
 /** The scoop's tip relative to the shoulder at rest. */
@@ -35,12 +38,13 @@ const ACROSS = new Vector3(REACH.z, 0, -REACH.x);
 const DIG = 0.04;
 const RAISED = -0.24;
 
-/** The arm's angle about AXIS (negative lifts) at progress p. */
+/** The arm's angle about AXIS (negative lifts) at slider value p: lift, lower, dig, raise. */
 function armAngle(p: number): number {
-  if (p < 0.12) return -0.28 * easeInOut(phase(p, 0, 0.12));
-  if (p < 0.24) return -0.28 + (DIG + 0.28) * easeInOut(phase(p, 0.12, 0.24));
-  if (p < 0.4) return DIG + 0.018 * Math.sin(phase(p, 0.24, 0.4) * Math.PI * 4);
-  return DIG + (RAISED - DIG) * easeInOut(phase(p, 0.4, 0.52));
+  if (p < SCOOP.lift) return -0.28 * easeInOut(phase(p, 0, SCOOP.lift));
+  if (p < SCOOP.lower) return -0.28 + (DIG + 0.28) * easeInOut(phase(p, SCOOP.lift, SCOOP.lower));
+  // Digging: the scoop rocks as it bites, in step with the slider (scrub to dig).
+  if (p < SCOOP.dug) return DIG + 0.022 * Math.sin(phase(p, SCOOP.lower, SCOOP.dug) * Math.PI * 5);
+  return DIG + (RAISED - DIG) * easeInOut(phase(p, SCOOP.dug, SCOOP.raised));
 }
 
 const SNOW_N = 300;
@@ -50,6 +54,13 @@ const SNOW_GONE = 2.3;
 
 type Stage = 'none' | 'ice' | 1 | 2 | 3 | 4 | 'gone';
 
+const stageOf = (p: number): Stage => {
+  const st = scoopState(p);
+  if (st.sol === 5) return 'gone';
+  if (st.sol > 0) return st.sol as Stage;
+  return st.ice > 0.5 ? 'ice' : 'none';
+};
+
 export function PhoenixScoop({ stop, ground, lay }: SiteSignatureProps) {
   const reduced = useReducedMotion();
   const anchor = useRef<Group>(null);
@@ -58,6 +69,9 @@ export function PhoenixScoop({ stop, ground, lay }: SiteSignatureProps) {
   const [stage, setStage] = useState<Stage>('none');
   const stageRef = useRef<Stage>('none');
   const q = useMemo(() => new Quaternion(), []);
+  const drive = useSliderDrive('scoop', reduced);
+  const puffs = useMemo(() => new Puffs(80, '#7d5a41', 0.045), []);
+  const dug = useRef({ p: 0, sound: 0, snow: 0 });
 
   // Where the scoop bites: the tip at the dig angle, pulled back a little toward the lander.
   const dig = useMemo(() => {
@@ -176,47 +190,55 @@ export function PhoenixScoop({ stop, ground, lay }: SiteSignatureProps) {
     },
     [parts],
   );
+  useEffect(() => () => puffs.dispose(), [puffs]);
 
   useFrame((state, dt) => {
     if (!arm.current) arm.current = findMachine(anchor.current)?.getObjectByName('phoenix-arm') ?? null;
-    const at = sigNow('scoop');
-    const now = Date.now();
-    const p = buttonProgress(at, SCOOP_MS, now, reduced);
-    // Timed visibility even with reduced motion (nothing moves then, things only appear).
-    const t = buttonProgress(at, SCOOP_MS, now, false);
+    const p = drive(dt);
     const site = siteShown(stop);
-    if (p === null || t === null) {
+    puffs.update(dt, site);
+    if (p === null) {
       reset();
       parts.trench.visible = false;
       parts.clumps.forEach(c => (c.visible = false));
       parts.snow.visible = parts.beam.visible = false;
       shown.current.trench = shown.current.snow = 0;
+      dug.current.snow = 0;
       if (stageRef.current !== 'none') setStage((stageRef.current = 'none'));
       return;
     }
     if (arm.current) arm.current.quaternion.copy(q.setFromAxisAngle(AXIS, armAngle(p)));
 
-    const trenchOpacity = smoothstep(0.24, 0.4, p);
-    (parts.trench.material as MeshStandardMaterial).opacity = trenchOpacity * 0.85;
-    parts.trench.visible = trenchOpacity > 0;
-    // Clumps appear as the trench opens and sublimate over "four sols" (time-lapse).
-    const iceAlpha = smoothstep(0.3, 0.42, p) * (1 - smoothstep(0.6, 0.95, p));
-    parts.clumpMat.opacity = iceAlpha;
-    const shrink = 1 - 0.6 * smoothstep(0.6, 0.95, p);
+    const st = scoopState(p);
+    (parts.trench.material as MeshStandardMaterial).opacity = st.trench * 0.85;
+    parts.trench.visible = st.trench > 0;
+    // Clumps show as the trench deepens and sublimate over the slider's "four sols".
+    parts.clumpMat.opacity = st.ice;
     parts.clumps.forEach(c => {
-      c.visible = iceAlpha > 0.01;
-      c.scale.copy(c.userData.base as Vector3).multiplyScalar(shrink);
+      c.visible = st.ice > 0.01;
+      c.scale.copy(c.userData.base as Vector3).multiplyScalar(st.shrink);
     });
-    shown.current.trench = trenchOpacity * site;
+    shown.current.trench = st.trench * site;
 
-    let next: Stage = 'none';
-    if (p >= 0.95) next = 'gone';
-    else if (p >= 0.6) next = (1 + Math.min(3, Math.floor(phase(p, 0.6, 0.95) * 4))) as Stage;
-    else if (p >= 0.36) next = 'ice';
+    const next = stageOf(p);
     if (next !== stageRef.current) setStage((stageRef.current = next));
 
-    // Snow: in from above, gone before the ground.
-    const snowOn = smoothstep(0, 0.06, t) * (1 - smoothstep(0.92, 1, t)) * site;
+    // Soil flies off the scoop while it digs, and the scoop crunches, in step with the hand.
+    const moved = Math.abs(p - dug.current.p);
+    dug.current.p = p;
+    if (moved > 1e-4 && p > SCOOP.lower && p < SCOOP.dug && site > 0.5) {
+      if (!reduced) puffs.emit(dig, Math.min(7, 1 + Math.round(moved * 300)), 0.14, 0.45);
+      const now = performance.now();
+      if (now - dug.current.sound > 520) {
+        dug.current.sound = now;
+        playDig(700);
+      }
+    }
+
+    // Snow, in from above and gone before the ground: it fades in once the visitor starts digging
+    // and keeps falling (an ambient effect beside the hand-driven trench).
+    dug.current.snow = reduced ? 1 : Math.min(1, dug.current.snow + dt / 1.2);
+    const snowOn = (p > 0 ? dug.current.snow : 0) * site;
     shown.current.snow = snowOn;
     const sm = parts.snow.material as PointsMaterial;
     sm.opacity = snowOn;
@@ -253,6 +275,8 @@ export function PhoenixScoop({ stop, ground, lay }: SiteSignatureProps) {
       ))}
       <primitive object={parts.snow} />
       <primitive object={parts.beam} />
+      <primitive object={puffs.points} />
+      <SigFocus sigKey="scoop" position={labelAt} />
       <SigTag position={labelAt} show={() => (trenchLabel ? shown.current.trench : 0)} tone="white">
         {trenchLabel || 'Trench'}
         {stage === 'gone' && <small>the ice turned to vapour</small>}

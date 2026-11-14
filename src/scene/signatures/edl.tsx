@@ -1,16 +1,15 @@
-// Perseverance's parachute: decode it ring by ring. A bright sweep reads each ring of gores in turn
-// and leaves it tinted, and its word appears: DARE, MIGHTY, THINGS, then JPL's coordinates on the
+// Perseverance's parachute: decode it ring by ring with a slider (the sweep is the slider). A bright
+// sweep reads each ring of gores in turn and leaves it tinted, and its word appears: DARE, MIGHTY, THINGS, then JPL's coordinates on the
 // outer band. The overlay drapes on the canopy's own surface (it shares its vertices).
 
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, Mesh, ShaderMaterial, Vector3, type Group } from 'three';
-import { playScan } from '../../ui/sound';
 import { useReducedMotion } from '../useReducedMotion';
-import { findMachine, SigTag, siteShown, useButtonClock, type SiteSignatureProps } from './common';
+import { findMachine, SigFocus, SigTag, siteShown, type SiteSignatureProps } from './common';
+import { useSliderDrive } from './drive';
 import { PARACHUTE_RINGS, ringsDecoded } from './logic';
 
-const DECODE_MS = 10000;
 /** The canopy model (models.ts backshellAndChute): RingGeometry(0.5, 8, 96, 22), bands every 2.1 m. */
 const CHUTE = { inner: 0.5, outer: 8, theta: 96, phi: 22, band: 2.1, at: [-1.5, 0, -8.2] as const, yaw: 0.12, squash: 0.72 };
 const RING_STEP = 0.2125;
@@ -104,9 +103,11 @@ export function ParachuteDecode({ stop, lay }: SiteSignatureProps) {
   );
 
   const spots = useMemo(() => PARACHUTE_RINGS.map((_, i) => labelSpot(i)), []);
-  const clock = useButtonClock('decode', DECODE_MS, reduced, () => playScan(reduced ? 600 : DECODE_MS * 0.85));
+  const drive = useSliderDrive('decode', reduced);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
+    // Read every frame (also while the overlay is still being built) so the smoothing stays current.
+    const v = drive(dt);
     if (!overlay) {
       // Share the canopy's own (deformed) vertices, adding each vertex's ring radius and angle.
       const chute = findMachine(anchor.current)?.getObjectByName('parachute') as Mesh | undefined;
@@ -134,7 +135,7 @@ export function ParachuteDecode({ stop, lay }: SiteSignatureProps) {
       }
       return;
     }
-    const p = clock();
+    const p = v === null ? null : Math.min(1, Math.max(0, v));
     const site = siteShown(stop);
     if (p === null) {
       overlay.visible = false;
@@ -147,7 +148,7 @@ export function ParachuteDecode({ stop, lay }: SiteSignatureProps) {
     mat.uniforms.uDone.value = n;
     mat.uniforms.uSweep.value = Math.min(1, sweep);
     mat.uniforms.uFade.value = site;
-    overlay.visible = site > 0.003;
+    overlay.visible = site > 0.003 && p > 0.001;
     shown.current = site;
     if (n !== doneRef.current) setDone((doneRef.current = n));
   });
@@ -155,6 +156,7 @@ export function ParachuteDecode({ stop, lay }: SiteSignatureProps) {
   return (
     <group ref={anchor} rotation-y={lay.machineYaw}>
       {overlay && <primitive object={overlay} />}
+      <SigFocus sigKey="decode" position={spots[1]} />
       {PARACHUTE_RINGS.map((word, i) => (
         <SigTag key={word} position={spots[i]} show={() => (i < done ? shown.current : 0)} tone={i === 3 ? 'faint' : 'amber'}>
           {word}

@@ -14,6 +14,7 @@ import { FadeQuad } from './FadeQuad';
 import { Globe } from './Globe';
 import { Ingenuity } from './Ingenuity';
 import { Lights } from './Lights';
+import { SoundScape } from './SoundScape';
 import { Starfield } from './Starfield';
 
 function Scene() {
@@ -40,6 +41,7 @@ function Scene() {
       <Globe />
       {site && <Diorama key={site} stop={site} />}
       <Ingenuity />
+      <SoundScape />
       <FadeQuad />
     </>
   );

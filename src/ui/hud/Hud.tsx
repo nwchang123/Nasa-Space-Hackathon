@@ -9,7 +9,10 @@ import { HOME } from '../../flight/route';
 import { useApp } from '../../store';
 import { MACHINE_IDS } from '../../types';
 import { NavcamOverlay } from '../NavcamOverlay';
+import { BearingBar } from './BearingBar';
 import { Dock, FaultBanner } from './Dock';
+import { FocusControls } from './FocusControls';
+import { ScoutCam } from './ScoutCam';
 import { SiteCard } from './SiteCard';
 import { TopBar } from './TopBar';
 
@@ -24,10 +27,13 @@ export function Hud() {
   return (
     <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}`}>
       <NavcamOverlay />
+      <ScoutCam />
+      <FocusControls />
       <TopBar />
       <FaultBanner />
       {cardId && <SiteCard key={cardId} machine={MACHINE_BY_ID[cardId]} standing={stage === 'site'} />}
       <Dock />
+      <BearingBar />
       <p className="hud-fine">{FICTION_NOTE}</p>
     </div>
   );

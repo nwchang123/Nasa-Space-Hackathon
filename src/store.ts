@@ -1,6 +1,7 @@
 // App state shared by the 3D scene and the HUD.
 // The scene READS everything here and WRITES only hover(), setStory() (3D hotspots),
-// requestCall() (the antenna hotspot) and addBoost() (the Director, while boost is held).
+// requestCall() (the antenna hotspot), addBoost() (the Director, while boost is held), setFocus()
+// (hotspots, signature actions and the free flight at a site) and addSnapshot() (the scout camera).
 
 import { create } from 'zustand';
 import { HOME, LEGS, hop } from './flight/route';
@@ -57,6 +58,37 @@ export type CamMode = 'chase' | 'navcam';
 /** Speed while boost is held (× real flight time). */
 export const BOOST_FACTOR = 2.5;
 
+/**
+ * What the site camera is looking at close up: a story hotspot (id '0'..'3', or 'call' for the
+ * antenna) or a signature action (id = its def.key). `strength` 1 is the full close-up; less is a
+ * gentle push in (used when Ingenuity flies near a hotspot, so the visitor keeps control).
+ */
+export interface Focus {
+  kind: 'hotspot' | 'signature';
+  id: string;
+  strength: number;
+  /** Date.now() when it was set. */
+  at: number;
+}
+
+/** A scout camera photo taken at a site. */
+export interface Snapshot {
+  /** Date.now() when it was taken (also its key). */
+  at: number;
+  /** A small JPEG data URL (about 160 px wide). */
+  url: string;
+  /** The story section of the hotspot it framed, or null if nothing was in the frame. */
+  section: StorySection | null;
+}
+
+/** A scout camera photo kept for the flight log, with the stop it was taken at. */
+export interface AlbumShot extends Snapshot {
+  stop: MachineId;
+}
+
+/** Photos kept in the flight log's album for one Flight 73 (oldest dropped first). */
+export const ALBUM_MAX = 24;
+
 export interface AppState {
   phase: Phase;
   flight: FlightState;
@@ -87,6 +119,18 @@ export interface AppState {
   boostMs: number;
   /** Date.now() of the latest "Call from Earth" request from a 3D hotspot (the HUD starts the call). */
   callRequest: number;
+  /** The site camera's close-up subject, or null for the wide view. Cleared on every stage change. */
+  focus: Focus | null;
+  /** Date.now() of the latest "Reset wide view" (the scene drops the orbit, focus and follow). */
+  viewResetAt: number;
+  /** The scout camera's viewfinder is up (key C at a site). */
+  scoutCam: boolean;
+  /** Date.now() of the latest "Capture" press (the scene grabs the frame). */
+  snapshotRequest: number;
+  /** Photos taken at this site, oldest first. Cleared on every stage change. */
+  snapshots: Snapshot[];
+  /** Every photo of this Flight 73, for the flight log. Kept across stops; cleared on a new flight. */
+  album: AlbumShot[];
 
   setPhase(phase: Phase): void;
   startFlight(): void;
@@ -108,6 +152,12 @@ export interface AppState {
   /** Bank extra flight time (called every frame by the Director while boost is held and flying). */
   addBoost(ms: number): void;
   requestCall(): void;
+  setFocus(f: Omit<Focus, 'at'> | null): void;
+  /** Back to the site's wide view: no focus, no orbit, the camera stops following Ingenuity. */
+  resetView(): void;
+  setScoutCam(on: boolean): void;
+  requestSnapshot(): void;
+  addSnapshot(s: Snapshot): void;
 }
 
 /**
@@ -122,7 +172,16 @@ export function stageElapsed(s: Pick<AppState, 'flight' | 'boostMs'>, now = Date
 const IDLE: FlightState = { leg: -1, stage: 'prologue', from: HOME, stageStartedAt: 0, flyMs: 0 };
 
 /** Per-stage state, cleared whenever the stage changes (take-off, arrival, home). */
-const FRESH_STAGE = { story: 0 as StorySection, siteHour: null, sig: {}, boost: false, boostMs: 0 };
+const FRESH_STAGE = {
+  story: 0 as StorySection,
+  siteHour: null,
+  sig: {},
+  boost: false,
+  boostMs: 0,
+  focus: null,
+  scoutCam: false,
+  snapshots: [] as Snapshot[],
+};
 
 /** Where we are standing (home before take-off and after landing back), or null while flying. */
 export function standingAt(f: FlightState): MachineId | null {
@@ -149,6 +208,9 @@ export const useApp = create<AppState>(set => ({
   prologue: { step: 'ready', at: 0 },
   camMode: 'chase',
   callRequest: 0,
+  viewResetAt: 0,
+  snapshotRequest: 0,
+  album: [],
 
   setPhase: phase => set({ phase }),
   startFlight: () =>
@@ -162,6 +224,7 @@ export const useApp = create<AppState>(set => ({
       ...FRESH_STAGE,
       prologue: { step: 'ready', at: Date.now() },
       camMode: 'chase',
+      album: [],
     }),
   flyTo: (leg, flyMs, from = LEGS[leg].from) =>
     set({ flight: { leg, stage: 'flying', from, stageStartedAt: Date.now(), flyMs }, ping: null, ...FRESH_STAGE }),
@@ -187,7 +250,7 @@ export const useApp = create<AppState>(set => ({
   resolvePing: () =>
     set(state => (state.ping ? { ping: { ...state.ping, result: 'silent' }, called: { ...state.called, [state.ping.id]: true } } : {})),
   reset: () =>
-    set({ phase: 'title', flight: IDLE, hoverId: null, flownKm: 0, visited: {}, called: {}, ping: null, ...FRESH_STAGE, camMode: 'chase' }),
+    set({ phase: 'title', flight: IDLE, hoverId: null, flownKm: 0, visited: {}, called: {}, ping: null, ...FRESH_STAGE, camMode: 'chase', album: [] }),
   setStory: story => set({ story }),
   setSiteHour: siteHour => set({ siteHour }),
   setSig: (key, value) => set(state => ({ sig: { ...state.sig, [key]: value } })),
@@ -196,4 +259,13 @@ export const useApp = create<AppState>(set => ({
   setBoost: boost => set({ boost }),
   addBoost: ms => set(state => ({ boostMs: state.boostMs + ms })),
   requestCall: () => set({ callRequest: Date.now() }),
+  setFocus: f => set({ focus: f ? { ...f, at: Date.now() } : null }),
+  resetView: () => set({ focus: null, viewResetAt: Date.now() }),
+  setScoutCam: scoutCam => set({ scoutCam }),
+  requestSnapshot: () => set({ snapshotRequest: Date.now() }),
+  addSnapshot: s =>
+    set(state => {
+      const stop = currentStop(state.flight) ?? HOME;
+      return { snapshots: [...state.snapshots, s].slice(-6), album: [...state.album, { ...s, stop }].slice(-ALBUM_MAX) };
+    }),
 }));

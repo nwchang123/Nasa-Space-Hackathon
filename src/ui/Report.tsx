@@ -5,6 +5,9 @@ import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { formatDate, formatKm, yearsBetween } from './callPlan';
 import { renderPostcard } from './postcard';
+import './album.css';
+
+const SECTION_LABELS = ['Why I came', 'What I found', 'My last day', 'Still here'] as const;
 
 const POSTCARD_KEY = 'still-here-postcards';
 const MAX_MESSAGE = 240;
@@ -22,6 +25,7 @@ function savePostcard(entry: { id: string; message: string; from: string; at: st
 export function Report() {
   const visited = useApp(s => s.visited);
   const flownKm = useApp(s => s.flownKm);
+  const album = useApp(s => s.album);
   const startFlight = useApp(s => s.startFlight);
   const reset = useApp(s => s.reset);
   const years = useMemo(
@@ -92,6 +96,30 @@ export function Report() {
           );
         })}
       </ol>
+
+      {album.length > 0 && (
+        <div className="album">
+          <h3>Scout camera</h3>
+          <p className="dim">
+            {album.length} {album.length === 1 ? 'photo' : 'photos'} taken from Ingenuity on this flight. Click one to save it.
+          </p>
+          <ul className="album-grid">
+            {album.map(shot => {
+              const m = MACHINE_BY_ID[shot.stop];
+              const what = shot.section === null ? m.shortName : `${m.shortName} · ${SECTION_LABELS[shot.section]}`;
+              return (
+                <li key={shot.at}>
+                  <a href={shot.url} download={`flight-73-${shot.stop}-${shot.at}.jpg`} title={`Save: ${what}`}>
+                    <img src={shot.url} alt={`Scout camera photo: ${what}`} loading="lazy" />
+                  </a>
+                  <span className="album-cap">{what}</span>
+                  <span className="album-time tabular">{new Date(shot.at).toISOString().slice(11, 16)} UTC</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       <div className="postcard-box">
         <h3>Write a postcard</h3>

@@ -1,9 +1,10 @@
 // Shared pieces for the signature effects: when an effect may show, labels in the scene, the
-// machine's bounding box in its own frame, and a reduced-motion-aware clock.
+// machine's bounding box in its own frame, a reduced-motion-aware clock, and where the action
+// happens (SigFocus) for the close-up camera and Ingenuity's autopilot.
 
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Box3, CanvasTexture, Matrix4, SRGBColorSpace, Vector3, type Group, type Mesh, type Object3D } from 'three';
 import { useApp } from '../../store';
 import type { MachineId } from '../../types';
@@ -84,6 +85,46 @@ export function useSig(key: string): number | undefined {
 /** Read a signature value without subscribing (inside useFrame). */
 export function sigNow(key: string): number | undefined {
   return useApp.getState().sig[key];
+}
+
+/**
+ * Where a signature action happens. When the visitor uses the action (its value changes to
+ * anything but 0), the site camera closes in on this point and Ingenuity flies over to scan it
+ * (store.focus); the point is published every frame as live.targets 'sig:<key>'. `position` is in
+ * the parent's frame, like a SigTag's (a Vector3 its owner moves is followed).
+ */
+export function SigFocus({ sigKey, position }: { sigKey: string; position: [number, number, number] | Vector3 }) {
+  const holder = useRef<Group>(null);
+  const value = useSig(sigKey);
+  const last = useRef(value);
+
+  useEffect(() => {
+    if (value === last.current) return;
+    last.current = value;
+    if (value === undefined || value === 0) return;
+    const s = useApp.getState();
+    if (s.phase !== 'flight' || s.flight.stage !== 'site') return;
+    if (s.focus?.kind === 'signature' && s.focus.id === sigKey) return;
+    s.setFocus({ kind: 'signature', id: sigKey, strength: 1 });
+  }, [value, sigKey]);
+
+  useEffect(
+    () => () => {
+      live.targets.delete(`sig:${sigKey}`);
+    },
+    [sigKey],
+  );
+
+  useFrame(() => {
+    const h = holder.current;
+    if (!h) return;
+    if (!Array.isArray(position)) h.position.copy(position);
+    let v = live.targets.get(`sig:${sigKey}`);
+    if (!v) live.targets.set(`sig:${sigKey}`, (v = new Vector3()));
+    h.getWorldPosition(v);
+  });
+
+  return <group ref={holder} position={Array.isArray(position) ? position : undefined} />;
 }
 
 const inv = new Matrix4();

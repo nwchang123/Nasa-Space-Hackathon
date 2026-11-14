@@ -18,10 +18,14 @@ import { HOME } from '../flight/route';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { dioramaSunDir, horizonDir, SITE_SCALE, smoothstep } from './layout';
+import { GuideBubble } from './GuideBubble';
 import { Hotspots } from './Hotspots';
 import { MachineModel } from './MachineModel';
 import { buildBladeFragment, disposeObject } from './models';
 import { live } from './registry';
+import { FocusReticle, ScanBeam } from './FocusFx';
+import { ScoutCamGrab } from './ScoutCamGrab';
+import { SiteFlight } from './SiteFlight';
 import { SiteOrbitInput } from './SiteOrbitInput';
 import { SiteSignature } from './signatures';
 import { applySiteFx } from './signatures/fx';
@@ -156,6 +160,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
         )}
         <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
         <SiteSignature stop={stop} ground={ground} lay={lay} />
+        <GuideBubble stop={stop} />
         {stop === HOME && (
           <group position={lay.ingenuity}>
             <Hotspots stop={stop} />
@@ -163,6 +168,10 @@ export function Diorama({ stop }: { stop: MachineId }) {
         )}
       </group>
       <SiteOrbitInput stop={stop} />
+      <SiteFlight stop={stop} ground={ground} />
+      <FocusReticle stop={stop} />
+      <ScanBeam stop={stop} />
+      <ScoutCamGrab stop={stop} />
       {stop === HOME && (
         <SiteTag follow>
           Broken rotor tip<span className="marker-label-tag"> · Flight 72</span>

@@ -1,0 +1,113 @@
+/* The site camera's target reticle (src/scene/FocusFx.tsx): two thin amber rings turning slowly
+   in opposite directions, four ticks, and a small lock label. It snaps in from larger on lock-on. */
+
+.fx-reticle-wrap {
+  pointer-events: none;
+}
+
+.fx-reticle {
+  --fx: 64px;
+  position: relative;
+  width: var(--fx);
+  height: var(--fx);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.fx-reticle.on {
+  opacity: 1;
+  animation: fx-lock-on 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.fx-reticle.nudge {
+  --fx: 46px;
+}
+
+.fx-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(242, 169, 59, 0.85);
+  box-shadow: 0 0 12px rgba(242, 169, 59, 0.25);
+  animation: fx-spin 9s linear infinite;
+}
+.fx-ring-in {
+  inset: 9px;
+  border: 1px solid rgba(242, 169, 59, 0.35);
+  border-top-color: rgba(242, 169, 59, 0.95);
+  border-bottom-color: rgba(242, 169, 59, 0.95);
+  box-shadow: none;
+  animation-duration: 5s;
+  animation-direction: reverse;
+}
+
+.fx-tick {
+  position: absolute;
+  background: var(--amber, #f2a93b);
+}
+.fx-tick.t,
+.fx-tick.b {
+  left: 50%;
+  width: 1px;
+  height: 9px;
+  margin-left: -0.5px;
+}
+.fx-tick.t {
+  top: -12px;
+}
+.fx-tick.b {
+  bottom: -12px;
+}
+.fx-tick.l,
+.fx-tick.r {
+  top: 50%;
+  height: 1px;
+  width: 9px;
+  margin-top: -0.5px;
+}
+.fx-tick.l {
+  left: -12px;
+}
+.fx-tick.r {
+  right: -12px;
+}
+
+.fx-lock {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 16px);
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  background: rgba(5, 7, 10, 0.72);
+  border: 1px solid rgba(242, 169, 59, 0.45);
+  font-family: var(--mono, 'Martian Mono', ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber, #f2a93b);
+  white-space: nowrap;
+}
+.fx-reticle.nudge .fx-lock {
+  color: var(--bone, #e9e4d8);
+}
+
+@keyframes fx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fx-lock-on {
+  from {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-ring,
+  .fx-reticle.on {
+    animation: none;
+  }
+}

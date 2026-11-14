@@ -1,12 +1,20 @@
-// Each stop's one "signature action": a hands-on moment only that site has. The HUD renders the
-// controls from these definitions and stores their values in the store (`sig`, by def.key); the
-// scene effects in src/scene/signatures/ read them. Every caption and readout that states a fact
-// matches docs/FACT_CHECK.md ("Signature actions").
+// Each stop's one "signature action": a hands-on moment only that site has, driven by the
+// visitor's hand (a slider dragged, a toggle, a control held and released), never a clip that
+// plays by itself. The HUD renders the controls from these definitions and stores their values in
+// the store (`sig`, by def.key); the scene effects in src/scene/signatures/ read them every frame.
+// Every caption and readout that states a fact matches docs/FACT_CHECK.md ("Signature actions").
 
-import { stormReadout } from '../scene/signatures/logic';
+import { decodeReadout, scoopReadout, stormReadout, wakeReadout } from '../scene/signatures/logic';
 import type { MachineId } from '../types';
 
-export type SignatureKind = 'button' | 'toggle' | 'slider';
+/**
+ * 'slider': sig[key] is the value (the scene follows it live). 'toggle': 0/1. 'hold': press and
+ * hold to charge, release to fire — while held sig[`${key}:hold`] = 1 and sig[key] rises 0→1 over
+ * chargeMs; on release sig[`${key}:hold`] = 0, sig[`${key}:fire`] = Date.now() and sig[key] keeps
+ * the charge; the effect then runs for about durationMs. 'button' (kept for compatibility, unused):
+ * sig[key] = Date.now() of the press.
+ */
+export type SignatureKind = 'button' | 'toggle' | 'slider' | 'hold';
 
 export interface SignatureDef {
   /** Unique within its site; the store key (store.sig[key]). */
@@ -21,8 +29,10 @@ export interface SignatureDef {
   max?: number;
   step?: number;
   initial?: number;
-  /** Buttons: how long the effect runs, ms (the HUD shows it as running meanwhile). */
+  /** Buttons and holds: how long the effect runs, ms (the HUD shows it as running meanwhile). */
   durationMs?: number;
+  /** Holds: how long to hold for a full charge, ms. */
+  chargeMs?: number;
   /** One line shown under the control once it has been used. */
   caption?: string;
   /** A live readout under the control (value is undefined until first used; now = Date.now()). */
@@ -34,9 +44,12 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'scan',
       icon: '◫',
-      label: 'Scan the first photo from the surface (1976)',
-      kind: 'button',
-      durationMs: 9000,
+      label: 'Scan the first photo, strip by strip (1976)',
+      kind: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.005,
+      initial: 0,
       caption:
         'Minutes after landing on 20 July 1976, Viking 1 took the first photograph ever made on the surface of Mars: rocks, sand and, at right, one of its own footpads. Re-created here from this scene.',
     },
@@ -69,9 +82,12 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'drag',
       icon: '◎',
-      label: 'Drag the jammed right-front wheel',
-      kind: 'button',
-      durationMs: 6000,
+      label: 'Drive backwards, dragging the jammed wheel',
+      kind: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.005,
+      initial: 0,
       caption:
         'Spirit’s right-front wheel stopped turning in 2006, so it drove backwards, dragging it. In 2007 the dragged wheel scraped up nearly pure silica: a sign of ancient hot springs or steam vents.',
     },
@@ -95,9 +111,13 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'scoop',
       icon: '⌄',
-      label: 'Scoop arctic soil for water ice',
-      kind: 'button',
-      durationMs: 8000,
+      label: 'Dig the trench, then let four sols pass',
+      kind: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.005,
+      initial: 0,
+      readout: v => scoopReadout(v),
       caption:
         'A trench Phoenix dug showed whitish clumps that vanished over four sols: water ice turning to vapour. Its laser saw snow fall from clouds about 4 km up and vaporise before reaching the ground.',
     },
@@ -106,8 +126,9 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'quake',
       icon: '〰',
-      label: 'Pulse a marsquake',
-      kind: 'button',
+      label: 'Hold to charge a marsquake, release to pulse it',
+      kind: 'hold',
+      chargeMs: 2400,
       durationMs: 5000,
       caption: 'InSight’s arm set its seismometer on the ground. It recorded 1,319 marsquakes before the mission ended in December 2022.',
     },
@@ -123,9 +144,13 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'decode',
       icon: '◐',
-      label: 'Decode the parachute',
-      kind: 'button',
-      durationMs: 10000,
+      label: 'Decode the parachute, ring by ring',
+      kind: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.005,
+      initial: 0,
+      readout: v => decodeReadout(v),
       caption:
         'The orange and white gores spell DARE MIGHTY THINGS in binary, one word per ring, and the outer band gives the coordinates of JPL: 34°11′58″N 118°10′31″W.',
     },
@@ -134,9 +159,13 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
     {
       key: 'wake',
       icon: '☀',
-      label: 'Run the daily wake-up routine',
-      kind: 'button',
-      durationMs: 9000,
+      label: 'Run the daily wake-up routine, step by step',
+      kind: 'slider',
+      min: 0,
+      max: 1,
+      step: 0.005,
+      initial: 0,
+      readout: v => wakeReadout(v),
       caption:
         'Its last software update tells it to wake every day, test its solar panel and batteries, take a colour photo and log temperatures. Whether it still does today is not known.',
     },

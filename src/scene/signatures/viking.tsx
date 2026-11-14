@@ -1,19 +1,20 @@
 // Viking 1: the first photograph from the surface, re-created from this scene and scanned in strip
-// by strip. Viking 2: the winter frost of 1979 settling on the ground and rocks.
+// by strip as the visitor drags the slider (the scan line is the slider). Viking 2: the winter
+// frost of 1979 settling on the ground and rocks.
 
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PerspectiveCamera, Vector3, WebGLRenderTarget, type Group, type MeshStandardMaterial, type Object3D, type Scene, type WebGLRenderer } from 'three';
-import { playScan } from '../../ui/sound';
+import { useApp } from '../../store';
 import { SITE_SCALE } from '../layout';
 import { live } from '../registry';
 import { useReducedMotion } from '../useReducedMotion';
 import { findMachine, rightFrontFoot, siteShown, sigNow, type SiteSignatureProps } from './common';
+import { useSliderDrive } from './drive';
 
 // ---------------------------------------------------------------- Viking 1
 
-const SCAN_MS = 9000;
 const PHOTO_W = 728;
 const PHOTO_H = 280;
 const PHOTO_FOV = 24;
@@ -104,42 +105,49 @@ export function VikingScan({ stop }: SiteSignatureProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const line = useRef<HTMLDivElement>(null);
-  const run = useRef({ at: undefined as number | undefined, img: null as ImageData | null, cols: 0 });
+  const run = useRef({ img: null as ImageData | null, cols: 0, raw: undefined as number | undefined, open: false });
   const [open, setOpen] = useState(false);
+  const drive = useSliderDrive('scan', reduced);
 
-  useFrame(() => {
-    const at = sigNow('scan');
+  const show = (on: boolean) => {
+    run.current.open = on;
+    setOpen(on);
+  };
+
+  useFrame((_, dt) => {
     const r = run.current;
-    if (at !== r.at) {
-      r.at = at;
-      r.img = null;
-      r.cols = 0;
-      setOpen(at !== undefined);
-      if (at !== undefined && Date.now() - at < 1500) playScan(reduced ? 600 : SCAN_MS);
-      const g = canvas.current?.getContext('2d');
-      if (g) {
-        g.fillStyle = '#0b0b0b';
-        g.fillRect(0, 0, PHOTO_W, PHOTO_H);
-      }
+    const raw = useApp.getState().sig.scan;
+    const p = drive(dt);
+    // A new movement of the slider opens the photo (again, if it was closed).
+    if (raw !== r.raw) {
+      r.raw = raw;
+      if (raw !== undefined && raw > 0 && !r.open) show(true);
+      if (raw === undefined && r.open) show(false);
     }
-    if (at === undefined) return;
+    if (p === null || !r.open) return;
     const shown = siteShown(stop);
     if (panel.current) panel.current.style.opacity = String(shown);
+    const g = canvas.current?.getContext('2d');
+    if (!g) return;
     if (!r.img) {
       const machine = findMachine(anchor.current);
       if (shown < 0.5 || !machine) return;
       r.img = shootFirstPhoto(gl, scene, machine);
+      r.cols = 0;
+      g.fillStyle = '#0b0b0b';
+      g.fillRect(0, 0, PHOTO_W, PHOTO_H);
     }
-    const p = reduced ? 1 : Math.min(1, (Date.now() - at) / SCAN_MS);
-    const cols = Math.round(p * PHOTO_W);
-    const g = canvas.current?.getContext('2d');
-    if (g && cols > r.cols) {
-      g.putImageData(r.img, 0, 0, r.cols, 0, cols - r.cols, PHOTO_H);
-      r.cols = cols;
+    // The scan line is the slider: strips in as it moves right, back to blank as it moves left.
+    const cols = Math.round(Math.min(1, Math.max(0, p)) * PHOTO_W);
+    if (cols > r.cols) g.putImageData(r.img, 0, 0, r.cols, 0, cols - r.cols, PHOTO_H);
+    else if (cols < r.cols) {
+      g.fillStyle = '#0b0b0b';
+      g.fillRect(cols, 0, r.cols - cols, PHOTO_H);
     }
+    r.cols = cols;
     if (line.current) {
       line.current.style.left = `${(cols / PHOTO_W) * 100}%`;
-      line.current.style.opacity = p < 1 ? '1' : '0';
+      line.current.style.opacity = cols > 0 && cols < PHOTO_W ? '1' : '0';
     }
   });
 
@@ -155,12 +163,25 @@ export function VikingScan({ stop }: SiteSignatureProps) {
           <div ref={panel} className="sig-photo" style={{ opacity: 0 }} role="figure" aria-label="Viking 1's first photograph, re-created">
             <p className="sig-photo-head">
               <span>Viking 1 · first photo from the surface · re-created</span>
-              <button type="button" aria-label="Close the photo" onClick={() => setOpen(false)}>
+              <button type="button" aria-label="Close the photo" onClick={() => show(false)}>
                 ×
               </button>
             </p>
             <div className="sig-photo-frame">
-              <canvas ref={canvas} width={PHOTO_W} height={PHOTO_H} />
+              <canvas
+                ref={el => {
+                  canvas.current = el;
+                  // A fresh canvas (reopened): draw what is scanned so far on the next frame.
+                  if (el) run.current.cols = 0;
+                  const g = el?.getContext('2d');
+                  if (g) {
+                    g.fillStyle = '#0b0b0b';
+                    g.fillRect(0, 0, PHOTO_W, PHOTO_H);
+                  }
+                }}
+                width={PHOTO_W}
+                height={PHOTO_H}
+              />
               <div ref={line} className="sig-photo-scan" aria-hidden="true" />
             </div>
             <p className="sig-photo-foot">
