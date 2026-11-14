@@ -3,10 +3,13 @@
 // the globe, 1 = standing at the site), where Ingenuity is on its arc, and what its rotors do.
 // Everything is a function of time since a stage began, so it is frame-rate independent and has
 // no jumps; a few transitions (skip, return to the globe) start from wherever the shot was.
+// Stage time includes the time banked by boost (stageElapsed), so boost speeds up the flight, the
+// odometer and the arrival together. In the prologue the visitor's rotor test drives the rotor:
+// spin-up, a stall with a wobble, the fault's judder, and the wind-down.
 // Pure TypeScript (no three.js), unit-tested.
 
 import { HOME, hop } from '../flight/route';
-import type { FlightState, Phase } from '../store';
+import type { FlightState, Phase, PrologueStep } from '../store';
 import { MACHINE_IDS, type MachineId } from '../types';
 import { climbMs, descentMs, easeInOut, flightProgress, smoothstep, type LegLike } from './layout';
 
@@ -28,6 +31,38 @@ export const LANDING_MS = 1700;
 export const SPINDOWN_MS = 1800;
 /** Climbing out of a site the story has left behind, ms. */
 export const LEAVE_MS = 900;
+/** Rotor test in the prologue: spin-up time, the speed it stalls at, and the fault's wind-down. */
+export const SPINUP_MS = 1200;
+export const STALL_SPEED = 0.55;
+export const FAULT_SPINDOWN_MS = 2000;
+/** The fault's judder fades over this long, ms. */
+export const JUDDER_MS = 1400;
+
+/** Inputs beyond the flight state (all optional, so tests can leave them out). */
+export interface ShotExtras {
+  /** Flight time banked by boost in this stage, ms (store.boostMs). */
+  boostMs?: number;
+  /** The prologue's rotor test (store.prologue). */
+  prologue?: { step: PrologueStep; at: number };
+}
+
+/** Rotor speed and judder (0..1) of the prologue's rotor test, `since` ms into its step. */
+export function rotorTest(step: PrologueStep, since: number): { rotor: number; judder: number } {
+  const t = Math.max(0, since);
+  if (step === 'spinning') {
+    const up = 1 - (1 - Math.min(1, t / SPINUP_MS)) ** 2;
+    // Stuck short of flight speed, wobbling a little.
+    const wobble = t > SPINUP_MS * 0.7 ? 0.035 * Math.sin(t * 0.021) * Math.sin(t * 0.0067 + 1) : 0;
+    return { rotor: STALL_SPEED * up + wobble, judder: 0 };
+  }
+  if (step === 'fault') {
+    return {
+      rotor: STALL_SPEED * (1 - easeInOut(t / FAULT_SPINDOWN_MS)),
+      judder: 1 - smoothstep(0, JUDDER_MS, t),
+    };
+  }
+  return { rotor: 0, judder: 0 };
+}
 
 export interface Arc extends LegLike {
   /** Fraction flown, 0..1 (same clock and easing as the odometer). */
@@ -49,6 +84,8 @@ export interface Shot {
   rotor: number;
   /** Ingenuity is on screen (in flight, or anywhere near a site). */
   ingenuity: boolean;
+  /** The prologue rotor fault: how hard Ingenuity shakes, 0..1. */
+  judder?: number;
 }
 
 interface Moment {
@@ -105,7 +142,8 @@ export class Choreographer {
   private lastNow = 0;
   private leaving: { site: MachineId; from: number; at: number } | null = null;
 
-  update(phase: Phase, f: FlightState, now: number, reduced: boolean): Shot {
+  update(phase: Phase, f: FlightState, now: number, reduced: boolean, extras: ShotExtras = {}): Shot {
+    const boostMs = extras.boostMs ?? 0;
     const ease = reduced ? (k: number) => (k > 0 ? 1 : 0) : easeInOut;
     const key = phase === 'flight' ? `${f.stage}:${f.leg}:${f.stageStartedAt}` : phase;
     if (key !== this.key) {
@@ -146,9 +184,10 @@ export class Choreographer {
       next = { ...REST, siteId: blend > 0 ? prev.siteId : null, blend, globeShot: phase === 'report' ? 'report' : 'title', rotor: spinDown };
     } else if (f.stage === 'prologue') {
       const blend = this.blendAtChange + (1 - this.blendAtChange) * ease(since / OPENING_DESCENT_MS);
-      next = { ...REST, siteId: HOME, blend, globeShot: 'title' };
+      const test = extras.prologue && !reduced ? rotorTest(extras.prologue.step, now - extras.prologue.at) : { rotor: 0, judder: 0 };
+      next = { ...REST, siteId: HOME, blend, globeShot: 'title', rotor: test.rotor, judder: test.judder };
     } else if (f.stage === 'flying') {
-      const t = now - f.stageStartedAt;
+      const t = now - f.stageStartedAt + boostMs;
       this.flying = { leg: f.leg, from: f.from, t: Math.min(t, f.flyMs), flyMs: f.flyMs };
       next = flight(f.from, f.leg, t, f.flyMs);
     } else if (f.stage === 'site') {
@@ -174,7 +213,7 @@ export class Choreographer {
       }
     } else {
       // Epilogue: home, blade broken, then the long rise to the whole globe.
-      const t = now - f.stageStartedAt;
+      const t = now - f.stageStartedAt + boostMs;
       const rise = t < EPILOGUE_HOLD_MS ? 0 : ease((t - EPILOGUE_HOLD_MS) / EPILOGUE_RISE_MS);
       const blend = rise > 0 ? 1 - rise : this.blendAtChange + (1 - this.blendAtChange) * ease(since / RETURN_MS);
       next = { ...REST, siteId: blend > 0 ? HOME : null, blend, globeShot: 'epilogue', rotor: spinDown };

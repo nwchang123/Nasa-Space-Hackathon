@@ -7,11 +7,16 @@ import {
   EPILOGUE_HOLD_MS,
   EPILOGUE_RISE_MS,
   OPENING_DESCENT_MS,
+  rotorTest,
   SKIP_CRUISE_MS,
   SKIP_DESCENT_MS,
   skipClock,
+  SPINUP_MS,
+  STALL_SPEED,
+  FAULT_SPINDOWN_MS,
   type Shot,
 } from '../src/scene/choreo';
+import { phantomLook, PHANTOM_RISE_MS } from '../src/scene/phantom';
 import {
   arcAltitude,
   arcPeak,
@@ -21,7 +26,12 @@ import {
   dioramaSunDir,
   easeInOut,
   flightProgress,
+  HUD_ANCHOR_Y,
   legPoint,
+  navcamPose,
+  orbitOffset,
+  ORBIT_MAX_ELEV,
+  ORBIT_MIN_ELEV,
   realSizeScale,
   ROUTE_BASE,
   siteFrame,
@@ -82,9 +92,11 @@ describe('chase camera', () => {
     expect(low.position[1]).toBeGreaterThan(1.1); // above
     expect(dist(high.position, base.pos)).toBeGreaterThan(dist(low.position, base.pos) * 2);
   });
-  it('keeps Ingenuity left of centre on wide screens and high on tall ones', () => {
+  it('keeps Ingenuity centred left to right and above the bottom dock on wide screens', () => {
+    expect(HUD_ANCHOR_Y).toBeLessThan(0.5);
     const wide = chaseGoal({ ...base, alt: 0.05, aspect: 1.8 });
-    expect(wide.target[0]).toBeGreaterThan(0); // camera right = +X when flying −Z with +Y up
+    expect(wide.target[0]).toBeCloseTo(0, 9); // no sideways offset (camera right = ±X here)
+    expect(wide.target[1]).toBeLessThan(base.pos[1]); // aimed below it, so it sits above the middle
     const tall = chaseGoal({ ...base, alt: 0.05, aspect: 0.5 });
     expect(tall.target[1]).toBeLessThan(base.pos[1]);
   });
@@ -260,5 +272,112 @@ describe('Flight 73 is one continuous shot', () => {
     expect(skipClock(SKIP_CRUISE_MS, 1000, D)).toBeCloseTo(D - descentMs(D), 6);
     expect(skipClock(SKIP_CRUISE_MS + SKIP_DESCENT_MS, 1000, D)).toBe(D);
     expect(easeInOut(1)).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------- Version 3
+
+describe('boost', () => {
+  it('banked time moves the flight on, without restarting the shot', () => {
+    const D = flyDurationMs(LEGS[1].distanceKm);
+    const flight: FlightState = { leg: 1, stage: 'flying', from: 'viking-1', stageStartedAt: 0, flyMs: D };
+    const plain = new Choreographer();
+    const boosted = new Choreographer();
+    const end = Math.round((D * 0.3) / 16) * 16;
+    for (let t = 0; t < end; t += 16) {
+      plain.update('flight', flight, t, false);
+      // Boost held from the start: 1.5 extra ms per real ms (x2.5 in all).
+      boosted.update('flight', flight, t, false, { boostMs: t * 1.5 });
+    }
+    const a = plain.update('flight', flight, end, false).arc!;
+    const b = boosted.update('flight', flight, end, false, { boostMs: end * 1.5 }).arc!;
+    expect(b.p).toBeCloseTo(flightProgress(end * 2.5, D), 9);
+    expect(b.p).toBeGreaterThan(a.p);
+  });
+});
+
+describe('prologue rotor test', () => {
+  it('spins up, stalls short of flight speed, then winds down after the fault', () => {
+    expect(rotorTest('ready', 500).rotor).toBe(0);
+    expect(rotorTest('spinning', 0).rotor).toBe(0);
+    expect(rotorTest('spinning', SPINUP_MS / 2).rotor).toBeGreaterThan(0.2);
+    const stalled = rotorTest('spinning', SPINUP_MS * 3).rotor;
+    expect(stalled).toBeGreaterThan(STALL_SPEED - 0.05);
+    expect(stalled).toBeLessThan(STALL_SPEED + 0.05);
+    expect(rotorTest('fault', 0).judder).toBe(1);
+    expect(rotorTest('fault', 0).rotor).toBeCloseTo(STALL_SPEED, 9);
+    expect(rotorTest('fault', FAULT_SPINDOWN_MS).rotor).toBe(0);
+    expect(rotorTest('fault', FAULT_SPINDOWN_MS).judder).toBe(0);
+    expect(rotorTest('imagine', 0).rotor).toBe(0);
+  });
+  it('drives the shot in the prologue', () => {
+    const c = new Choreographer();
+    const f: FlightState = { leg: -1, stage: 'prologue', from: 'ingenuity', stageStartedAt: 0, flyMs: 0 };
+    const shot = c.update('flight', f, 5000, false, { prologue: { step: 'spinning', at: 5000 - SPINUP_MS * 2 } });
+    expect(shot.rotor).toBeGreaterThan(0.45);
+    const still = new Choreographer().update('flight', f, 5000, true, { prologue: { step: 'spinning', at: 4000 } });
+    expect(still.rotor).toBe(0); // reduced motion
+  });
+});
+
+describe('the phantom', () => {
+  const at = (stage: FlightState['stage'], leg: number, from: FlightState['from'] = 'ingenuity'): FlightState => ({
+    leg,
+    stage,
+    from,
+    stageStartedAt: 0,
+    flyMs: 4000,
+  });
+  it('is the real, broken Ingenuity until lift-off', () => {
+    expect(phantomLook('title', at('prologue', -1), 0, 0, 0)).toEqual({ phantom: 0, realAtHome: false });
+    expect(phantomLook('flight', at('prologue', -1), 3000, 0.5, 0)).toEqual({ phantom: 0, realAtHome: false });
+  });
+  it('rises out of the real one, which stays at home', () => {
+    expect(phantomLook('flight', at('flying', 0), 0, 0, 0).phantom).toBe(0);
+    const mid = phantomLook('flight', at('flying', 0), PHANTOM_RISE_MS / 2, 1, 1);
+    expect(mid.phantom).toBeGreaterThan(0.2);
+    expect(mid.realAtHome).toBe(true);
+    expect(phantomLook('flight', at('flying', 0), PHANTOM_RISE_MS, 1, 2).phantom).toBe(1);
+    expect(phantomLook('flight', at('site', 3, 'pathfinder-sojourner'), 0, 0, 0).phantom).toBe(1);
+    expect(phantomLook('flight', at('flying', 4, 'spirit'), 0, 1, 0).phantom).toBe(1);
+  });
+  it('settles onto the real one at home and fades into it as the rotors stop', () => {
+    const last = MACHINE_IDS.indexOf('ingenuity');
+    expect(phantomLook('flight', at('site', last, 'mars2020-edl'), 500, 1, 1.2).phantom).toBe(1); // still hovering
+    expect(phantomLook('flight', at('site', last, 'mars2020-edl'), 3000, 0.5, 0).phantom).toBeGreaterThan(0);
+    expect(phantomLook('flight', at('site', last, 'mars2020-edl'), 6000, 0, 0)).toEqual({ phantom: 0, realAtHome: false });
+    expect(phantomLook('flight', at('epilogue', MACHINE_IDS.length), 0, 0, 0).phantom).toBe(0);
+  });
+});
+
+describe('orbiting a site', () => {
+  const up: Vec3 = [0, 1, 0];
+  const off: Vec3 = [0, Math.sin(0.4), Math.cos(0.4)];
+  const elev = (v: Vec3) => (Math.asin(v[1] / len(v)) * 180) / Math.PI;
+  it('turns about up and keeps the distance', () => {
+    const o = orbitOffset(off, up, Math.PI / 2, 0, 1);
+    expect(len(o)).toBeCloseTo(1, 9);
+    expect(o[1]).toBeCloseTo(off[1], 9);
+    expect(Math.abs(o[0])).toBeCloseTo(Math.cos(0.4), 9); // swung round a quarter turn
+  });
+  it('clamps the elevation and the zoom', () => {
+    expect(elev(orbitOffset(off, up, 0, -2, 1))).toBeCloseTo(ORBIT_MIN_ELEV, 6);
+    expect(elev(orbitOffset(off, up, 0, 2, 1))).toBeCloseTo(ORBIT_MAX_ELEV, 6);
+    expect(len(orbitOffset(off, up, 0, 0, 5))).toBeCloseTo(1.8, 9);
+    expect(len(orbitOffset(off, up, 0, 0, 0.1))).toBeCloseTo(0.6, 9);
+  });
+  it('is the composed shot when untouched', () => {
+    const o = orbitOffset(off, up, 0, 0, 1);
+    for (let i = 0; i < 3; i++) expect(o[i]).toBeCloseTo(off[i], 9);
+  });
+});
+
+describe('navigation camera', () => {
+  it('sits just below Ingenuity, looking straight down, travel direction up the frame', () => {
+    const n = navcamPose([0, 1.1, 0], [0, 1, 0], [0, 0, -1], 0.002);
+    expect(n.position[1]).toBeCloseTo(1.098, 9);
+    expect(n.target[1]).toBeLessThan(n.position[1]);
+    expect(n.target[0]).toBeCloseTo(0, 9);
+    expect(n.up).toEqual([0, 0, -1]);
   });
 });

@@ -2,6 +2,8 @@
 // turns the globe, and works out the world-space frames everyone else needs (the site diorama's
 // placement on the globe, Ingenuity on its arc, Ingenuity at rest at home). Tells the stage which
 // diorama to mount, and preloads the next stop's model as soon as a flight toward it begins.
+// While boost is held during a flight it banks extra flight time (store.addBoost), so the shot,
+// the odometer and the arrival all speed up together, and Ingenuity leans further forward.
 
 import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -11,7 +13,7 @@ import { marsSubSolar } from '../astro';
 import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
 import { latLonToVec3 } from '../geo';
-import { useApp } from '../store';
+import { BOOST_FACTOR, useApp } from '../store';
 import type { MachineId } from '../types';
 import { Choreographer, type Shot } from './choreo';
 import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE, titleSunOffsetDeg } from './layout';
@@ -46,6 +48,9 @@ const back = new Vector3();
 const lean = new Quaternion();
 const X = new Vector3(1, 0, 0);
 const sunBody = new Vector3(1, 0, 0);
+/** Forward lean while cruising, radians; boost adds more. */
+const LEAN = 0.22;
+const BOOST_LEAN = 0.2;
 
 /** Frame of a stop on the globe, globe-local, in metres (scaled by SITE_SCALE). */
 function localSiteMatrix(id: MachineId, out: Matrix4, scale: number): Matrix4 {
@@ -65,12 +70,19 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
   const preloaded = useRef(new Set<string>());
   const sunKey = useRef(-1);
   const started = useRef(false);
+  const boostK = useRef(0);
 
   useFrame((_, delta) => {
-    const s = useApp.getState();
+    let s = useApp.getState();
     const now = Date.now();
     const dt = Math.min(delta, 0.1);
-    const shot = choreo.current.update(s.phase, s.flight, now, reduced);
+    const boosting = s.boost && s.phase === 'flight' && s.flight.stage === 'flying';
+    if (boosting) {
+      s.addBoost(dt * 1000 * (BOOST_FACTOR - 1));
+      s = useApp.getState();
+    }
+    boostK.current += ((boosting ? 1 : 0) - boostK.current) * (1 - Math.exp(-dt * 4));
+    const shot = choreo.current.update(s.phase, s.flight, now, reduced, { boostMs: s.boostMs, prologue: s.prologue });
 
     // Reduced motion: every change of view is a step, covered by a short dip to black.
     if (!shown.current) shown.current = shot;
@@ -142,7 +154,7 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
       basis.makeBasis(right, up, back);
       live.arc.quat.setFromRotationMatrix(basis);
       // Lean into the flight: tip the top toward the direction of travel while cruising.
-      live.arc.quat.multiply(lean.setFromAxisAngle(X, -0.22 * Math.sin(Math.PI * arc.p)));
+      live.arc.quat.multiply(lean.setFromAxisAngle(X, -(LEAN + BOOST_LEAN * boostK.current) * Math.sin(Math.PI * arc.p)));
       live.arc.pos.set(...a).applyMatrix4(gm);
       if (globe) live.arc.quat.premultiply(globe.quaternion);
       live.arc.up.copy(up).transformDirection(gm);

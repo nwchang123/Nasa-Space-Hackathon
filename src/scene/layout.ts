@@ -172,6 +172,8 @@ export interface FramingInput {
   anchorY?: number;
   /** Landscape only: share of the screen width the subject may fill. Default 0.62. */
   fillWidth?: number;
+  /** Landscape only: share of the screen height the subject may fill. Default 0.72. */
+  fillHeight?: number;
 }
 
 export interface CameraGoal {
@@ -197,11 +199,12 @@ export function cameraGoal(input: FramingInput): CameraGoal {
   const anchorX = input.anchorX ?? 0.31;
   const anchorY = input.anchorY ?? 0.5;
   const fillWidth = input.fillWidth ?? 0.62;
+  const fillHeight = input.fillHeight ?? 0.72;
 
   let d: number;
   if (landscape) {
-    // Fit in fillWidth of the width (75 % fill) and ~72 % of the height.
-    d = Math.max((2 * hx) / (0.75 * fillWidth * 2 * t * aspect), (2 * hy) / (0.72 * 2 * t));
+    // Fit in fillWidth of the width (75 % fill) and fillHeight of the height.
+    d = Math.max((2 * hx) / (0.75 * fillWidth * 2 * t * aspect), (2 * hy) / (fillHeight * 2 * t));
   } else {
     // Fit in 85 % of the width and 85 % of the top 45 % of the height.
     d = Math.max((2 * hx) / (0.85 * 2 * t * aspect), (2 * hy) / (0.85 * 0.45 * 2 * t));
@@ -322,9 +325,18 @@ export interface ChaseGoal {
 }
 
 /**
+ * Full-screen HUD (Version 3): a top bar (~90 px) and a dock along the bottom (~28 % of the
+ * height). Subjects sit centred left to right and a little above the middle, in the clear band.
+ */
+export const HUD_ANCHOR_Y = 0.42;
+/** Share of the height a framed subject may fill, so it stays between the top bar and the dock. */
+export const HUD_FILL_HEIGHT = 0.58;
+
+/**
  * Chase view: behind and above Ingenuity. Low down it looks almost level, so the limb of Mars
  * crosses the frame; higher up it pulls back and looks down more steeply, keeping the planet in
- * view. Ingenuity sits ~33 % from the left on wide screens, or in the top 45 % on portrait ones.
+ * view. Ingenuity sits centred left to right and a little above the middle (HUD_ANCHOR_Y) on
+ * wide screens, or in the top 45 % on portrait ones.
  */
 export function chaseGoal(i: ChaseInput): ChaseGoal {
   const k = clamp01(i.alt / 0.22);
@@ -334,13 +346,53 @@ export function chaseGoal(i: ChaseInput): ChaseGoal {
 
   const view = normalize(sub(i.pos, position));
   const camUp = normalize(sub(i.up, scale(view, dot(i.up, view))));
-  const right = normalize(cross(view, camUp));
   const t = Math.tan((i.fovDeg * DEG) / 2);
   const aspect = Math.max(0.2, i.aspect);
   const H = 2 * d * t;
-  const W = H * aspect;
-  const offset = aspect > LANDSCAPE_ASPECT ? scale(right, (0.5 - 0.33) * W) : scale(camUp, -0.275 * H);
+  const offset = aspect > LANDSCAPE_ASPECT ? scale(camUp, -(0.5 - HUD_ANCHOR_Y) * H) : scale(camUp, -0.275 * H);
   return { position, target: add(i.pos, offset), up: i.up };
+}
+
+// ---------------------------------------------------------------- visitor's orbit at a site
+
+/** Lowest and highest camera elevation above a site's ground while the visitor orbits, degrees. */
+export const ORBIT_MIN_ELEV = 4;
+export const ORBIT_MAX_ELEV = 65;
+export const ORBIT_ZOOM: [number, number] = [0.6, 1.8];
+
+/**
+ * A site camera offset (camera − target) turned by the visitor's orbit: `az` radians about `up`,
+ * `el` radians added to its elevation (the result clamped to ORBIT_MIN_ELEV..ORBIT_MAX_ELEV), and
+ * its length times `zoom` (clamped to ORBIT_ZOOM).
+ */
+export function orbitOffset(offset: Vec3, up: Vec3, az: number, el: number, zoom: number): Vec3 {
+  const len = Math.hypot(offset[0], offset[1], offset[2]);
+  if (len < 1e-12) return offset;
+  const u = normalize(up);
+  const dir = scale(offset, 1 / len);
+  const e0 = Math.asin(Math.max(-1, Math.min(1, dot(dir, u))));
+  let h = sub(dir, scale(u, dot(dir, u)));
+  if (Math.hypot(h[0], h[1], h[2]) < 1e-9) h = normalize(cross(u, Math.abs(u[0]) < 0.9 ? [1, 0, 0] : [0, 0, 1]));
+  else h = normalize(h);
+  // Rodrigues' rotation of the horizontal direction about up (u ⟂ h, so the u(u·h) term is zero).
+  const c = Math.cos(az);
+  const sn = Math.sin(az);
+  const hr = add(scale(h, c), scale(cross(u, h), sn));
+  const e = Math.min(ORBIT_MAX_ELEV * DEG, Math.max(ORBIT_MIN_ELEV * DEG, e0 + el));
+  const z = Math.min(ORBIT_ZOOM[1], Math.max(ORBIT_ZOOM[0], zoom));
+  return scale(add(scale(hr, Math.cos(e)), scale(u, Math.sin(e))), len * z);
+}
+
+// ---------------------------------------------------------------- navigation camera
+
+/**
+ * Ingenuity's downward navigation camera while flying: just below the helicopter, looking straight
+ * down at the ground, with the direction of travel at the top of the frame.
+ */
+export function navcamPose(pos: Vec3, up: Vec3, forward: Vec3, below: number): { position: Vec3; target: Vec3; up: Vec3 } {
+  const u = normalize(up);
+  const position = sub(pos, scale(u, below));
+  return { position, target: sub(position, u), up: normalize(forward) };
 }
 
 // ---------------------------------------------------------------- diorama directions
