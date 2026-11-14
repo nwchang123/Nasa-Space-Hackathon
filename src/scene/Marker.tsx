@@ -152,6 +152,7 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
         <Html center zIndexRange={[12, 0]} pointerEvents="none" className="marker-label">
           <div ref={label} className="marker-label-inner" style={{ transform: 'translateY(-22px)', whiteSpace: 'nowrap' }}>
             {machine.shortName}
+            <span className="marker-label-year"> · {machine.arrived.slice(0, 4)}</span>
             {tag && <span className="marker-label-tag"> · {tag}</span>}
           </div>
         </Html>

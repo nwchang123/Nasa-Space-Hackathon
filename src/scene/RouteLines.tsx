@@ -103,7 +103,7 @@ export function RouteLines() {
     for (const l of planned) {
       if (all) style(l, 0.4 + pulse, 1.6);
       else if (inFlight) style(l, 0.22, 1.2);
-      else if (title) style(l, 0.25, 1.2);
+      else if (title) style(l, 0.26 + (reduced ? 0 : 0.07 * Math.sin(t * 1.1)), 1.2);
       else l.line.visible = false;
     }
 

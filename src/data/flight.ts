@@ -11,14 +11,23 @@ import type { MachineId } from '../types';
 /** Shown on the title screen and in the footer for the whole flight. */
 export const FICTION_NOTE = 'Flight 73 never happened. Every machine, place and date on the way is real.';
 
-/** Opening, at Valinor Hills with the broken blades. 3–5 short lines. */
+/**
+ * Opening, at Valinor Hills with the broken blades. 3–5 short lines. The first PROLOGUE_TEST_AT
+ * lines come before the visitor's rotor test; the rest, the turn to fiction, after it fails.
+ */
 export const PROLOGUE: string[] = [
   '18 January 2024. Flight 72 was meant to be a short hop to check my systems.',
   'The sand below was probably too smooth for my navigation camera to follow.',
-  'I came down hard, and my rotor blades broke.',
-  'My team said goodbye on 16 April 2024. I cannot fly again.',
-  'So let me imagine one more flight. Flight 73.',
+  'I came down hard, and my rotor blades broke. My team said goodbye on 16 April 2024.',
+  'I will never fly again.',
+  'But let me imagine one last flight. Flight 73.',
 ];
+
+/** How many PROLOGUE lines are shown before the rotor test. */
+export const PROLOGUE_TEST_AT = 3;
+
+/** The fault bar when the rotor test stalls (the damage is real: docs/FACT_CHECK.md, Prologue). */
+export const ROTOR_FAULT = 'Rotor imbalance — blades damaged on Flight 72';
 
 export interface LegScript {
   /** 1–3 short lines Ingenuity says while flying to this stop. */

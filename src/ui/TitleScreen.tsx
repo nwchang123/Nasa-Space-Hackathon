@@ -40,16 +40,16 @@ export function TitleScreen() {
         <li>
           <strong>{formatKm(TOTAL_KM)}</strong>
           <span>
-            {LEGS.length - 1} stops · its 72 real flights: {REAL_FLOWN_KM}
+            {LEGS.length} stops · its 72 real flights: {REAL_FLOWN_KM}
           </span>
         </li>
         <li>
           <strong className="tabular">{roundTrip === null ? '—' : formatDuration(roundTrip)}</strong>
-          <span>Earth–Mars radio round trip, right now</span>
+          <span>Earth–Mars light time, round trip, now</span>
         </li>
         <li>
-          <strong>Live Sun</strong>
-          <span>Lit by real-time Mars24 ephemeris</span>
+          <strong>Live Mars24 Sun</strong>
+          <span>Lit as Mars is right now</span>
         </li>
       </ul>
       <button type="button" className="primary reveal" style={{ animationDelay: '1.5s' }} onClick={startFlight}>

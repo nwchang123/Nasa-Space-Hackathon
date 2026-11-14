@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { useApp } from './store';
-import { FlightConsole } from './ui/FlightConsole';
+import { Hud } from './ui/hud/Hud';
 import { Report } from './ui/Report';
 import { TitleScreen } from './ui/TitleScreen';
 import { useLiveClock } from './ui/useClock';
@@ -21,7 +21,7 @@ export default function App() {
       <div className="vignette" aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
       {phase === 'title' && <TitleScreen />}
-      {phase === 'flight' && <FlightConsole />}
+      {phase === 'flight' && <Hud />}
       {phase === 'report' && <Report />}
     </div>
   );

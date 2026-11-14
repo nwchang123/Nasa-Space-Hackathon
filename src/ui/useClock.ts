@@ -20,6 +20,17 @@ export function useUtcClock(): string {
   return now.toISOString().slice(11, 19) + ' UTC';
 }
 
+/** Date.now(), refreshed every `ms` while `enabled` (for running effects and live readouts). */
+export function useNow(ms: number, enabled = true): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!enabled) return;
+    const id = window.setInterval(() => setNow(Date.now()), ms);
+    return () => window.clearInterval(id);
+  }, [ms, enabled]);
+  return now;
+}
+
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 }
