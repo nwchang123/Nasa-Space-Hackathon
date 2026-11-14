@@ -18,7 +18,18 @@ NASA material is used for education under NASA's media guidelines. NASA does not
 
 ## Images and 3D models
 
-The Mars globe and the machines in the scene are drawn procedurally in code and are illustrative. If NASA 3D models or maps are added, each file is listed here with its source and licence.
+3D models from NASA 3D Resources (https://science.nasa.gov/3d-resources/), which describes its files as "free and without copyright". Converted and compressed with glTF-Transform 4.5.1 (meshopt geometry, WebP textures up to 1024 px); otherwise unmodified:
+
+- "Viking Lander", NASA/Michael D. Carbajal: used for Viking 1 and Viking 2 (`public/models/viking-lander.glb`)
+- "InSight Cruise Lander (arm deployed)", NASA/Brian E. Kumanchik (`public/models/insight.glb`)
+- "Ingenuity Mars Helicopter", NASA/Brian E. Kumanchik (`public/models/ingenuity.glb`)
+- "Mars Exploration Rover – Opportunity (MER-B)", NASA/Ames Research Center: used for Spirit and Opportunity (`public/models/mer.glb`)
+
+Mars globe: Viking MDIM 2.1 colorized global mosaic, NASA/JPL-Caltech/USGS, tiles from NASA Solar System Treks (Mars Trek, https://trek.nasa.gov/mars/), stitched into a 4096×2048 equirectangular map (`src/scene/maps/mars.webp`).
+
+Pathfinder and Sojourner, Phoenix, and Perseverance's parachute and backshell have no NASA model; they are drawn procedurally in code and labelled illustrative. The NASA models show each machine as built, not as it rests today (for example, InSight's instruments are on its deck in the model but were placed on the ground in 2018–2019, and Ingenuity's rotor blades are intact in the model).
+
+No NASA endorsement is implied, and no NASA logos or insignia are used.
 
 ## Fonts
 
