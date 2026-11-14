@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { MACHINES, MACHINE_BY_ID } from '../data/machines';
-import { LEGS, TOTAL_KM } from '../flight/route';
+import { LEGS } from '../flight/route';
 import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { formatDate, formatKm, yearsBetween } from './callPlan';
@@ -21,6 +21,7 @@ function savePostcard(entry: { id: string; message: string; from: string; at: st
 /** The flight log: every stop with its leg, plus a postcard to one machine. */
 export function Report() {
   const visited = useApp(s => s.visited);
+  const flownKm = useApp(s => s.flownKm);
   const startFlight = useApp(s => s.startFlight);
   const reset = useApp(s => s.reset);
   const years = useMemo(
@@ -58,7 +59,7 @@ export function Report() {
 
       <div className="report-stats">
         <div>
-          <strong className="tabular">{formatKm(TOTAL_KM)}</strong>
+          <strong className="tabular">{formatKm(flownKm)}</strong>
           <span>flown in imagination</span>
         </div>
         <div>
@@ -72,8 +73,8 @@ export function Report() {
       </div>
 
       <p className="report-line">
-        None of them answers any more. All of them are still there, exactly where their work ended, and what they found is still
-        being used by the missions that came after.
+        Their missions are over. All of them are still there, exactly where their work ended, and what they found is still being
+        used by the missions that came after.
       </p>
 
       <ol className="report-list">

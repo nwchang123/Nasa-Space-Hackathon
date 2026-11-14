@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { siteSky } from '../astro';
 import { EPILOGUE, FICTION_NOTE, LEG_SCRIPTS, PROLOGUE } from '../data/flight';
 import { MACHINE_BY_ID } from '../data/machines';
-import { HOME, LEGS, TOTAL_KM, compass, flyDurationMs } from '../flight/route';
-import { currentStop, useApp } from '../store';
+import { HOME, LEGS, TOTAL_KM, compass, flyDurationMs, hop } from '../flight/route';
+import { currentStop, standingAt, useApp } from '../store';
 import { MACHINE_IDS, type Machine } from '../types';
 import {
   formatDate,
@@ -26,7 +26,7 @@ export function FlightConsole() {
   const flight = useApp(s => s.flight);
   const utc = useUtcClock();
   const [muted, setMutedState] = useState(isMuted());
-  const flownKm = flight.leg <= 0 ? 0 : LEGS[Math.min(flight.leg, LEGS.length) - 1].cumulativeKm;
+  const flownKm = useApp(s => s.flownKm);
 
   return (
     <aside className="console" aria-label="Flight 73 log">
@@ -63,10 +63,10 @@ export function FlightConsole() {
       <footer className="console-foot">
         <div className="progress">
           <div className="progress-bar">
-            <span style={{ width: `${(flownKm / TOTAL_KM) * 100}%` }} />
+            <span style={{ width: `${Math.min(1, flownKm / TOTAL_KM) * 100}%` }} />
           </div>
           <span className="tabular">
-            {formatKm(flownKm)} of {formatKm(TOTAL_KM)}
+            {formatKm(flownKm)} flown · route {formatKm(TOTAL_KM)}
           </span>
         </div>
         <p className="fiction">{FICTION_NOTE}</p>
@@ -75,12 +75,15 @@ export function FlightConsole() {
   );
 }
 
-/** Ten dots: home, the stops, home again. */
+/** One dot per stop. While standing anywhere, pick a dot to fly straight to that stop. */
 function RouteStrip() {
   const flight = useApp(s => s.flight);
   const visited = useApp(s => s.visited);
   const hover = useApp(s => s.hover);
+  const flyTo = useApp(s => s.flyTo);
   const here = currentStop(flight);
+  const standing = standingAt(flight);
+  const reduced = useMemo(prefersReducedMotion, []);
   return (
     <nav className="route-strip" aria-label="Route">
       <ol>
@@ -88,11 +91,22 @@ function RouteStrip() {
           const m = MACHINE_BY_ID[id];
           const state = id === here ? (flight.stage === 'flying' ? 'next' : 'here') : visited[id] ? 'done' : 'todo';
           return (
-            <li key={id} className={state} onMouseEnter={() => hover(id)} onMouseLeave={() => hover(null)} title={`${i + 1}. ${m.name}`}>
+            <li key={id} className={state} onMouseEnter={() => hover(id)} onMouseLeave={() => hover(null)}>
+              <button
+                type="button"
+                className="hop"
+                disabled={standing === null || standing === id}
+                title={`${i + 1}. ${m.name}`}
+                onClick={() => {
+                  if (standing === null || standing === id) return;
+                  flyTo(i, reduced ? 0 : flyDurationMs(hop(standing, i).distanceKm), standing);
+                }}
+              >
+                <span className="sr-only">
+                  Stop {i + 1}, {m.name}, {state === 'done' ? 'visited' : state === 'here' ? 'here now' : state === 'next' ? 'flying there' : 'ahead'}
+                </span>
+              </button>
               <span className="dot" aria-hidden="true" />
-              <span className="sr-only">
-                Stop {i + 1}, {m.name}, {state === 'done' ? 'visited' : state === 'here' ? 'here now' : state === 'next' ? 'flying there' : 'ahead'}
-              </span>
             </li>
           );
         })}
@@ -147,6 +161,9 @@ function Prologue() {
       >
         Lift off <span aria-hidden="true">→</span>
       </button>
+      <p className="jump-hint reveal" style={{ animationDelay: reduced ? '0s' : `${0.6 + PROLOGUE.length * 1.1}s` }}>
+        Short on time? Pick any dot on the route above to fly straight to that stop.
+      </p>
     </div>
   );
 }
@@ -154,9 +171,12 @@ function Prologue() {
 function Flying() {
   const flight = useApp(s => s.flight);
   const arrive = useApp(s => s.arrive);
-  const leg = LEGS[flight.leg];
+  const flownKm = useApp(s => s.flownKm);
+  const leg = hop(flight.from, flight.leg);
   const to = MACHINE_BY_ID[leg.to];
-  const script = LEG_SCRIPTS[leg.to];
+  const from = MACHINE_BY_ID[leg.from];
+  // The scripted lines name the planned leg's geometry, so a direct hop gets a plain line instead.
+  const lines = leg.onRoute ? LEG_SCRIPTS[leg.to].enRoute : [`Off the planned route: straight from ${from.shortName} to ${to.shortName}.`];
   const reduced = useMemo(prefersReducedMotion, []);
   const [k, setK] = useState(flight.flyMs === 0 ? 1 : 0);
 
@@ -176,14 +196,13 @@ function Flying() {
     return () => cancelAnimationFrame(raf);
   }, [flight.flyMs, flight.stageStartedAt, arrive]);
 
-  const before = flight.leg === 0 ? 0 : LEGS[flight.leg - 1].cumulativeKm;
   const eased = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
   const legKm = leg.distanceKm * eased;
 
   return (
     <div className="stage-panel">
       <p className="speaker">
-        Leg {flight.leg + 1} · heading {compass(leg.bearingDeg)}
+        {leg.onRoute ? `Leg ${flight.leg + 1}` : 'Direct hop'} · heading {compass(leg.bearingDeg)}
       </p>
       <h2 className="leg-title">
         <span className="dim">to</span> {to.name}
@@ -192,10 +211,10 @@ function Flying() {
       <div className="odometer tabular" aria-live="off">
         <span className="odo-big">{formatKm(legKm)}</span>
         <span className="odo-sub">
-          of {formatKm(leg.distanceKm)} · Flight 73 so far {formatKm(before + legKm)}
+          of {formatKm(leg.distanceKm)} · Flight 73 so far {formatKm(flownKm + legKm)}
         </span>
       </div>
-      <Lines lines={script.enRoute} start={0.3} step={1.6} instant={reduced} />
+      <Lines lines={lines} start={0.3} step={1.6} instant={reduced} />
       <button type="button" className="ghost small" onClick={arrive}>
         Skip to {to.shortName} <span aria-hidden="true">→</span>
       </button>

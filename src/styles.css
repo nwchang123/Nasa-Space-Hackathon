@@ -959,12 +959,42 @@ button:disabled {
   height: 9px;
   cursor: default;
 }
+/* A 25px hit area around each 9px dot: pick any stop to fly straight there. */
+.route-strip .hop {
+  position: absolute;
+  inset: -8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.route-strip .hop:disabled {
+  cursor: default;
+}
+.route-strip .hop:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 0;
+}
 .route-strip .dot {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   border: 1px solid var(--ghost);
   background: var(--ink);
+  pointer-events: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.route-strip .hop:not(:disabled):hover + .dot,
+.route-strip .hop:focus-visible + .dot {
+  border-color: var(--amber);
+  transform: scale(1.6);
+}
+.jump-hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ghost);
 }
 .route-strip .done .dot {
   background: var(--bone-dim);

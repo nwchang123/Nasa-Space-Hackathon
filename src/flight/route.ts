@@ -99,6 +99,25 @@ export function buildLegs(): Leg[] {
 export const LEGS: Leg[] = buildLegs();
 export const TOTAL_KM = LEGS[LEGS.length - 1].cumulativeKm;
 
+/** One flight from a place to a stop: a planned leg, or a direct hop picked from the route strip. */
+export interface Hop {
+  from: MachineId;
+  to: MachineId;
+  distanceKm: number;
+  bearingDeg: number;
+  /** True when this is the planned leg, so its scripted en-route lines (which name its geometry) apply. */
+  onRoute: boolean;
+}
+
+/** The flight to stop `legIndex` starting from `from`. */
+export function hop(from: MachineId, legIndex: number): Hop {
+  const leg = LEGS[legIndex];
+  if (leg.from === from) return { from, to: leg.to, distanceKm: leg.distanceKm, bearingDeg: leg.bearingDeg, onRoute: true };
+  const a = MACHINE_BY_ID[from];
+  const b = MACHINE_BY_ID[leg.to];
+  return { from, to: leg.to, distanceKm: greatCircleKm(a, b), bearingDeg: initialBearing(a, b), onRoute: false };
+}
+
 /** How long the flight animation for a leg lasts, ms: longer legs take a little longer. */
 export function flyDurationMs(distanceKm: number): number {
   return Math.round(Math.min(9000, Math.max(2500, 2500 + distanceKm * 0.65)));
