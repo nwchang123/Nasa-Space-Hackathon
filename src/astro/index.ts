@@ -1,12 +1,21 @@
 // Astronomy API. The scene and the console import only from here.
-// STUB: placeholder maths so the app compiles while the astro module is written.
-// The signatures are the contract; keep them when replacing the bodies.
+// Formulas and their sources live in the sibling files:
+//   mars24.ts  – Mars solar time and sub-solar point (Allison & McEwen 2000, NASA GISS Mars24)
+//   moon.ts    – Moon/Sun positions, libration, selenographic sub-solar point (Meeus 1998)
+//   orbits.ts  – heliocentric positions (JPL approximate planetary elements; JPL SBDB for Ceres/Eros)
+//   deep.ts    – rough models for Pioneer 10/11 and Kepler, fitted to JPL Horizons
 
 import type { MachineId, SignalPath, SiteSky, World } from '../types';
 import { DEG, wrap180 } from '../geo';
+import { AU_KM_CONST, C_KM_S_CONST } from './constants';
+import { jdTT } from './time';
+import { mars24, marsLTST } from './mars24';
+import { moonPosition, moonSubEarthJde, moonSubSolarJde } from './moon';
+import { distance, planetHelio, smallBodyEpoch, smallBodyHelio } from './orbits';
+import { keplerEarthDistanceAU, keplerTrail, pioneerHelio } from './deep';
 
-export const C_KM_S = 299_792.458;
-export const AU_KM = 149_597_870.7;
+export const C_KM_S = C_KM_S_CONST;
+export const AU_KM = AU_KM_CONST;
 
 /** A point in body-fixed coordinates: planetocentric latitude, east longitude (−180..180), degrees. */
 export interface SubPoint {
@@ -14,29 +23,25 @@ export interface SubPoint {
   lon: number;
 }
 
-/** Point on the Moon where the Sun is overhead now (selenographic). */
+/** Point on the Moon where the Sun is overhead now (selenographic; Meeus ch. 53, ~0.05°). */
 export function moonSubSolar(date: Date): SubPoint {
-  const days = (date.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 86_400_000;
-  const phase = ((days / 29.530588) % 1 + 1) % 1; // 0 new, 0.5 full
-  return { lat: 0, lon: wrap180(180 - phase * 360) };
+  return moonSubSolarJde(jdTT(date));
 }
 
-/** Point on the Moon where Earth is overhead now (about 0°, 0° with libration). */
-export function moonSubEarth(_date: Date): SubPoint {
-  return { lat: 0, lon: 0 };
+/** Point on the Moon where Earth is overhead now: optical libration, |lon| ≲ 8°, |lat| ≲ 7°. */
+export function moonSubEarth(date: Date): SubPoint {
+  return moonSubEarthJde(jdTT(date));
 }
 
-/** Point on Mars where the Sun is overhead now (Mars24 algorithm). */
+/** Point on Mars where the Sun is overhead now (Mars24 algorithm, ~0.01°). */
 export function marsSubSolar(date: Date): SubPoint {
-  const hours = marsLocalSolarTime(date, 0);
-  return { lat: 0, lon: wrap180(180 - hours * 15) };
+  const m = mars24(date);
+  return { lat: m.declination, lon: wrap180(-m.subsolarWest) };
 }
 
-/** Mars local true solar time at an east longitude, hours 0–24. */
+/** Mars local true solar time at an east longitude, hours 0–24 (Mars24). */
 export function marsLocalSolarTime(date: Date, lonEast: number): number {
-  const jdtt = date.getTime() / 86_400_000 + 2440587.5 + 69.184 / 86400;
-  const mst = (24 * ((jdtt - 2451549.5) / 1.0274912517 + 44796.0 - 0.0009626)) % 24;
-  return (((mst + lonEast / 15) % 24) + 24) % 24;
+  return marsLTST(mars24(date), lonEast);
 }
 
 /** Sun elevation above the local horizon, degrees, for a site given the sub-solar point. */
@@ -47,7 +52,7 @@ export function sunElevation(sub: SubPoint, lat: number, lon: number): number {
   return Math.asin(Math.max(-1, Math.min(1, s))) / DEG;
 }
 
-/** Sky right now at a site on the Moon or Mars. */
+/** Sky right now at a site on the Moon or Mars (centre of the Sun's disc, no refraction). */
 export function siteSky(world: 'moon' | 'mars', lat: number, lon: number, date: Date): SiteSky {
   const sub = world === 'moon' ? moonSubSolar(date) : marsSubSolar(date);
   const elevationDeg = sunElevation(sub, lat, lon);
@@ -60,36 +65,65 @@ export function siteSky(world: 'moon' | 'mars', lat: number, lon: number, date: 
 
 /** Heliocentric ecliptic (J2000) position in AU, or null when no trustworthy model is available. */
 export function heliocentricAU(body: 'earth' | 'mars' | 'ceres' | 'eros', date: Date): [number, number, number] | null {
-  const t = (date.getTime() - Date.UTC(2000, 0, 1, 12)) / (86_400_000 * 365.25);
-  if (body === 'earth') return [Math.cos(2 * Math.PI * t + 1.75), Math.sin(2 * Math.PI * t + 1.75), 0];
-  if (body === 'mars') return [1.52 * Math.cos(2 * Math.PI * t / 1.88 - 0.08), 1.52 * Math.sin(2 * Math.PI * t / 1.88 - 0.08), 0];
-  return null;
+  const jde = jdTT(date);
+  if (body === 'earth' || body === 'mars') return planetHelio(body, jde);
+  return smallBodyHelio(body, jde);
 }
 
-export function earthMoonDistanceKm(_date: Date): number {
-  return 384_400;
+/** Earth–Moon centre distance now, km (Meeus ch. 47 main terms, ~50 km). */
+export function earthMoonDistanceKm(date: Date): number {
+  return moonPosition(jdTT(date)).distanceKm;
 }
 
+/** Earth–Mars distance now, km (JPL approximate elements, ~0.001 AU). */
 export function earthMarsDistanceKm(date: Date): number {
-  const e = heliocentricAU('earth', date)!;
-  const m = heliocentricAU('mars', date)!;
-  return Math.hypot(m[0] - e[0], m[1] - e[1], m[2] - e[2]) * AU_KM;
+  const jde = jdTT(date);
+  return distance(planetHelio('mars', jde), planetHelio('earth', jde)) * AU_KM;
 }
 
 /** Kepler space telescope: angle it trails Earth along Earth's orbit, degrees (rough model). */
-export function keplerTrailAngleDeg(_date: Date): number {
-  return 90;
+export function keplerTrailAngleDeg(date: Date): number {
+  return keplerTrail(date);
+}
+
+const YEAR_D = 365.25;
+
+function path(distanceAU: number, estimate: boolean, note: string): SignalPath {
+  const distanceKm = distanceAU * AU_KM;
+  return { distanceKm, roundTripS: (2 * distanceKm) / C_KM_S, estimate, note };
+}
+
+function smallBodyPath(body: 'ceres' | 'eros', date: Date, note: string): SignalPath {
+  const jde = jdTT(date);
+  const d = distance(smallBodyHelio(body, jde), planetHelio('earth', jde));
+  // Two-body elements drift with Jupiter's pull: call it an estimate far from the element epoch.
+  const far = Math.abs(jde - smallBodyEpoch(body)) > 4 * YEAR_D;
+  return path(d, far, far ? note + ' (rough: far from the orbit epoch)' : note);
 }
 
 /** Live distance and round-trip light time for a call to a machine. */
-export function signalPath(_id: MachineId, world: World, date: Date): SignalPath {
+export function signalPath(id: MachineId, world: World, date: Date): SignalPath {
   if (world === 'moon') {
     const d = earthMoonDistanceKm(date);
-    return { distanceKm: d, roundTripS: (2 * d) / C_KM_S, estimate: false, note: 'Earth–Moon distance (stub)' };
+    return { distanceKm: d, roundTripS: (2 * d) / C_KM_S, estimate: false, note: 'Earth–Moon distance right now (Meeus lunar theory)' };
   }
   if (world === 'mars') {
     const d = earthMarsDistanceKm(date);
-    return { distanceKm: d, roundTripS: (2 * d) / C_KM_S, estimate: false, note: 'Earth–Mars distance (stub)' };
+    return { distanceKm: d, roundTripS: (2 * d) / C_KM_S, estimate: false, note: 'Earth–Mars distance right now (JPL planetary elements)' };
   }
-  return { distanceKm: null, roundTripS: null, estimate: true, note: 'No estimate (stub)' };
+  const earth = planetHelio('earth', jdTT(date));
+  switch (id) {
+    case 'pioneer-10':
+      return path(distance(pioneerHelio(id, date), earth), true, "Estimate from JPL's predicted path; no signal since 2003");
+    case 'pioneer-11':
+      return path(distance(pioneerHelio(id, date), earth), true, "Estimate from JPL's predicted path; no signal since 1995");
+    case 'kepler':
+      return path(keplerEarthDistanceAU(date), true, 'Rough estimate: Kepler slips about 7° further behind Earth each year');
+    case 'dawn':
+      return smallBodyPath('ceres', date, 'Earth–Ceres distance right now (JPL orbit of Ceres)');
+    case 'near-shoemaker':
+      return smallBodyPath('eros', date, 'Earth–Eros distance right now (JPL orbit of Eros)');
+    default:
+      return { distanceKm: null, roundTripS: null, estimate: true, note: 'No distance estimate available' };
+  }
 }
