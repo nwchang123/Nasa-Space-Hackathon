@@ -25,7 +25,9 @@ NASA material is used for education under NASA's media guidelines. NASA does not
 - "Ingenuity Mars Helicopter", NASA/Brian E. Kumanchik (`public/models/ingenuity.glb`)
 - "Mars Exploration Rover – Opportunity (MER-B)", NASA/Ames Research Center: used for Spirit and Opportunity (`public/models/mer.glb`)
 
-Mars globe: Viking MDIM 2.1 colorized global mosaic, NASA/JPL-Caltech/USGS, tiles from NASA Solar System Treks (Mars Trek, https://trek.nasa.gov/mars/), stitched into a 4096×2048 equirectangular map (`src/scene/maps/mars.webp`).
+Mars globe: Viking MDIM 2.1 colorized global mosaic, NASA/JPL-Caltech/USGS, tiles from NASA Solar System Treks (Mars Trek, https://trek.nasa.gov/mars/), stitched into equirectangular maps of 4096×2048 (`src/scene/maps/mars.webp`, shown first) and 8192×4096 (`src/scene/maps/mars-8k.webp`, swapped in once loaded on GPUs that support it).
+
+Relief: MGS MOLA global elevation (MOLA 128/64 ppd merge), NASA/GSFC MOLA Science Team, tiles from NASA Solar System Treks, stitched to 4096×2048, lightly smoothed and saved as `src/scene/maps/mars-height.jpg`. The globe shades this relief with the real Sun; relief is exaggerated for legibility, and the 8-bit stretched elevation is used for shape only, not for heights in metres.
 
 Pathfinder and Sojourner, Phoenix, and Perseverance's parachute and backshell have no NASA model; they are drawn procedurally in code and labelled illustrative. The NASA models show each machine as built, not as it rests today (for example, InSight's instruments are on its deck in the model but were placed on the ground in 2018–2019, and Ingenuity's rotor blades are intact in the model).
 

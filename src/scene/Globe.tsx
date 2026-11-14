@@ -1,7 +1,7 @@
 // Mars, lit by the real Sun for "now", with the nine stops and the route. The Director turns it
 // (only while nothing is anchored to it); it hides once the camera stands inside a site diorama.
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Quaternion, type Group } from 'three';
 import { MACHINES } from '../data/machines';
@@ -11,15 +11,21 @@ import { GLOBE_R, MARKER_LIFT } from './layout';
 import { Marker } from './Marker';
 import { groups, live } from './registry';
 import { RouteLines } from './RouteLines';
-import { useSurfaceMap } from './surfaceMaps';
+import { useExtraMap, useSurfaceMap } from './surfaceMaps';
 
 const inv = new Quaternion();
+/** The 8192 mosaic is requested this long after the globe appears, so it never slows the opening. */
+const HIRES_DELAY_MS = 2500;
 
 export function Globe() {
   const group = useRef<Group>(null);
   const material = useMemo(() => createGlobeMaterial(MARS_LOOK), []);
   // NASA's Viking colour mosaic (src/scene/maps/mars.webp) when present; the painted map otherwise.
   const map = useSurfaceMap('mars');
+  // MOLA elevation for relief shading, and the 8192 mosaic once the GPU can hold it.
+  const height = useExtraMap('mars-height', true);
+  const maxTex = useThree(s => s.gl.capabilities.maxTextureSize);
+  const hires = useExtraMap('mars-8k', false, maxTex >= 8192, HIRES_DELAY_MS);
 
   useEffect(() => () => material.dispose(), [material]);
 
@@ -31,9 +37,17 @@ export function Globe() {
   }, []);
 
   useEffect(() => {
-    material.uniforms.map.value = map;
-    material.uniforms.hasMap.value = map ? 1 : 0;
-  }, [map, material]);
+    const colour = hires ?? map;
+    material.uniforms.map.value = colour;
+    material.uniforms.hasMap.value = colour ? 1 : 0;
+  }, [map, hires, material]);
+
+  useEffect(() => {
+    material.uniforms.heightMap.value = height;
+    material.uniforms.hasHeight.value = height ? 1 : 0;
+    const img = height?.image as { width?: number; height?: number } | undefined;
+    if (img?.width && img.height) material.uniforms.heightTexel.value.set(1 / img.width, 1 / img.height);
+  }, [height, material]);
 
   useFrame((_, delta) => {
     const g = group.current;

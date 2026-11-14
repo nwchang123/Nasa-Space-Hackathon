@@ -216,3 +216,16 @@ No NASA endorsement is implied.
 - **Ingenuity**：模型里的旋翼是完好的。实际上 2024 年 1 月第 72 次飞行后，旋翼已经断了。开场要表现"断掉的桨叶"，需要在场景里另外处理，例如缩短一片桨叶，或者用镜头避开。
 - **Spirit 和 Opportunity**：共用 MER-B 模型，很简化。远处看可以，近景要标"示意"。
 - **Viking 1 和 Viking 2**：共用同一个模型，两台确实是同型号。
+
+## 补充下载（2026-11-14 下午，你确认后下载）
+
+为了让火星表面更清楚，补了两份 NASA Mars Trek 的地图。下载前列了清单，你选了"两个都下载"。
+
+| 文件 | 来源 | 实际下载量 | 放进网站的文件 |
+|---|---|---|---|
+| MGS MOLA 全球高程，第 3 层，128 张 PNG 瓦片，拼成 4096×2048 | NASA Mars Trek，`mola128_mola64_merge_90Nto90S_SimpleC_clon0` | 2,924,785 B | `src/scene/maps/mars-height.jpg`（轻微模糊去掉 8 位阶梯，JPEG q92，648,143 B） |
+| Viking MDIM 2.1 彩色拼接图，第 4 层，512 张 JPEG 瓦片，拼成 8192×4096 | NASA Mars Trek，`Mars_Viking_MDIM21_ClrMosaic_global_232m` | 见下方提交记录 | `src/scene/maps/mars-8k.webp` |
+
+- 高程图核对过：Olympus Mons 和 Arsia Mons 最亮（灰度 255，山顶被拉伸截平），Hellas 盆地最暗（19），位置和彩色图一致。
+- 高程用来算坡度、按真实太阳方向打明暗，起伏有夸张，不代表真实海拔（米）。
+- 8192 地图在开场后约 2.5 秒才在后台加载，显卡不支持 8192 贴图时不加载，继续用 4096 版。

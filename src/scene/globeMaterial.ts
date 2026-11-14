@@ -1,7 +1,9 @@
 // Globe shading: colour map × soft Lambert from a sun direction in BODY-FIXED coordinates.
 // Normals are taken in object space, so the lighting stays true when the globe is rotated.
+// With a MOLA height map, each fragment's normal is tilted by the local slope (finite differences),
+// so craters, volcanoes and canyons are shaded by the real Sun. Relief is exaggerated (`bump`).
 
-import { Color, ShaderMaterial, Vector3, type Texture } from 'three';
+import { Color, ShaderMaterial, Vector2, Vector3, type Texture } from 'three';
 
 export interface GlobeLook {
   sunColor: string;
@@ -65,20 +67,47 @@ const fragmentShader = /* glsl */ `
   uniform vec3 rimColor;
   uniform float rimStrength;
   uniform float reveal;
+  uniform sampler2D heightMap;
+  uniform float hasHeight;
+  uniform vec2 heightTexel;
+  uniform float bump;
   varying vec2 vUv;
   varying vec3 vObjNormal;
   varying vec3 vWorldNormal;
   varying vec3 vViewDir;
+
+  // Surface normal tilted by the height map's slope. Tangents follow latLonToVec3: lon 0 → +X,
+  // east → −Z, north → +Y; u grows eastward and v northward on the equirectangular map.
+  vec3 reliefNormal(vec3 n0) {
+    float hE = texture2D(heightMap, vUv + vec2(heightTexel.x, 0.0)).r;
+    float hW = texture2D(heightMap, vUv - vec2(heightTexel.x, 0.0)).r;
+    float hN = texture2D(heightMap, vUv + vec2(0.0, heightTexel.y)).r;
+    float hS = texture2D(heightMap, vUv - vec2(0.0, heightTexel.y)).r;
+    vec3 east = vec3(n0.z, 0.0, -n0.x);
+    float cosLat = length(east);
+    east = cosLat > 1e-4 ? east / cosLat : vec3(0.0, 0.0, -1.0);
+    vec3 north = cross(n0, east);
+    // Rise per unit of surface distance on a unit sphere (a longitude step shrinks by cos lat).
+    float dE = (hE - hW) / (2.0 * heightTexel.x * 6.2831853 * max(cosLat, 0.08));
+    float dN = (hN - hS) / (2.0 * heightTexel.y * 3.1415927);
+    return normalize(n0 - bump * (dE * east + dN * north));
+  }
+
   void main() {
     // A small negative mip bias keeps the mosaic crisp instead of soft (no visible shimmer at this scale).
     vec3 albedo = mix(placeholder, texture2D(map, vUv, -0.4).rgb, hasMap * reveal);
-    float ndl = dot(normalize(vObjNormal), normalize(sunDir));
-    // Soft terminator over a few degrees, lifted falloff so the surface stays readable near it.
-    float day = smoothstep(-0.035, 0.06, ndl);
-    float shade = mix(0.14, 1.0, pow(clamp(ndl, 0.0, 1.0), shadePow));
+    vec3 n0 = normalize(vObjNormal);
+    vec3 sd = normalize(sunDir);
+    float ndl0 = dot(n0, sd);
+    float ndl = hasHeight > 0.5 ? dot(reliefNormal(n0), sd) : ndl0;
+    // Soft terminator over a few degrees, from the smooth sphere. Relief may nudge it by about 2°
+    // at most, so peaks and crater rims catch the light just past it, but slopes deep in the night
+    // side stay dark. Lifted falloff so the surface stays readable.
+    float day = smoothstep(-0.035, 0.06, ndl0 + clamp(0.35 * (ndl - ndl0), -0.035, 0.035));
+    float shade = mix(0.1, 1.0, pow(clamp(ndl, 0.0, 1.0), shadePow));
     vec3 col = albedo * (sunColor * day * shade + ambientColor);
     float fres = pow(1.0 - max(dot(normalize(vWorldNormal), normalize(vViewDir)), 0.0), 3.0);
-    col += rimColor * rimStrength * fres * smoothstep(-0.25, 0.35, ndl);
+    col += rimColor * rimStrength * fres * smoothstep(-0.25, 0.35, ndl0);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -101,6 +130,10 @@ export function createGlobeMaterial(look: GlobeLook): ShaderMaterial {
       shadePow: { value: look.shadePow },
       rimColor: { value: new Color(look.rimColor) },
       rimStrength: { value: look.rimStrength },
+      heightMap: { value: null as Texture | null },
+      hasHeight: { value: 0 },
+      heightTexel: { value: new Vector2(1 / 4096, 1 / 2048) },
+      bump: { value: 0.12 },
     },
   });
 }

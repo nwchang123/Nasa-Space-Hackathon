@@ -3,7 +3,16 @@
 // worker. Resolved at build time, so a missing file never causes a 404.
 
 import { useEffect, useState } from 'react';
-import { CanvasTexture, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader, type Texture } from 'three';
+import {
+  CanvasTexture,
+  ImageBitmapLoader,
+  LinearMipmapLinearFilter,
+  NoColorSpace,
+  RepeatWrapping,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
+} from 'three';
 import { paintMars } from './proceduralMaps';
 
 export type Body = 'mars';
@@ -17,9 +26,13 @@ const overrides = import.meta.glob('./maps/*.{jpg,jpeg,png,webp}', {
   import: 'default',
 }) as Record<string, string>;
 
-function overrideUrl(body: Body): string | undefined {
-  const key = Object.keys(overrides).find(k => new RegExp(`/maps/${body}\\.(jpe?g|png|webp)$`, 'i').test(k));
+function namedUrl(name: string): string | undefined {
+  const key = Object.keys(overrides).find(k => new RegExp(`/maps/${name}\\.(jpe?g|png|webp)$`, 'i').test(k));
   return key ? overrides[key] : undefined;
+}
+
+function overrideUrl(body: Body): string | undefined {
+  return namedUrl(body);
 }
 
 export function hasRealMap(body: Body): boolean {
@@ -128,5 +141,68 @@ export function useSurfaceMap(body: Body): Texture | null {
       release(body);
     };
   }, [body]);
+  return tex;
+}
+
+// ---------------------------------------------------------------- extra maps
+
+/**
+ * Optional maps beside the colour mosaic, loaded once and kept for the session:
+ * - 'mars-height': MOLA elevation (grey), read as linear data for relief shading;
+ * - 'mars-8k': the 8192×4096 colour mosaic, swapped in after the opening.
+ * Decoded off the main thread where the browser can (ImageBitmap), so a big map does not stall
+ * a frame while decoding. Resolves null if the file is absent or fails to load.
+ */
+const extras = new Map<string, Promise<Texture | null>>();
+
+function loadExtra(name: string, linear: boolean): Promise<Texture | null> {
+  const url = namedUrl(name);
+  if (!url) return Promise.resolve(null);
+  let p = extras.get(name);
+  if (!p) {
+    p = new Promise<Texture | null>(resolve => {
+      const done = (tex: Texture) => {
+        finish(tex);
+        if (linear) tex.colorSpace = NoColorSpace;
+        resolve(tex);
+      };
+      if (typeof createImageBitmap === 'function') {
+        const loader = new ImageBitmapLoader();
+        loader.setOptions({ imageOrientation: 'flipY' });
+        loader.load(
+          url,
+          bitmap => {
+            const tex = new Texture(bitmap);
+            tex.flipY = false; // already flipped while decoding
+            done(tex);
+          },
+          undefined,
+          () => resolve(null),
+        );
+      } else {
+        new TextureLoader().load(url, done, undefined, () => resolve(null));
+      }
+    });
+    extras.set(name, p);
+  }
+  return p;
+}
+
+/** An optional extra map: null until loaded, or if absent. `delayMs` defers the request. */
+export function useExtraMap(name: string, linear: boolean, enabled = true, delayMs = 0): Texture | null {
+  const [tex, setTex] = useState<Texture | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    const id = setTimeout(() => {
+      void loadExtra(name, linear).then(t => {
+        if (alive) setTex(t);
+      });
+    }, delayMs);
+    return () => {
+      alive = false;
+      clearTimeout(id);
+    };
+  }, [name, linear, enabled, delayMs]);
   return tex;
 }
