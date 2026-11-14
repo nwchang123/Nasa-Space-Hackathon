@@ -1,23 +1,55 @@
-// 3D stage. STUB: replaced by the scene module.
-// Contract: default export <Stage />, a full-size R3F <Canvas> that reads useApp() and
-// writes only useApp.getState().select(id) / hover(id).
+// 3D stage: the Moon and Mars lit by the real Sun for "now", the machines on them, a deep-space
+// schematic, and the call effects. Full-size R3F canvas behind the console UI.
+// Contract: reads useApp(); writes only select(id) and hover(id).
 
+import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
+import { useEffect } from 'react';
+import { useApp } from '../store';
+import { CameraRig } from './CameraRig';
+import { DeepSpace } from './DeepSpace';
+import { Globe } from './Globe';
+import { MARS_LOOK, MOON_LOOK } from './globeMaterial';
+import { MARS_POS, MARS_R, MARS_YAW, MOON_POS, MOON_R, MOON_YAW } from './layout';
+import { Starfield } from './Starfield';
+
+function Controls() {
+  const phase = useApp(s => s.phase);
+  const enabled = phase === 'rollcall' || phase === 'report';
+  return (
+    <OrbitControls
+      makeDefault
+      enabled={enabled}
+      enablePan={false}
+      enableDamping
+      dampingFactor={0.08}
+      rotateSpeed={0.45}
+      zoomSpeed={0.6}
+      minDistance={1.3}
+      maxDistance={60}
+    />
+  );
+}
 
 export default function Stage() {
+  useEffect(() => () => {
+    document.body.style.cursor = '';
+  }, []);
+
   return (
-    <Canvas camera={{ position: [0, 0.4, 9], fov: 40 }} dpr={[1, 2]}>
+    <Canvas
+      flat
+      dpr={[1, 2]}
+      gl={{ antialias: true, powerPreference: 'high-performance' }}
+      camera={{ position: [0, 1.2, 13], fov: 40, near: 0.02, far: 1200 }}
+    >
       <color attach="background" args={['#05070a']} />
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[5, 2, 5]} intensity={2} />
-      <mesh position={[-2.4, 0, 0]}>
-        <sphereGeometry args={[1, 64, 32]} />
-        <meshStandardMaterial color="#9a9a96" />
-      </mesh>
-      <mesh position={[2.4, 0, 0]}>
-        <sphereGeometry args={[0.9, 64, 32]} />
-        <meshStandardMaterial color="#b4643c" />
-      </mesh>
+      <Starfield />
+      <Globe world="moon" radius={MOON_R} position={MOON_POS} yaw={MOON_YAW} look={MOON_LOOK} />
+      <Globe world="mars" radius={MARS_R} position={MARS_POS} yaw={MARS_YAW} look={MARS_LOOK} />
+      <DeepSpace />
+      <Controls />
+      <CameraRig />
     </Canvas>
   );
 }

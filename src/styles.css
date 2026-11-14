@@ -870,6 +870,12 @@ button:disabled {
 /* Marker labels drawn by the scene */
 
 .marker-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+.marker-label-inner,
+.orbit-label {
   padding: 3px 7px;
   background: rgba(5, 7, 10, 0.8);
   border: 1px solid var(--line);
@@ -880,8 +886,19 @@ button:disabled {
   text-transform: uppercase;
   color: var(--bone);
   white-space: nowrap;
-  transform: translate(-50%, -150%);
-  pointer-events: none;
+}
+
+.marker-label-tag {
+  color: var(--bone-dim);
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.orbit-label {
+  font-size: 9.5px;
+  color: var(--ghost);
+  background: rgba(5, 7, 10, 0.55);
+  border-color: transparent;
 }
 
 /* ---------- Report ---------- */
