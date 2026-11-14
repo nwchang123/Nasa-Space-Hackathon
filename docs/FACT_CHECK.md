@@ -257,9 +257,9 @@ Short source keys:
 | Prologue rotor test (spin-up, imbalance fault) and the amber-gold "phantom" Ingenuity that flies Flight 73: fiction, covered by `FICTION_NOTE`. The real Ingenuity stays at Valinor Hills (it is drawn there at the last stop). | fiction, INGB |
 | Fault text "Rotor imbalance — blades damaged on Flight 72" / "Rotor test failed": the test is fiction; the blade damage on Flight 72 (18 Jan 2024) is real | INGB, INGX |
 | Map marker hover label "Name · year": the year of `machine.arrived`, sourced per stop above | per stop |
-| Title telemetry "9 stops" = 8 sites + Ingenuity's home | `MACHINE_IDS` |
-| Title telemetry "Earth–Mars light time, round trip, now": computed live from JPL's approximate Keplerian elements (Standish), see CREDITS | CREDITS |
-| Title telemetry "Live Mars24 Sun" / "Lit as Mars is right now": Mars24 algorithm (Allison & McEwen 2000), see CREDITS | CREDITS |
+| Title facts "across 9 stops" = 8 sites + Ingenuity's home; its tooltip "Ingenuity's 72 real flights covered 17.0 km" | `MACHINE_IDS`, ING |
+| Title facts "… for a radio call there and back" (e.g. "21 min 55 s"): Earth–Mars light time, round trip, now, computed live from JPL's approximate Keplerian elements (Standish), see CREDITS | CREDITS |
+| Title facts "… local solar time at Jezero": Mars local true solar time at Ingenuity's listed longitude (77.4° E), live, Mars24 algorithm (Allison & McEwen 2000); the globe is lit to match, see CREDITS | CREDITS |
 | Epilogue stats "17.0 km / 72 real flights" | ING |
 | Site card relay note at stop 9 (Perseverance relayed messages): logged under "ingenuity" above, confirmed | INGB |
 | "Navcam B&W view" in flight: Ingenuity carries "one black-and-white 0.5 megapixel downward-facing navigation camera" (INGPK, key listed under "Signature actions" below; checked 14 Nov 2026; ING mentions the navigation camera but not its colour). The overlay deliberately shows no altitude: the flight arcs are exaggerated (up to 0.22 Mars radii), so a number would mislead. | INGPK, INGX |

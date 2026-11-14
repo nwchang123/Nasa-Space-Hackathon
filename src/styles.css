@@ -166,28 +166,42 @@ button:disabled {
 
 /* ---------- Title ---------- */
 
+/* A mission brief laid over the live globe. The brief sits low on the left while Mars fills the
+   right (CameraRig 'title' shot: ~57–98 % of the width). It is pushed down with margin-top: auto,
+   not justify-content: flex-end, so on a short window it runs into a scroll instead of up past
+   the top edge. */
 .title-screen {
   position: fixed;
   z-index: 3;
   inset: 0;
-  /* Only the text column takes the pointer; the rest reaches the globe (hover labels). */
+  /* Only the brief takes the pointer; the rest reaches the globe (hover labels). */
   pointer-events: none;
   /* Dragging across the globe or the text must not paint the copy blue. */
   -webkit-user-select: none;
   user-select: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  padding: clamp(24px, 6vw, 88px);
-  padding-bottom: clamp(32px, 8vh, 96px);
-  max-width: 100%;
-  background: linear-gradient(90deg, rgba(5, 7, 10, 0.92) 0%, rgba(5, 7, 10, 0.6) 38%, transparent 66%);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: max(28px, 4.5vh) clamp(24px, 6vw, 88px) clamp(28px, 7vh, 80px);
+  background:
+    linear-gradient(0deg, rgba(5, 7, 10, 0.5) 0%, transparent 28%),
+    linear-gradient(90deg, rgba(5, 7, 10, 0.92) 0%, rgba(5, 7, 10, 0.62) 36%, transparent 62%);
+}
+.title-screen::-webkit-scrollbar {
+  display: none;
 }
 
-.title-screen > * {
-  /* Keeps the text column clear of Mars, which starts at ~57 % of the width. */
-  max-width: min(620px, 48vw);
+.title-brief {
+  flex: none;
+  margin-top: auto;
+  width: 100%;
+  /* Clear of Mars, which starts at ~57 % of the width. */
+  max-width: min(600px, 48vw);
   pointer-events: auto;
+  container: brief / inline-size;
 }
 
 .kicker {
@@ -198,12 +212,12 @@ button:disabled {
   text-transform: uppercase;
 }
 
-/* One line, led by a breathing beacon: a live feed from Jezero. Tighter tracking so the clock's
-   "UTC" always fits in the text column. */
+/* One plain console line, led by a breathing beacon: the live clock from Jezero. */
 .title-screen .kicker {
   display: flex;
   align-items: center;
   gap: 0.9em;
+  margin: 0 0 clamp(12px, 2.4vh, 22px);
   white-space: nowrap;
   letter-spacing: 0.14em;
 }
@@ -213,74 +227,104 @@ button:disabled {
   height: 6px;
 }
 
+/* Bound by height as well as width, so a short window never pushes it off the top. */
 .title-screen h1 {
   margin: 0;
   font-family: var(--serif);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(76px, 13vw, 196px);
-  line-height: 0.86;
+  font-size: clamp(52px, min(10vw, 13vh), 148px);
+  line-height: 0.9;
   letter-spacing: -0.025em;
+  white-space: nowrap;
   color: var(--bone);
-  text-shadow: 0 0 60px rgba(242, 169, 59, 0.12);
+}
+
+/* Set like a film credit under the title, in the same serif. */
+.title-screen .subtitle {
+  margin: 0.7em 0 0;
+  font-family: var(--serif);
+  font-size: clamp(14px, min(1.25vw, 2vh), 17px);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
 }
 
 .lede {
-  margin: 0.5em 0 0;
+  margin: clamp(14px, 2.6vh, 24px) 0 0;
+  max-width: 28em;
   font-family: var(--serif);
-  font-size: clamp(22px, 2.4vw, 30px);
   font-style: italic;
-  color: var(--amber);
+  font-size: clamp(19px, min(1.85vw, 3.1vh), 26px);
+  line-height: 1.28;
+  color: var(--bone);
+  text-wrap: balance;
 }
 
 .title-body {
-  margin: 1.2em 0 0;
+  margin: clamp(8px, 1.4vh, 14px) 0 0;
+  max-width: 38em;
   font-family: var(--serif);
-  font-size: clamp(16px, 1.4vw, 19px);
-  line-height: 1.55;
+  font-size: clamp(15px, min(1.15vw, 2.1vh), 17px);
+  line-height: 1.5;
   color: var(--bone-dim);
+  text-wrap: pretty;
 }
 
-/* Telemetry strip: three compact bordered readouts; labels wrap inside their cell. */
-.telemetry {
+/* Three live readings, written as plain console lines: no boxes, rules or labels in capitals.
+   Each line is short enough never to wrap. */
+.title-facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 1.5em 0 1.9em;
+  gap: 2px;
+  margin: clamp(14px, 2.6vh, 24px) 0 clamp(20px, 3.6vh, 32px);
   padding: 0;
   list-style: none;
-}
-.telemetry li {
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  min-width: 0;
-  padding: 11px 13px 12px;
-  border: 1px solid var(--line);
-  background: rgba(5, 7, 10, 0.5);
-}
-.telemetry strong {
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(19px, 1.7vw, 24px);
-  line-height: 1.1;
-  color: var(--amber);
-  white-space: nowrap;
-}
-.telemetry span {
-  font-size: 9px;
-  line-height: 1.5;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 11px;
+  line-height: 1.6;
   color: var(--bone-dim);
 }
+.title-facts li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.title-facts strong {
+  font-weight: 400;
+  color: var(--bone);
+}
 
-.title-screen .primary {
-  align-self: flex-start;
-  background: rgba(242, 169, 59, 0.14);
-  box-shadow:
-    0 0 26px rgba(242, 169, 59, 0.28),
-    inset 0 0 14px rgba(242, 169, 59, 0.12);
+/* A phone-wide brief has no room for the date beside the clock; the clock stays. */
+@container brief (max-width: 420px) {
+  .title-screen .kicker {
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+  }
+  .title-kicker-date {
+    display: none;
+  }
+}
+
+.title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+}
+
+/* The one lit control on the page: a flat amber block, nothing else glows. */
+.title-screen .title-begin {
+  padding: 1.1em 1.6em;
+  border-color: var(--amber);
+  background: var(--amber);
+  color: var(--ink);
+  font-weight: 500;
+}
+.title-screen .title-begin:hover:not(:disabled) {
+  border-color: #ffc463;
+  background: #ffc463;
+  color: var(--ink);
+  box-shadow: none;
 }
 
 .fine {
@@ -288,6 +332,16 @@ button:disabled {
   font-size: 10px;
   color: var(--bone-dim);
   opacity: 0.75;
+}
+/* The fiction note in a plain, quiet hand. */
+.title-screen .fine {
+  margin: clamp(16px, 2.8vh, 26px) 0 0;
+  max-width: 34em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.45;
+  opacity: 0.8;
 }
 
 /* ---------- Time-lapse ---------- */
@@ -913,15 +967,6 @@ button:disabled {
 }
 
 /* ---------- Flight 73 ---------- */
-
-.subtitle {
-  margin: 0.15em 0 0;
-  font-family: var(--mono);
-  font-size: clamp(14px, 1.4vw, 18px);
-  letter-spacing: 0.5em;
-  text-transform: uppercase;
-  color: var(--amber);
-}
 
 .sr-only {
   position: absolute;
@@ -2248,10 +2293,69 @@ button:disabled {
 
 /* ---------- Small screens: console becomes a bottom sheet ---------- */
 
-@media (max-width: 820px) {
+/* Small landscape windows (and phones on their side): Mars stays on the right, so the brief stays
+   a left column, with the side gutter cut to make room. */
+@media (max-width: 900px) and (min-aspect-ratio: 11/10) {
   .title-screen {
-    background: linear-gradient(0deg, rgba(5, 7, 10, 0.95) 0%, rgba(5, 7, 10, 0.7) 55%, transparent 85%);
+    padding-left: 24px;
+    padding-right: 24px;
   }
+  .title-brief {
+    max-width: 50vw;
+  }
+}
+
+/* Portrait windows: CameraRig frames Mars in the top 45 % whenever aspect ≤ 1.1 (layout.ts
+   LANDSCAPE_ASPECT), so the brief spans the width below it, on a soft dark floor. This follows the
+   camera's aspect rule rather than a width, so the brief never lands on the planet. */
+@media (max-aspect-ratio: 11/10) {
+  .title-screen {
+    padding: 28px 20px max(20px, env(safe-area-inset-bottom));
+    background: linear-gradient(
+      0deg,
+      rgba(5, 7, 10, 0.96) 0%,
+      rgba(5, 7, 10, 0.9) 34%,
+      rgba(5, 7, 10, 0.5) 46%,
+      transparent 56%
+    );
+  }
+  .title-brief {
+    max-width: 100%;
+  }
+  .title-screen .kicker {
+    margin-bottom: 12px;
+  }
+  .title-screen .subtitle {
+    margin-top: 0.6em;
+    font-size: 13px;
+  }
+  .lede {
+    margin-top: 12px;
+    font-size: 19px;
+  }
+  .title-body {
+    margin-top: 8px;
+    font-size: 14.5px;
+    line-height: 1.42;
+  }
+  .title-facts {
+    margin: 12px 0 16px;
+    font-size: 10.5px;
+  }
+  .title-screen .fine {
+    margin-top: 14px;
+    font-size: 12.5px;
+  }
+}
+/* Short portrait screens (small phones): the lede carries the story, so the body steps aside and
+   Mars keeps the top of the screen. */
+@media (max-aspect-ratio: 11/10) and (max-height: 760px) {
+  .title-body {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
   .tl-end {
     left: 16px;
     right: 16px;
