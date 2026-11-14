@@ -4,24 +4,30 @@
 // toward it and out as the camera climbs away. Only the current stop's diorama is mounted; it is
 // built on mount and disposed on unmount. At home, two small callouts point out the damage from
 // flight 72: the end of the broken blade on Ingenuity, and the piece that lies 15 m to the west.
+// The sky follows the real Sun now, or the local solar hour picked on the HUD's sun scrubber
+// (store.siteHour), with any signature effect on top (applySiteFx); live.siteSun carries that Sun
+// to the Lights. At a stop, the machine carries its story hotspots, and the view can be orbited.
 
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { SphereGeometry, SRGBColorSpace, type Fog, type Group, type Mesh } from 'three';
-import { siteSky } from '../astro';
+import { SphereGeometry, SRGBColorSpace, Vector3, type Fog, type Group, type Mesh } from 'three';
+import { siteSky, siteSkyAtHour } from '../astro';
 import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
-import { useApp } from '../store';
+import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { dioramaSunDir, horizonDir, SITE_SCALE, smoothstep } from './layout';
+import { Hotspots } from './Hotspots';
 import { MachineModel } from './MachineModel';
 import { buildBladeFragment, disposeObject } from './models';
 import { live } from './registry';
+import { SiteOrbitInput } from './SiteOrbitInput';
 import { SiteSignature } from './signatures';
+import { applySiteFx } from './signatures/fx';
 import { SitePing } from './SitePing';
 import { applySky, createSkyMaterial } from './skyMaterial';
-import { SITE_PRESETS, siteLayout, skyLook } from './sites';
+import { SITE_PRESETS, siteLayout, skyLook, type SkyLook } from './sites';
 import { buildGround } from './terrain';
 
 /** Sky dome radius, m. */
@@ -34,13 +40,22 @@ export const FOG_OFF: [number, number] = [1000, 2000];
 
 const logLerp = (a: number, b: number, k: number) => Math.exp(Math.log(a) * (1 - k) + Math.log(b) * k);
 
+/** The site's sky before any signature effect, for the real "now" or a picked local solar hour. */
+interface BaseSky {
+  nowMs: number;
+  hour: number | null;
+  look: SkyLook;
+  /** Unit vector toward the Sun, diorama-local. */
+  sun: Vector3;
+}
+
 export function Diorama({ stop }: { stop: MachineId }) {
   const scene = useThree(s => s.scene);
   const preset = SITE_PRESETS[stop];
   const lay = siteLayout(preset);
   const group = useRef<Group>(null);
   const dome = useRef<Mesh>(null);
-  const lookKey = useRef(-1);
+  const base = useRef<BaseSky | null>(null);
 
   const ground = useMemo(() => buildGround(preset, lay), [preset, lay]);
   const skyMat = useMemo(() => createSkyMaterial(), []);
@@ -80,16 +95,26 @@ export function Diorama({ stop }: { stop: MachineId }) {
     g.matrix.copy(live.site.matrix);
     g.matrixWorldNeedsUpdate = true;
 
-    // The site's real sky right now.
-    const nowMs = useApp.getState().nowMs;
-    if (nowMs !== lookKey.current || !live.siteLook) {
-      lookKey.current = nowMs;
+    // The site's sky: the real Sun right now, or the hour picked on the sun scrubber (same
+    // season). Recomputed only when the time or the hour changes; effects are applied every frame.
+    const st = useApp.getState();
+    const hour = st.siteHour;
+    let b = base.current;
+    if (!b || b.nowMs !== st.nowMs || b.hour !== hour) {
       const m = MACHINE_BY_ID[stop];
-      const sky = siteSky('mars', m.lat, m.lon, new Date(nowMs));
-      live.siteLook = skyLook(sky.elevationDeg);
-      applySky(skyMat, live.siteLook, dioramaSunDir(sky.azimuthDeg, sky.elevationDeg));
+      const date = new Date(st.nowMs);
+      const sky = hour === null ? siteSky('mars', m.lat, m.lon, date) : siteSkyAtHour(m.lat, m.lon, hour, date);
+      b = base.current = {
+        nowMs: st.nowMs,
+        hour,
+        look: skyLook(sky.elevationDeg),
+        sun: new Vector3(...dioramaSunDir(sky.azimuthDeg, sky.elevationDeg)),
+      };
     }
-    const look = live.siteLook;
+    const look = applySiteFx(b.look, stop, st.sig);
+    live.siteLook = look;
+    live.siteSun.copy(b.sun).applyQuaternion(live.site.quat).normalize();
+    applySky(skyMat, look, [b.sun.x, b.sun.y, b.sun.z]);
 
     // Fade in with the dive: ground first, then the sky closes in around the camera.
     const w = shot.blend;
@@ -103,8 +128,8 @@ export function Diorama({ stop }: { stop: MachineId }) {
     const fog = scene.fog as Fog | null;
     if (fog) {
       const k = smoothstep(0.45, 0.95, w);
-      fog.near = logLerp(FOG_OFF[0], FOG_NEAR_M * SITE_SCALE, k);
-      fog.far = logLerp(FOG_OFF[1], FOG_FAR_M * SITE_SCALE, k);
+      fog.near = logLerp(FOG_OFF[0], (look.fogNearM ?? FOG_NEAR_M) * SITE_SCALE, k);
+      fog.far = logLerp(FOG_OFF[1], (look.fogFarM ?? FOG_FAR_M) * SITE_SCALE, k);
       fog.color.setRGB(...look.fog, SRGBColorSpace);
     }
   });
@@ -118,6 +143,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
         {stop !== HOME && (
           <group rotation-y={lay.machineYaw} name="machine">
             <MachineModel id={stop} />
+            <Hotspots stop={stop} />
           </group>
         )}
         {fragment && (
@@ -130,7 +156,13 @@ export function Diorama({ stop }: { stop: MachineId }) {
         )}
         <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
         <SiteSignature stop={stop} ground={ground} lay={lay} />
+        {stop === HOME && (
+          <group position={lay.ingenuity}>
+            <Hotspots stop={stop} />
+          </group>
+        )}
       </group>
+      <SiteOrbitInput stop={stop} />
       {stop === HOME && (
         <SiteTag follow>
           Broken rotor tip<span className="marker-label-tag"> · Flight 72</span>
@@ -147,6 +179,9 @@ export function Diorama({ stop }: { stop: MachineId }) {
 function homeTagFade(): number {
   const shot = live.shot;
   if (shot.siteId !== HOME || !live.site.valid) return 0;
+  // At the last stop the story hotspots take over (03 sits on the broken blade).
+  const s = useApp.getState();
+  if (s.phase === 'flight' && s.flight.stage === 'site' && currentStop(s.flight) === HOME) return 0;
   return (
     smoothstep(0.85, 1, shot.blend) *
     (1 - smoothstep(0.02, 0.15, shot.rotor)) *

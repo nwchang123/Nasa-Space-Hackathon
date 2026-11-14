@@ -221,6 +221,46 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
   },
 };
 
+// ---------------------------------------------------------------- story hotspots
+
+/**
+ * Where a story hotspot sits, in the machine's own frame (front = +Z, up = +Y, its right = −X):
+ * `m` in metres, or `box` as fractions of the loaded model's bounding box (x and z −1..1 about the
+ * box centre, y 0..1 from its bottom), for NASA models whose parts are not at known coordinates.
+ */
+export type Spot = { m: Vec3 } | { box: Vec3 };
+
+/**
+ * The four story hotspots on each machine, in story order: 01 Why I came · 02 What I found ·
+ * 03 My last day · 04 Still here. Each sits on a part the story talks about where the model has
+ * one (Spirit's wheels, Phoenix's scoop and arrays, the parachute); otherwise on the body. The
+ * radio call hotspot uses the preset's `antenna`. At home (Ingenuity), 03 follows the broken blade.
+ */
+export const HOTSPOTS: Record<MachineId, [Spot, Spot, Spot, Spot]> = {
+  // Body (the biology lab inside), the sampler-arm side, the far side, a footpad.
+  'viking-1': [{ box: [0, 0.5, 0.2] }, { box: [0.55, 0.3, 0.75] }, { box: [-0.65, 0.62, -0.35] }, { box: [0.8, 0.03, -0.6] }],
+  // Body, the low (tilted) footpad, the far side, the other footpad.
+  'viking-2': [{ box: [0, 0.5, 0.2] }, { box: [0.75, 0.04, 0.65] }, { box: [-0.65, 0.62, -0.35] }, { box: [-0.7, 0.03, 0.6] }],
+  // An airbag, Sojourner, the camera mast (last data), a petal.
+  'pathfinder-sojourner': [{ m: [1.14, 0.3, -0.11] }, { m: [-2.6, 0.38, 0.5] }, { m: [0, 1.22, 0] }, { m: [0, 0.22, -0.85] }],
+  // (The NASA rover model, as placed: about x −0.8…0.9, y 0…1.45, z −0.8…0.9, its arm reaching
+  // forward to z 1.75.) Camera mast, the right-front wheel (the dead one it dragged), a wheel in
+  // the soft soil, the panels.
+  spirit: [{ m: [0.22, 1.36, 0.42] }, { m: [-0.66, 0.1, 0.62] }, { m: [0.72, 0.06, -0.05] }, { m: [0.05, 0.72, -0.55] }],
+  // Camera mast, the arm's rock tools, the dusty panels, a wheel.
+  opportunity: [{ m: [0.22, 1.42, 0.42] }, { m: [0.35, 0.3, 1.55] }, { m: [-0.6, 0.78, -0.25] }, { m: [0.72, 0.12, -0.6] }],
+  // The deck (ovens, lab), the scoop in its trench, the array that lost power, the broken array.
+  phoenix: [{ m: [0.1, 1.15, -0.1] }, { m: [-0.5, 0.32, 1.95] }, { m: [-1.79, 1.12, 0] }, { m: [1.6, 0.9, 0] }],
+  // (NASA model, as placed: deck top ~1.35 m, arrays to x ±3 m, the raised arm at x −1.3…0,
+  // y 1.1…2.1, z 0.7…1.7.) The arm, the instruments on the deck's front edge, a dusty array, the
+  // deck's top (where the laser reflector is).
+  insight: [{ m: [-0.65, 1.95, 1.2] }, { m: [-0.1, 1.28, 0.9] }, { m: [-2.2, 1.22, 0] }, { m: [0.1, 1.4, -0.6] }],
+  // The backshell's top, the parachute, a dent from the impact, the canopy's near edge.
+  'mars2020-edl': [{ m: [-0.14, 1.75, -0.11] }, { m: [-1.5, 0.35, -8.2] }, { m: [1.6, 0.75, 0.9] }, { m: [-1.2, 0.25, -3.6] }],
+  // Ingenuity at the diorama's centre: fuselage, rotor, the broken blade (followed live), solar panel.
+  ingenuity: [{ m: [0.05, 0.2, 0.05] }, { m: [0.42, 0.44, 0.1] }, { m: [-0.5, 0.44, 0] }, { m: [0, 0.56, 0] }],
+};
+
 export interface SiteLayout {
   /** Ingenuity's landing spot, diorama-local (y = 0). */
   ingenuity: Vec3;

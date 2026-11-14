@@ -75,6 +75,19 @@ export function siteSky(world: 'moon' | 'mars', lat: number, lon: number, date: 
   };
 }
 
+/**
+ * Sky at a Mars site at a chosen local true solar time (hours 0–24), with the Sun's declination of
+ * `date` (the season stays real; only the time of day changes). Hour angle = (hour − 12) × 15°,
+ * so the sub-solar longitude is the site's longitude minus that. At the site's real local solar
+ * time this matches siteSky('mars', …) for the same date.
+ */
+export function siteSkyAtHour(lat: number, lon: number, hour: number, date: Date): SiteSky {
+  const h = ((hour % 24) + 24) % 24;
+  const sub: SubPoint = { lat: marsSubSolar(date).lat, lon: wrap180(lon - (h - 12) * 15) };
+  const elevationDeg = sunElevation(sub, lat, lon);
+  return { elevationDeg, azimuthDeg: sunAzimuth(sub, lat, lon), isDay: elevationDeg > 0, localSolarHours: h };
+}
+
 /** Heliocentric ecliptic (J2000) position in AU, or null when no trustworthy model is available. */
 export function heliocentricAU(body: 'earth' | 'mars' | 'ceres' | 'eros', date: Date): [number, number, number] | null {
   const jde = jdTT(date);

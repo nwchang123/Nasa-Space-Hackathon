@@ -1,6 +1,7 @@
 // One sun and one sky light for the whole scene, so the set of lights never changes (no shader
 // recompiles mid-flight). Over the globe they light Ingenuity with the real Sun; at a site they
-// become that site's sky: full sun by day, low and orange near sunset, gone at night with a dim,
+// become that site's sky (the real Sun now, or the hour picked on the sun scrubber: live.siteSun,
+// written by the Diorama): full sun by day, low and orange near sunset, gone at night with a dim,
 // cool sky light so the machine still reads. At night the same light becomes a faint, cool key
 // from high on the Sun's bearing (an artistic choice, like an eye adapted to the dark), so models
 // keep their shape. The sun casts shadows only inside the diorama, and only the real Sun casts a
@@ -54,14 +55,14 @@ export function Lights() {
     const w = shot.siteId && live.site.valid && look ? shot.blend : 0;
 
     if (w > 0 && look && shot.siteId) {
-      // Sun over the site, from the real direction (the same one the sky dome uses).
+      // Sun over the site, from the direction the sky dome shows (real now, or the scrubbed hour).
       const p = live.site.point;
       target.position.copy(p);
-      dir.copy(live.sun);
+      dir.copy(live.siteSun);
       if (look.nightKey > 0) {
         // The Sun's bearing, lifted to 25° above the site's horizon.
         const up = live.site.up;
-        flat.copy(live.sun).addScaledVector(up, -live.sun.dot(up));
+        flat.copy(live.siteSun).addScaledVector(up, -live.siteSun.dot(up));
         if (flat.lengthSq() < 1e-10) flat.set(1, 0, 0).addScaledVector(up, -up.x);
         flat.normalize();
         lifted.copy(flat).multiplyScalar(Math.cos(NIGHT_KEY_ELEV)).addScaledVector(up, Math.sin(NIGHT_KEY_ELEV));

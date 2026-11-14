@@ -4,13 +4,30 @@
 
 import { useGLTF } from '@react-three/drei';
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
-import { MeshStandardMaterial, type Material, type Mesh, type MeshBasicMaterial } from 'three';
+import { MeshStandardMaterial, type Material, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
 import type { MachineId } from '../types';
 import { buildPlaceholder, disposeObject, MODEL_REGISTRY, normalizeModel, type ModelEntry } from './models';
 
+/**
+ * Free GPU resources once `obj` has really left the scene. React StrictMode (dev) runs effect
+ * cleanups once on mount while the object stays on screen; disposing then left the procedural
+ * Pathfinder and Phoenix undrawn. So wait a tick and only dispose if it is detached.
+ */
+function useDisposeWhenDetached(obj: Object3D, dispose: () => void) {
+  useEffect(
+    () => () => {
+      setTimeout(() => {
+        if (!obj.parent) dispose();
+      }, 0);
+    },
+    [obj, dispose],
+  );
+}
+
 function Silhouette({ id }: { id: MachineId }) {
   const obj = useMemo(() => buildPlaceholder(id), [id]);
-  useEffect(() => () => disposeObject(obj), [obj]);
+  const dispose = useMemo(() => () => disposeObject(obj), [obj]);
+  useDisposeWhenDetached(obj, dispose);
   return <primitive object={obj} />;
 }
 
@@ -44,7 +61,8 @@ function NasaModel({ entry }: { entry: ModelEntry & { url: string } }) {
     });
     return { obj: normalizeModel(c, entry.size), owned };
   }, [scene, entry]);
-  useEffect(() => () => owned.forEach(m => m.dispose()), [owned]);
+  const dispose = useMemo(() => () => owned.forEach(m => m.dispose()), [owned]);
+  useDisposeWhenDetached(obj, dispose);
   return <primitive object={obj} />;
 }
 
