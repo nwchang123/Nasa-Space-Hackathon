@@ -181,7 +181,8 @@ button:disabled {
 }
 
 .title-screen > * {
-  max-width: 620px;
+  /* Keeps the text column clear of Mars, which starts at ~60 % of the width. */
+  max-width: min(620px, 48vw);
 }
 
 .kicker {
@@ -628,7 +629,7 @@ button:disabled {
 }
 
 .detail-site {
-  margin: 8px 0 16px;
+  margin: 6px 0 12px;
   font-size: 11px;
   line-height: 1.6;
   color: var(--bone);
@@ -637,8 +638,8 @@ button:disabled {
 .dates {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 16px;
-  margin: 0 0 14px;
+  gap: 6px 16px;
+  margin: 0 0 10px;
 }
 .dates dt,
 .live dt {
@@ -648,7 +649,7 @@ button:disabled {
   color: var(--bone-dim);
 }
 .dates dd {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   font-size: 11.5px;
 }
 
@@ -657,11 +658,11 @@ button:disabled {
   flex-wrap: wrap;
   gap: 6px;
   list-style: none;
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   padding: 0;
 }
 .chips li {
-  padding: 4px 8px;
+  padding: 3px 7px;
   border: 1px solid var(--line);
   border-radius: 2px;
   font-size: 10px;
@@ -669,8 +670,8 @@ button:disabled {
 }
 
 .live {
-  margin: 0 0 16px;
-  padding: 12px 14px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   background: rgba(5, 7, 10, 0.5);
 }
@@ -678,7 +679,7 @@ button:disabled {
   display: grid;
   grid-template-columns: 9.5em 1fr;
   gap: 10px;
-  padding: 4px 0;
+  padding: 3px 0;
 }
 .live-row dd {
   margin: 0;
@@ -1085,13 +1086,13 @@ button:disabled {
 }
 
 .sky-now {
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   font-size: 11px;
   line-height: 1.6;
   color: var(--bone);
 }
 .model-note {
-  margin: -10px 0 18px;
+  margin: -6px 0 12px;
   padding-left: 10px;
   border-left: 1px solid var(--line);
   font-size: 10.5px;
@@ -1144,9 +1145,25 @@ button:disabled {
   opacity: 1;
 }
 
+/* Stays in reach at the bottom of the panel however long the story is. */
 .next-btn {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  background: #080b10;
   opacity: 0;
   animation: fade-up 0.8s ease forwards;
+}
+.next-btn::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: calc(100% + 1px);
+  height: 28px;
+  background: linear-gradient(transparent, rgba(8, 11, 16, 0.95));
+  pointer-events: none;
 }
 
 .epilogue-stats {

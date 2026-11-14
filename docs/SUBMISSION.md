@@ -66,7 +66,7 @@ Screen recording only, no stock footage. Captions on screen, no voice-over requi
 
 ## Checklist before 18:00 on 15 November
 
-- [ ] Deployed to GitHub Pages and opened on a phone and a laptop
+- [ ] Deployed to GitHub Pages and opened in Chrome on a laptop (desktop only; no phone layout planned)
 - [ ] Demo recorded and uploaded
 - [ ] All [TODO] above filled
 - [ ] FACT_CHECK.md has a source for every number shown in the app

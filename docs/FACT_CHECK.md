@@ -167,6 +167,7 @@ Short source keys:
 | Aerial scout for scientists and rover planners (and for engineers studying Perseverance's landing-gear debris) | ING |
 | Last flight 18 Jan 2024; hard landing; rotor blades significantly damaged; mission ended 25 Jan 2024 | ING, INGB, INGX |
 | Final team downlink 16 Apr 2024; stays at Valinor Hills as a stationary testbed | INGB |
+| Site-panel note "can't be called from Earth directly … Perseverance, its base station, relayed messages": Perseverance "serves as a base station for Ingenuity"; the farewell message was sent to Perseverance, which handed it to Ingenuity (checked 14 Nov 2026). Not claimed: whether Perseverance is still in range in 2026. | INGB |
 | `lastContactLabel` "Last team downlink": INGX (Dec 2024) says Ingenuity still beamed weather and avionics data to Perseverance about once a week, so 16 Apr 2024 is not its last signal ever | INGB, INGX |
 | Accident findings expected to benefit future Mars helicopters | INGX |
 | 17.0 km flown; 24.0 m max altitude; 1.8 kg | ING |

@@ -256,6 +256,12 @@ function Site() {
         </button>
       )}
       {machine.noRadio && <p className="channel-note">It never had a radio of its own, so there is nobody to call. It can still tell you its story.</p>}
+      {isHome && (
+        <p className="channel-note">
+          Ingenuity can’t be called from Earth directly. It only ever talked to Perseverance, its base station, which relayed messages to and
+          from Earth.
+        </p>
+      )}
 
       <div ref={storyRef} className="result-anchor">
         {showStory && (

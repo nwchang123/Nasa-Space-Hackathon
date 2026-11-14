@@ -79,18 +79,23 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     frame: { left: -1.9, right: 3.8, height: 2.3 },
     antenna: [-0.35, 1.95, 0.25],
   },
-  // Utopia Planitia: flat and strewn with rocks.
+  // Utopia Planitia: flat and strewn with boulders. Framed unlike Viking 1 on purpose (the two
+  // stops come back to back): from the north-west and higher up, the lander turned the other way
+  // and tilted, Ingenuity on its left.
   'viking-2': {
     ...BASE,
     ground: '#93604a',
     groundDark: '#5e3a28',
     seed: 22,
-    relief: 0.2,
-    rocks: 230,
-    rockSize: 0.3,
-    cameraAz: 165,
-    ingenuity: { right: 3.1, toward: 0.9 },
-    frame: { left: -1.9, right: 3.8, height: 2.3 },
+    relief: 0.12,
+    rocks: 420,
+    rockSize: 0.45,
+    clear: 2.0,
+    cameraAz: 305,
+    cameraElev: 26,
+    yawOffset: 40,
+    ingenuity: { right: -2.7, toward: 1.5 },
+    frame: { left: -3.9, right: 2.0, height: 2.4 },
     antenna: [-0.35, 1.95, 0.25],
   },
   // Ares Vallis, looking south-west toward the Twin Peaks, about a kilometre away.
@@ -297,6 +302,8 @@ export interface SkyLook {
   ambientSky: RGB;
   ambientGround: RGB;
   ambientIntensity: number;
+  /** 0 by day → 1 at night: weight of a faint cool key light that keeps machines' shape readable. */
+  nightKey: number;
   /** How much of the starfield shows through, 0..1. */
   stars: number;
   /** Sky dome opacity: 1 by day, low at night so the stars show. */
@@ -328,6 +335,7 @@ export function skyLook(elevationDeg: number): SkyLook {
     // Night stays readable: dim, cool light, as if the eye had adapted (an artistic choice; the
     // console states the real Sun elevation).
     ambientIntensity: 0.75 + 0.75 * day + 0.45 * night,
+    nightKey: 1 - smoothstep(-3, 5, elevationDeg),
     stars,
     domeOpacity: 1 - 0.82 * stars,
     fog: horizon,

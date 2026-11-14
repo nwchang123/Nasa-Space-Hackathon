@@ -57,7 +57,9 @@ const VIKING: ModelEntry = { url: modelUrl('viking-lander.glb'), size: { height:
 
 export const MODEL_REGISTRY: Record<MachineId, ModelEntry> = {
   'viking-1': VIKING,
-  'viking-2': VIKING,
+  // Viking 2 came to rest tilted 8.5° (docs/FACT_CHECK.md, viking-2); the direction of the tilt is
+  // illustrative. Lifted a little so the low footpad stays on the ground.
+  'viking-2': { ...VIKING, pose: { sink: -0.2, tilt: [0.06, 0, 0.136] } },
   'pathfinder-sojourner': { illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'] },
   spirit: {
     url: modelUrl('mer.glb'),

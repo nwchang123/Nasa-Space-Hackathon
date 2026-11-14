@@ -1,11 +1,13 @@
 // One sun and one sky light for the whole scene, so the set of lights never changes (no shader
 // recompiles mid-flight). Over the globe they light Ingenuity with the real Sun; at a site they
 // become that site's sky: full sun by day, low and orange near sunset, gone at night with a dim,
-// cool sky light so the machine still reads. The sun casts shadows only inside the diorama.
+// cool sky light so the machine still reads. At night the same light becomes a faint, cool key
+// from high on the Sun's bearing (an artistic choice, like an eye adapted to the dark), so models
+// keep their shape. The sun casts shadows only inside the diorama.
 
 import { useFrame } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { Color, Object3D, SRGBColorSpace, type DirectionalLight, type HemisphereLight } from 'three';
+import { Color, Object3D, SRGBColorSpace, Vector3, type DirectionalLight, type HemisphereLight } from 'three';
 import { SITE_SCALE } from './layout';
 import { live } from './registry';
 import { SITE_PRESETS } from './sites';
@@ -14,6 +16,13 @@ const GLOBE_SUN = new Color('#ffeedd');
 const GLOBE_SKY = new Color('#a7b4c8');
 const GLOBE_GROUND = new Color('#3a2418');
 const tmp = new Color();
+const NIGHT_KEY_COLOR = new Color('#9db2db');
+/** Night key intensity (the day Sun is 3.2). */
+const NIGHT_KEY = 0.35;
+const NIGHT_KEY_ELEV = 40 * (Math.PI / 180);
+const dir = new Vector3();
+const flat = new Vector3();
+const lifted = new Vector3();
 
 export function Lights() {
   const sun = useRef<DirectionalLight>(null);
@@ -33,7 +42,17 @@ export function Lights() {
       // Sun over the site, from the real direction (the same one the sky dome uses).
       const p = live.site.point;
       target.position.copy(p);
-      s.position.copy(p).addScaledVector(live.sun, 80 * SITE_SCALE);
+      dir.copy(live.sun);
+      if (look.nightKey > 0) {
+        // The Sun's bearing, lifted to 40° above the site's horizon.
+        const up = live.site.up;
+        flat.copy(live.sun).addScaledVector(up, -live.sun.dot(up));
+        if (flat.lengthSq() < 1e-10) flat.set(1, 0, 0).addScaledVector(up, -up.x);
+        flat.normalize();
+        lifted.copy(flat).multiplyScalar(Math.cos(NIGHT_KEY_ELEV)).addScaledVector(up, Math.sin(NIGHT_KEY_ELEV));
+        dir.lerp(lifted, look.nightKey).normalize();
+      }
+      s.position.copy(p).addScaledVector(dir, 80 * SITE_SCALE);
       const preset = SITE_PRESETS[shot.siteId];
       const key = shot.siteId;
       if (key !== lastBounds.current) {
@@ -49,8 +68,10 @@ export function Lights() {
         cam.updateProjectionMatrix();
         s.shadow.normalBias = 0.02 * SITE_SCALE;
       }
-      s.intensity = 2.6 * (1 - w) + look.sunIntensity * w;
-      s.color.copy(GLOBE_SUN).lerp(tmp.setRGB(...look.sunColor, SRGBColorSpace), w);
+      const nightKey = NIGHT_KEY * look.nightKey;
+      s.intensity = 2.6 * (1 - w) + (look.sunIntensity + nightKey) * w;
+      tmp.setRGB(...look.sunColor, SRGBColorSpace).lerp(NIGHT_KEY_COLOR, nightKey / Math.max(1e-6, look.sunIntensity + nightKey));
+      s.color.copy(GLOBE_SUN).lerp(tmp, w);
       h.color.copy(GLOBE_SKY).lerp(tmp.setRGB(...look.ambientSky, SRGBColorSpace), w);
       h.groundColor.copy(GLOBE_GROUND).lerp(tmp.setRGB(...look.ambientGround, SRGBColorSpace), w);
       h.intensity = 0.9 * (1 - w) + look.ambientIntensity * w;
