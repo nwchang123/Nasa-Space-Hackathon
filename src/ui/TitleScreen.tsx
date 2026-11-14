@@ -34,7 +34,7 @@ export function TitleScreen() {
       </p>
       <p className="title-body reveal" style={{ animationDelay: '1s' }}>
         In January 2024 the first aircraft on another world broke its rotor blades and never flew again. Imagine it lifting off
-        one last time, to visit the NASA machines whose work on Mars is done, and then fly home.
+        one last time, to visit the NASA landers and rovers whose work on Mars is done, and then fly home.
       </p>
       <ul className="telemetry reveal" style={{ animationDelay: '1.25s' }} aria-label="Flight 73 at a glance">
         <li>

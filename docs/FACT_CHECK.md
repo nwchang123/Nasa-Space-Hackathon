@@ -19,6 +19,15 @@ nasa.gov and JPL pages were used instead.
 - Flight 73 itself is fiction. The UI says so on the title screen and in the footer
   (`FICTION_NOTE`). Nothing below is about the imagined flight; it is about the real facts it
   passes.
+- **Who is on the route.** The title screen, README, submission and page description say Flight 73
+  visits "the NASA landers and rovers whose work on Mars is done". That set is complete: Viking 1
+  and 2, Mars Pathfinder with Sojourner, Spirit, Opportunity, Phoenix and InSight are all stops
+  (plus Perseverance's backshell and parachute, and Ingenuity's own home). Mars Polar Lander and
+  the Deep Space 2 probes were lost on arrival in 1999 and never worked on the surface ⚠.
+  Curiosity and Perseverance are not stops because they are still working: NASA says both are
+  "still operational" as of 11 Oct 2026, and that Curiosity "remains hard at work" (PERSREC,
+  checked 14 Nov 2026). The earlier wording, "every NASA machine that reached Mars before it",
+  was dropped on 14 Nov 2026 because Curiosity reached Mars before Ingenuity and is not a stop.
 
 Short source keys:
 
@@ -49,6 +58,7 @@ Short source keys:
 | ING | https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/ |
 | INGB | https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasas-ingenuity-mars-helicopter-team-says-goodbye-for-now/ |
 | INGX | https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasa-performs-first-aircraft-accident-investigation-on-another-world/ |
+| PERSREC | https://science.nasa.gov/blogs/perseverance-mars-rover/2026/10/12/nasas-perseverance-sets-off-world-record-for-total-distance-driven/ |
 
 ## The nine stops (`src/data/machines.ts`)
 

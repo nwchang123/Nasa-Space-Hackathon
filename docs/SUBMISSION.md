@@ -8,7 +8,7 @@ Still Here: Flight 73
 
 ## High-level summary
 
-Ingenuity, the first aircraft on another world, flew 72 times on Mars before a broken rotor blade grounded it for good in January 2024. *Still Here: Flight 73* imagines the one flight it never got to make. Starting from its resting place in Jezero crater, Ingenuity flies about 53,000 km across Mars to visit every NASA machine that reached the planet before it, in the order they arrived, and then flies home. At each stop the abandoned machine tells its own story (why it came, what it found, how its last day went and what its work still does today) and Ingenuity names what it inherited from it. The flight is fiction; every machine, place and date is real, and each distance is measured between the machines' recorded resting places. Mars is lit by the Sun's real position at this moment, each site shows its real local solar time, and radio calls from Earth wait on tonight's real Earth–Mars light time before the silence comes back. The result turns hardware that most people think of as junk into a chain of inheritance that runs from Viking in 1976 to the helicopters NASA plans to send next.
+Ingenuity, the first aircraft on another world, flew 72 times on Mars before a broken rotor blade grounded it for good in January 2024. *Still Here: Flight 73* imagines the one flight it never got to make. Starting from its resting place in Jezero crater, Ingenuity flies about 53,000 km across Mars to visit the NASA landers and rovers whose work on Mars is done, in the order they arrived, and then flies home. At each stop the abandoned machine tells its own story (why it came, what it found, how its last day went and what its work still does today) and Ingenuity names what it inherited from it. The flight is fiction; every machine, place and date is real, and each distance is measured between the machines' recorded resting places. Mars is lit by the Sun's real position at this moment, each site shows its real local solar time, and radio calls from Earth wait on tonight's real Earth–Mars light time before the silence comes back. The result turns hardware that most people think of as junk into a chain of inheritance that runs from Viking in 1976 to the helicopters NASA plans to send next.
 
 ## Links
 
@@ -58,7 +58,7 @@ Screen recording only, no stock footage. Captions on screen, no voice-over requi
 |---|---|---|
 | 0–4 s | Title screen, Mars turning, Ingenuity at Jezero | Ingenuity flew 72 times on Mars. |
 | 4–8 s | Prologue: the broken blade, "Lift off" pressed | This is the flight it never got to make. |
-| 8–13 s | Flying: route line across the globe, odometer running | 53,000 km to visit every NASA machine that came before it. |
+| 8–13 s | Flying: route line across the globe, odometer running | 53,000 km to every NASA lander and rover whose work on Mars is done. |
 | 13–18 s | Arrival at Opportunity, site lit by the real current Sun | Every machine, place and date is real. Even the light. |
 | 18–23 s | Radio call: signal meter, real light time, silence | Calls from Earth take tonight's real light time. Nothing answers. |
 | 23–27 s | Inheritance line, then the flight log and postcard | Each one handed something on. |

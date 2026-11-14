@@ -4,7 +4,7 @@
 
 NASA Space Apps Challenge 2026 · *Abandoned but not Forgotten: Storytelling about NASA's Discarded Equipment on the Moon and Mars*
 
-In January 2024, Ingenuity — the first aircraft on another world — broke its rotor blades on its 72nd flight and never flew again. In *Still Here: Flight 73*, it imagines one more flight: from its resting place in Jezero crater to every NASA machine that reached Mars before it, in the order they arrived, and then home. At each stop the machine tells its own story: why it came, what it found, how its last day went and what its work still does today. Then Ingenuity says what it inherited from it.
+In January 2024, Ingenuity — the first aircraft on another world — broke its rotor blades on its 72nd flight and never flew again. In *Still Here: Flight 73*, it imagines one more flight: from its resting place in Jezero crater to the NASA landers and rovers whose work on Mars is done, in the order they arrived, and then home. At each stop the machine tells its own story: why it came, what it found, how its last day went and what its work still does today. Then Ingenuity says what it inherited from it.
 
 > Flight 73 never happened. Every machine, place and date on the way is real.
 
