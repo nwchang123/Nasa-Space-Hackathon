@@ -335,11 +335,17 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
   // No ripples in the mesh: its vertices are 1.875 m apart (GROUND_SIZE / GROUND_SEGMENTS), too
   // coarse for 1.7 m ripples, which used to alias into false, ruler-straight stripes about 5 m
   // apart. The ripples live in the detail normal map (groundDetail), which can carry them.
+  // Patterned ground (Phoenix) is drawn in the mesh, so there the mesh is three times finer
+  // (0.625 m) and each trough about a metre and a half wide, a clearly darker groove a dozen
+  // centimetres deep: on the 1.875 m grid the half-metre troughs fell mostly between vertices, and
+  // at half that tone the network was lost in the sand's own mottling.
+  const segments = p.polygons > 0 ? GROUND_SEGMENTS * 3 : GROUND_SEGMENTS;
+  const trough = (x: number, z: number) => (p.polygons > 0 ? 1 - smoothstep(0.15, 0.9, polygonEdge(x, z, p.polygons, p.seed)) : 0);
   const heightAt = (x: number, z: number) => {
     const f = flatness(x, z);
     let h = p.relief * 2 * (fbm(x / 12, z / 12, p.seed) - 0.5);
     h += p.relief * 0.7 * (fbm(x / 3, z / 3, p.seed + 7) - 0.5);
-    if (p.polygons > 0) h -= 0.06 * (1 - smoothstep(0.05, 0.4, polygonEdge(x, z, p.polygons, p.seed)));
+    if (p.polygons > 0) h -= 0.12 * trough(x, z);
     // Flatten after adding the hills: a big hill's foot reaches the clearing (Jezero's rim added
     // ~0.2 m there) and would bury anything lying flat on the ground, like the parachute.
     for (const hill of hills) h += hill.h * Math.exp(-((x - hill.x) ** 2 + (z - hill.z) ** 2) / hill.r2);
@@ -347,18 +353,19 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
   };
 
   // ---- the ground
-  const geom = new PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS).rotateX(-Math.PI / 2);
+  const geom = new PlaneGeometry(GROUND_SIZE, GROUND_SIZE, segments, segments).rotateX(-Math.PI / 2);
   const pos = geom.getAttribute('position');
   const colors = new Float32Array(pos.count * 3);
   const base = new Color(p.ground);
   const dark = new Color(p.groundDark);
   const light = new Color(p.ground).lerp(new Color('#e3c7a4'), 0.25);
+  const troughTone = new Color(p.groundDark).multiplyScalar(0.8);
   const c = new Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i);
     pos.setY(i, heightAt(x, z));
     c.copy(base).lerp(dark, smoothstep(0.38, 0.78, fbm(x / 9, z / 9, p.seed + 11)));
-    if (p.polygons > 0) c.lerp(dark, 0.55 * (1 - smoothstep(0.05, 0.45, polygonEdge(x, z, p.polygons, p.seed))));
+    if (p.polygons > 0) c.lerp(troughTone, 0.75 * trough(x, z));
     // Rippled sand: broad, irregular patches of paler crest sand (the crests themselves are in the
     // detail maps), never stripes the vertex grid cannot draw.
     if (p.ripples > 0) c.lerp(light, 0.22 * smoothstep(0.45, 0.8, fbm(x / 6, z / 6, p.seed + 3)));

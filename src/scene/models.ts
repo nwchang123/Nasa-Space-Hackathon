@@ -9,6 +9,7 @@ import {
   Box3,
   BoxGeometry,
   BufferGeometry,
+  CanvasTexture,
   CircleGeometry,
   Color,
   CylinderGeometry,
@@ -25,6 +26,7 @@ import {
   Quaternion,
   RingGeometry,
   SphereGeometry,
+  SRGBColorSpace,
   Vector3,
   Object3D,
   type Material,
@@ -582,6 +584,50 @@ function phoenixArm(): Group {
   return arm;
 }
 
+let goreMap: CanvasTexture | null = null;
+
+/**
+ * The canopy's gore pattern as a texture on the ring's own UVs (RingGeometry maps the flat ring
+ * across the unit square), with the same rule as the vertex colours: 80 gores, bands every 2.1 m.
+ * Each pixel takes the colour at its own point, so the gore edges stay crisp; mipmaps keep them
+ * clean from afar. Built once and shared.
+ */
+function goreTexture(outer: number, orange: Color, white: Color): CanvasTexture | null {
+  if (goreMap) return goreMap;
+  // No DOM (unit tests): the canopy keeps its vertex colours.
+  if (typeof document === 'undefined') return null;
+  const N = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = N;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const img = ctx.createImageData(N, N);
+  const rgb = (c: Color) => [(c.getHex() >> 16) & 255, (c.getHex() >> 8) & 255, c.getHex() & 255];
+  const [o, w] = [rgb(orange), rgb(white)];
+  for (let r = 0; r < N; r++) {
+    // Canvas row 0 is the top of the texture (v = 1).
+    const yRing = (2 * (1 - (r + 0.5) / N) - 1) * outer;
+    for (let c = 0; c < N; c++) {
+      const x = (2 * ((c + 0.5) / N) - 1) * outer;
+      const z = -yRing; // the ring is turned flat with rotateX(-90°): its +Y becomes -Z
+      const th = Math.atan2(z, x);
+      const gore = Math.floor(((th + Math.PI) / (Math.PI * 2)) * 80);
+      const band = Math.min(3, Math.floor(Math.hypot(x, z) / 2.1));
+      const px = (gore * 7 + band * 3) % 5 < 2 ? o : w;
+      const i = (r * N + c) * 4;
+      img.data[i] = px[0];
+      img.data[i + 1] = px[1];
+      img.data[i + 2] = px[2];
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  goreMap = new CanvasTexture(canvas);
+  goreMap.colorSpace = SRGBColorSpace;
+  goreMap.anisotropy = 8;
+  return goreMap;
+}
+
 /** Perseverance's backshell, upright and dented, with the 21.5 m parachute spread out behind it. */
 function backshellAndChute(): Group {
   const r = rng(2021);
@@ -631,7 +677,14 @@ function backshellAndChute(): Group {
   }
   geom.setAttribute('color', new Float32BufferAttribute(colors, 3));
   geom.computeVertexNormals();
-  const chute = new Mesh(geom, new MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, side: DoubleSide }));
+  // The gores are drawn from a texture, not the vertex colours: 80 gores on a 96-segment ring cannot
+  // be coloured per vertex without their edges smearing into zigzags. The geometry (and its colour
+  // attribute) stays exactly as it was, for the decode overlay and the story anchors.
+  const gores = goreTexture(chuteR, orange, white);
+  const chute = new Mesh(
+    geom,
+    new MeshStandardMaterial({ map: gores, vertexColors: gores === null, roughness: 0.92, metalness: 0, side: DoubleSide }),
+  );
   chute.name = 'parachute';
   chute.position.set(-1.5, 0, -8.2);
   chute.rotation.y = 0.12;
