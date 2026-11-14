@@ -172,6 +172,9 @@ button:disabled {
   inset: 0;
   /* Only the text column takes the pointer; the rest reaches the globe (hover labels). */
   pointer-events: none;
+  /* Dragging across the globe or the text must not paint the copy blue. */
+  -webkit-user-select: none;
+  user-select: none;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -1081,6 +1084,9 @@ button:disabled {
   inset: 0;
   z-index: 3;
   pointer-events: none;
+  /* Orbiting a site or dragging a slider must not paint the panels' text blue. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 .hud.with-card {
   --dock-left: max(calc(var(--card-w) + 2 * var(--hud-gap)), calc(50% - var(--dock-max) / 2));
@@ -1142,8 +1148,10 @@ button:disabled {
   display: grid;
   justify-items: center;
   gap: 7px;
-  max-width: 100%;
-  padding: 2px 4px 0;
+  /* A long name may spill a little into its neighbours' columns (theirs are short) rather than
+     being cut to "OPPORTUNI…": the flex item stays centred on its dot as it overflows. */
+  flex: none;
+  padding: 2px 2px 0;
   background: none;
   border: 0;
   color: var(--bone-dim);
@@ -1161,14 +1169,23 @@ button:disabled {
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .hud-route .stop-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   transition: color 0.15s ease;
+}
+/* Narrower desktops: tighter tracking, so "5 · OPPORTUNITY" fits its own column. */
+@media (max-width: 1280px) {
+  .hud-route .stop-name {
+    letter-spacing: 0.05em;
+  }
+}
+
+/* The ?fps meter (drei <Stats>, inline-styled at top left) sits below the route bar instead. */
+.fps-meter {
+  top: 96px !important;
+  left: clamp(16px, 3vw, 40px) !important;
 }
 .hud-route .hop:not(:disabled):hover .dot,
 .hud-route .hop:focus-visible .dot {

@@ -67,7 +67,7 @@ export default function Stage() {
       <color attach="background" args={['#05070a']} />
       <fog attach="fog" args={['#05070a', FOG_OFF[0], FOG_OFF[1]]} />
       <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => setDpr(fullDpr())} flipflops={3} onFallback={() => setDpr(1)} />
-      {SHOW_FPS && <Stats />}
+      {SHOW_FPS && <Stats className="fps-meter" />}
       <Scene />
     </Canvas>
   );

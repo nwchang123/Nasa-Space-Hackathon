@@ -18,7 +18,9 @@ export function Hud() {
   const leg = useApp(s => s.flight.leg);
   useBoostKeys();
 
-  const cardId = stage === 'site' ? MACHINE_IDS[leg] : stage === 'flying' ? null : HOME;
+  // The site card shows only on the ground: at home before lift-off, and at each stop. In flight
+  // and in the epilogue (the camera back over the whole globe) the view stays clear.
+  const cardId = stage === 'site' ? MACHINE_IDS[leg] : stage === 'prologue' ? HOME : null;
   return (
     <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}`}>
       <NavcamOverlay />
