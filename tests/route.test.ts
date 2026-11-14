@@ -55,7 +55,8 @@ describe('Flight 73 route', () => {
   it('times longer legs longer, within limits', () => {
     expect(flyDurationMs(0)).toBe(2500);
     expect(flyDurationMs(5)).toBeLessThan(2600);
-    expect(flyDurationMs(9647)).toBe(9000);
+    expect(flyDurationMs(9647)).toBeLessThanOrEqual(9000);
+    expect(flyDurationMs(20_000)).toBe(9000);
     expect(flyDurationMs(3000)).toBeGreaterThan(flyDurationMs(1000));
   });
 });
