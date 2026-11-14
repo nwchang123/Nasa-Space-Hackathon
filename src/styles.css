@@ -1,0 +1,4 @@
+/* STUB: replaced by the console UI. */
+html, body, #root { height: 100%; margin: 0; background: #05070a; color: #e9e4d8; }
+.app { height: 100%; }
+.stage { position: fixed; inset: 0; }

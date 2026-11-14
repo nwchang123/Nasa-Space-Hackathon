@@ -1,0 +1,82 @@
+// The roll call. STUB: three sample entries; the full 18 replace this file.
+// Order and ids must match MACHINE_IDS in ../types.ts.
+
+import type { Machine } from '../types';
+
+export const MACHINES: Machine[] = [
+  {
+    id: 'apollo-11',
+    name: 'Apollo 11 · Eagle descent stage',
+    shortName: 'Apollo 11',
+    world: 'moon',
+    kind: 'Lander',
+    site: 'Tranquility Base, Mare Tranquillitatis',
+    lat: 0.674,
+    lon: 23.473,
+    launched: '1969-07-16',
+    arrived: '1969-07-20',
+    lastContact: '1969-08-25',
+    plannedLife: 'About 3 weeks (seismometer)',
+    actualLife: 'Seismometer about 3 weeks; reflector still in use',
+    reflector: true,
+    story: {
+      why: 'Placeholder.',
+      found: 'Placeholder.',
+      lastDay: 'Placeholder.',
+      stillHere: 'Placeholder.',
+    },
+    facts: ['Placeholder'],
+    sources: [{ label: 'NSSDCA', url: 'https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-059C' }],
+  },
+  {
+    id: 'opportunity',
+    name: 'Opportunity rover',
+    shortName: 'Opportunity',
+    world: 'mars',
+    kind: 'Rover',
+    site: 'Perseverance Valley, Endeavour crater rim',
+    lat: -2.2,
+    lon: -5.4,
+    approxPosition: true,
+    launched: '2003-07-07',
+    arrived: '2004-01-25',
+    lastContact: '2018-06-10',
+    plannedLife: '90 sols',
+    actualLife: 'About 14½ years',
+    reflector: false,
+    story: {
+      why: 'Placeholder.',
+      found: 'Placeholder.',
+      lastDay: 'Placeholder.',
+      stillHere: 'Placeholder.',
+    },
+    facts: ['Placeholder'],
+    sources: [{ label: 'NASA Science', url: 'https://science.nasa.gov/mission/mars-exploration-rovers-spirit-and-opportunity/' }],
+  },
+  {
+    id: 'pioneer-10',
+    name: 'Pioneer 10',
+    shortName: 'Pioneer 10',
+    world: 'deep',
+    kind: 'Probe',
+    site: 'Leaving the solar system',
+    deepAnchor: 'outbound',
+    headingEclipticLon: 70,
+    launched: '1972-03-03',
+    arrived: '1972-03-03',
+    lastContact: '2003-01-23',
+    plannedLife: '21 months',
+    actualLife: 'Nearly 31 years',
+    reflector: false,
+    story: {
+      why: 'Placeholder.',
+      found: 'Placeholder.',
+      lastDay: 'Placeholder.',
+      stillHere: 'Placeholder.',
+    },
+    facts: ['Placeholder'],
+    sources: [{ label: 'NASA Science', url: 'https://science.nasa.gov/mission/pioneer-10/' }],
+  },
+];
+
+export const MACHINE_BY_ID: Record<string, Machine> = Object.fromEntries(MACHINES.map(m => [m.id, m]));
