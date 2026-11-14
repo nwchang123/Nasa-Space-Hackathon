@@ -68,6 +68,19 @@ export function playSilence() {
   src.start();
 }
 
+// ---- Version 3 cues (stubs: the prologue/flight builder fills these in; callers may use them now)
+
+/** Rotor motor spinning up over `ms` (rising whine). */
+export function playSpinUp(_ms: number) {}
+/** Rotor fault: a short alarm and the whine winding down. */
+export function playFault() {}
+/** A low rumble (InSight's marsquake pulse). */
+export function playQuake() {}
+/** A camera shutter click. */
+export function playShutter() {}
+/** A soft scanning tone over `ms` (Viking 1's first photo). */
+export function playScan(_ms: number) {}
+
 /** A reflector answered. */
 export function playEcho() {
   tone(1318.5, 0, 0.5, 0.06);

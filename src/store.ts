@@ -1,5 +1,6 @@
-// App state shared by the 3D scene and the console UI.
-// The scene READS everything here and WRITES only hover().
+// App state shared by the 3D scene and the HUD.
+// The scene READS everything here and WRITES only hover(), setStory() (3D hotspots),
+// requestCall() (the antenna hotspot) and addBoost() (the Director, while boost is held).
 
 import { create } from 'zustand';
 import { HOME, LEGS, hop } from './flight/route';
@@ -39,6 +40,23 @@ export interface Ping {
   result: 'silent' | null;
 }
 
+/** Story sections at a site, in order: 01 Why I came · 02 What I found · 03 My last day · 04 Still here. */
+export type StorySection = 0 | 1 | 2 | 3;
+export const STORY_KEYS = ['why', 'found', 'lastDay', 'stillHere'] as const;
+
+/**
+ * The prologue at home, as the visitor plays it:
+ * 'ready' (spin-up button) → 'spinning' (rotor speeds up) → 'fault' (stalls, alarm, spins down)
+ * → 'imagine' (the line that turns to fiction, and the lift-off button).
+ */
+export type PrologueStep = 'ready' | 'spinning' | 'fault' | 'imagine';
+
+/** Flight camera: third-person chase, or Ingenuity's black-and-white downward navigation camera. */
+export type CamMode = 'chase' | 'navcam';
+
+/** Speed while boost is held (× real flight time). */
+export const BOOST_FACTOR = 2.5;
+
 export interface AppState {
   phase: Phase;
   flight: FlightState;
@@ -52,6 +70,23 @@ export interface AppState {
   /** Stops whose radio call went unanswered. */
   called: Partial<Record<MachineId, true>>;
   ping: Ping | null;
+  /** Story section shown at a site. Reset to 0 on every arrival. */
+  story: StorySection;
+  /** Local solar hour (0–24) picked on the site card's sun scrubber, or null for the real "now". */
+  siteHour: number | null;
+  /**
+   * The current site's signature actions (see src/data/signatures.ts), by key: a toggle is 0/1, a
+   * slider its value, a button the Date.now() it was pressed. Cleared on every arrival and take-off.
+   */
+  sig: Record<string, number>;
+  prologue: { step: PrologueStep; at: number };
+  camMode: CamMode;
+  /** Boost held (Space or the boost button) while flying. */
+  boost: boolean;
+  /** Extra flight time banked by boost in this stage, ms. See stageElapsed(). */
+  boostMs: number;
+  /** Date.now() of the latest "Call from Earth" request from a 3D hotspot (the HUD starts the call). */
+  callRequest: number;
 
   setPhase(phase: Phase): void;
   startFlight(): void;
@@ -64,9 +99,30 @@ export interface AppState {
   startPing(ping: Omit<Ping, 'result'>): void;
   resolvePing(): void;
   reset(): void;
+  setStory(i: StorySection): void;
+  setSiteHour(h: number | null): void;
+  setSig(key: string, value: number): void;
+  setPrologue(step: PrologueStep): void;
+  setCamMode(m: CamMode): void;
+  setBoost(on: boolean): void;
+  /** Bank extra flight time (called every frame by the Director while boost is held and flying). */
+  addBoost(ms: number): void;
+  requestCall(): void;
+}
+
+/**
+ * Time into the current stage, ms, including time banked by boost. Everything that times a
+ * stage (the HUD odometer and arrival, the choreographer, the camera) must use this, not
+ * Date.now() - stageStartedAt, so boost speeds them all up together.
+ */
+export function stageElapsed(s: Pick<AppState, 'flight' | 'boostMs'>, now = Date.now()): number {
+  return now - s.flight.stageStartedAt + s.boostMs;
 }
 
 const IDLE: FlightState = { leg: -1, stage: 'prologue', from: HOME, stageStartedAt: 0, flyMs: 0 };
+
+/** Per-stage state, cleared whenever the stage changes (take-off, arrival, home). */
+const FRESH_STAGE = { story: 0 as StorySection, siteHour: null, sig: {}, boost: false, boostMs: 0 };
 
 /** Where we are standing (home before take-off and after landing back), or null while flying. */
 export function standingAt(f: FlightState): MachineId | null {
@@ -89,26 +145,55 @@ export const useApp = create<AppState>(set => ({
   visited: {},
   called: {},
   ping: null,
+  ...FRESH_STAGE,
+  prologue: { step: 'ready', at: 0 },
+  camMode: 'chase',
+  callRequest: 0,
 
   setPhase: phase => set({ phase }),
   startFlight: () =>
-    set({ phase: 'flight', flight: { ...IDLE, stageStartedAt: Date.now() }, flownKm: 0, visited: {}, called: {}, ping: null }),
-  flyTo: (leg, flyMs, from = LEGS[leg].from) => set({ flight: { leg, stage: 'flying', from, stageStartedAt: Date.now(), flyMs }, ping: null }),
+    set({
+      phase: 'flight',
+      flight: { ...IDLE, stageStartedAt: Date.now() },
+      flownKm: 0,
+      visited: {},
+      called: {},
+      ping: null,
+      ...FRESH_STAGE,
+      prologue: { step: 'ready', at: Date.now() },
+      camMode: 'chase',
+    }),
+  flyTo: (leg, flyMs, from = LEGS[leg].from) =>
+    set({ flight: { leg, stage: 'flying', from, stageStartedAt: Date.now(), flyMs }, ping: null, ...FRESH_STAGE }),
   arrive: () =>
     set(state => {
       const id = currentStop(state.flight);
       return {
+        ...FRESH_STAGE,
         flight: { ...state.flight, stage: 'site', stageStartedAt: Date.now() },
         flownKm: state.flight.stage === 'flying' ? state.flownKm + hop(state.flight.from, state.flight.leg).distanceKm : state.flownKm,
         visited: id ? { ...state.visited, [id]: true } : state.visited,
       };
     }),
   toEpilogue: () =>
-    set(state => ({ flight: { leg: MACHINE_IDS.length, stage: 'epilogue', from: state.flight.from, stageStartedAt: Date.now(), flyMs: 0 }, ping: null })),
+    set(state => ({
+      flight: { leg: MACHINE_IDS.length, stage: 'epilogue', from: state.flight.from, stageStartedAt: Date.now(), flyMs: 0 },
+      ping: null,
+      ...FRESH_STAGE,
+    })),
   hover: id => set({ hoverId: id }),
   tick: nowMs => set({ nowMs }),
   startPing: ping => set({ ping: { ...ping, result: null } }),
   resolvePing: () =>
     set(state => (state.ping ? { ping: { ...state.ping, result: 'silent' }, called: { ...state.called, [state.ping.id]: true } } : {})),
-  reset: () => set({ phase: 'title', flight: IDLE, hoverId: null, flownKm: 0, visited: {}, called: {}, ping: null }),
+  reset: () =>
+    set({ phase: 'title', flight: IDLE, hoverId: null, flownKm: 0, visited: {}, called: {}, ping: null, ...FRESH_STAGE, camMode: 'chase' }),
+  setStory: story => set({ story }),
+  setSiteHour: siteHour => set({ siteHour }),
+  setSig: (key, value) => set(state => ({ sig: { ...state.sig, [key]: value } })),
+  setPrologue: step => set({ prologue: { step, at: Date.now() } }),
+  setCamMode: camMode => set({ camMode }),
+  setBoost: boost => set({ boost }),
+  addBoost: ms => set(state => ({ boostMs: state.boostMs + ms })),
+  requestCall: () => set({ callRequest: Date.now() }),
 }));

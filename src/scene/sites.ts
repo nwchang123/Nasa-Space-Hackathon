@@ -310,6 +310,9 @@ export interface SkyLook {
   /** Sky dome opacity: 1 by day, low at night so the stars show. */
   domeOpacity: number;
   fog: RGB;
+  /** Haze distances, m (default: the Diorama's 25 / 110). Signature effects may pull them in. */
+  fogNearM?: number;
+  fogFarM?: number;
 }
 
 const DAY = { zenith: hex('#a67d5a'), horizon: hex('#d6b089'), glow: hex('#f2dcc0') };

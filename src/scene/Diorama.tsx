@@ -18,6 +18,7 @@ import { dioramaSunDir, horizonDir, SITE_SCALE, smoothstep } from './layout';
 import { MachineModel } from './MachineModel';
 import { buildBladeFragment, disposeObject } from './models';
 import { live } from './registry';
+import { SiteSignature } from './signatures';
 import { SitePing } from './SitePing';
 import { applySky, createSkyMaterial } from './skyMaterial';
 import { SITE_PRESETS, siteLayout, skyLook } from './sites';
@@ -115,7 +116,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
         <primitive object={ground.rocks} />
         <mesh ref={dome} geometry={domeGeom} material={skyMat} renderOrder={-0.5} frustumCulled={false} visible={false} />
         {stop !== HOME && (
-          <group rotation-y={lay.machineYaw}>
+          <group rotation-y={lay.machineYaw} name="machine">
             <MachineModel id={stop} />
           </group>
         )}
@@ -128,6 +129,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
           </>
         )}
         <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
+        <SiteSignature stop={stop} ground={ground} lay={lay} />
       </group>
       {stop === HOME && (
         <SiteTag follow>

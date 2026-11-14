@@ -49,4 +49,15 @@ export const live = {
   },
   /** The end of Ingenuity's broken blade (an empty inside its rig, turning with the rotor), or null. */
   brokenTip: null as Object3D | null,
+  /**
+   * Visitor's orbit around the machine at a site, applied by the CameraRig on top of the site pose:
+   * az (radians, about the site's up), el (radians, added pitch), zoom (× distance). Written by the
+   * site orbit input; 0/0/1 = the composed shot. Reset when the site changes.
+   */
+  siteOrbit: { az: 0, el: 0, zoom: 1 },
+  /**
+   * The Sun as the diorama shows it, world space: the real Sun now, or the hour picked on the sun
+   * scrubber. Written by the Diorama (valid only while a diorama is in use); Lights uses it there.
+   */
+  siteSun: new Vector3(0, 1, 0),
 };
