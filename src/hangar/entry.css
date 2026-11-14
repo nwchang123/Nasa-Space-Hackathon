@@ -1,0 +1,41 @@
+/* The ways into the AR hangar, and the globe hidden behind it (it pauses there, untouched). */
+
+/* Title screen: a quiet underlined text link beside Begin Flight 73 (styles.css .title-actions
+   lays the pair out), so the amber button stays the only lit control. */
+.title-actions .hangar-entry {
+  padding: 0.95em 0.15em;
+  border-color: transparent;
+  background: none;
+  color: var(--bone-dim);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-decoration: underline;
+  text-decoration-color: rgba(169, 163, 151, 0.36);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+.title-actions .hangar-entry:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--bone);
+  text-decoration-color: var(--bone);
+}
+
+.app[data-phase='hangar'] > .stage,
+.app[data-phase='hangar'] > .vignette,
+.app[data-phase='hangar'] > .grain {
+  visibility: hidden;
+}
+
+/* While the hangar's own code loads. */
+.hangar-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--ghost);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}

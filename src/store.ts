@@ -2,12 +2,22 @@
 // The scene READS everything here and WRITES only hover(), setStory() (3D hotspots),
 // requestCall() (the antenna hotspot), addBoost() (the Director, while boost is held), setFocus()
 // (hotspots, signature actions and the free flight at a site) and addSnapshot() (the scout camera).
+// The AR hangar (src/hangar) keeps its own store; here it is only a phase to open and close.
 
 import { create } from 'zustand';
 import { HOME, LEGS, hop } from './flight/route';
 import { MACHINE_IDS, type MachineId } from './types';
 
-export type Phase = 'title' | 'flight' | 'report';
+/** 'hangar': the AR hangar, opened over any other phase, which it leaves exactly as it was. */
+export type Phase = 'title' | 'flight' | 'report' | 'hangar';
+
+/** The address fragment that opens the AR hangar directly (its QR code points there). */
+export const HANGAR_HASH = '#hangar';
+
+/** A visitor who opens the hangar's link lands in it, without the globe loading behind. */
+function initialPhase(): Phase {
+  return typeof window !== 'undefined' && window.location.hash === HANGAR_HASH ? 'hangar' : 'title';
+}
 
 /**
  * Where we are on Flight 73:
@@ -91,6 +101,8 @@ export const ALBUM_MAX = 24;
 
 export interface AppState {
   phase: Phase;
+  /** The phase the hangar returns to. */
+  hangarFrom: Exclude<Phase, 'hangar'>;
   flight: FlightState;
   hoverId: MachineId | null;
   /** Wall-clock time used for live lighting (Date.now()), refreshed every 30 s. */
@@ -133,6 +145,10 @@ export interface AppState {
   album: AlbumShot[];
 
   setPhase(phase: Phase): void;
+  /** Open the AR hangar over the current phase (the flight's state is left untouched). */
+  openHangar(): void;
+  /** Back to where the hangar was opened from. */
+  closeHangar(): void;
   startFlight(): void;
   /** Fly to MACHINE_IDS[leg]; `from` defaults to the planned leg's start. */
   flyTo(leg: number, flyMs: number, from?: MachineId): void;
@@ -196,7 +212,8 @@ export function currentStop(f: FlightState): MachineId | null {
 }
 
 export const useApp = create<AppState>(set => ({
-  phase: 'title',
+  phase: initialPhase(),
+  hangarFrom: 'title',
   flight: IDLE,
   hoverId: null,
   nowMs: Date.now(),
@@ -213,6 +230,8 @@ export const useApp = create<AppState>(set => ({
   album: [],
 
   setPhase: phase => set({ phase }),
+  openHangar: () => set(s => (s.phase === 'hangar' ? {} : { phase: 'hangar', hangarFrom: s.phase })),
+  closeHangar: () => set(s => (s.phase === 'hangar' ? { phase: s.hangarFrom } : {})),
   startFlight: () =>
     set({
       phase: 'flight',

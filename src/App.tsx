@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useApp } from './store';
 import { Hud } from './ui/hud/Hud';
 import { Report } from './ui/Report';
@@ -6,23 +6,35 @@ import { TitleScreen } from './ui/TitleScreen';
 import { useLiveClock } from './ui/useClock';
 
 const Stage = lazy(() => import('./scene/Stage'));
+const Hangar = lazy(() => import('./hangar/Hangar'));
 
 export default function App() {
   const phase = useApp(s => s.phase);
   useLiveClock();
+  // Someone who opens the hangar's link (a phone, from its QR code) never needs the globe: the
+  // Stage mounts the first time any other phase shows, and then stays (paused under the hangar).
+  const [stageOn, setStageOn] = useState(phase !== 'hangar');
+  if (!stageOn && phase !== 'hangar') setStageOn(true);
 
   return (
     <div className="app" data-phase={phase}>
-      <div className="stage" aria-hidden={phase === 'report'}>
-        <Suspense fallback={<div className="stage-loading">Spinning up the rotors…</div>}>
-          <Stage />
-        </Suspense>
+      <div className="stage" aria-hidden={phase === 'report' || phase === 'hangar'}>
+        {stageOn && (
+          <Suspense fallback={<div className="stage-loading">Spinning up the rotors…</div>}>
+            <Stage />
+          </Suspense>
+        )}
       </div>
       <div className="vignette" aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
       {phase === 'title' && <TitleScreen />}
       {phase === 'flight' && <Hud />}
       {phase === 'report' && <Report />}
+      {phase === 'hangar' && (
+        <Suspense fallback={<div className="hangar-loading">Opening the hangar…</div>}>
+          <Hangar />
+        </Suspense>
+      )}
     </div>
   );
 }

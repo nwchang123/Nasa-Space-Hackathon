@@ -6,6 +6,7 @@
 import { OrbitControls, PerformanceMonitor, Stats } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useEffect, useState } from 'react';
+import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { CameraRig } from './CameraRig';
 import { Diorama, FOG_OFF } from './Diorama';
@@ -54,6 +55,8 @@ const fullDpr = () => Math.min(2, typeof window !== 'undefined' ? window.deviceP
 export default function Stage() {
   // Sharp on capable screens; drops to 1× when the frame rate falls, so slow laptops stay smooth.
   const [dpr, setDpr] = useState(fullDpr);
+  // Paused, not unmounted, under the AR hangar: Flight 73 resumes exactly where it was left.
+  const paused = useApp(s => s.phase === 'hangar');
   useEffect(() => () => {
     document.body.style.cursor = '';
   }, []);
@@ -62,6 +65,7 @@ export default function Stage() {
     <Canvas
       flat
       shadows
+      frameloop={paused ? 'never' : 'always'}
       dpr={dpr}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 1.2, 13], fov: 40, near: 0.01, far: 80 }}

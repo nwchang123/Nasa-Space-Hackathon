@@ -2,6 +2,7 @@ import { marsLocalSolarTime, signalPath } from '../astro';
 import { FICTION_NOTE } from '../data/flight';
 import { MACHINE_BY_ID } from '../data/machines';
 import { LEGS, TOTAL_KM } from '../flight/route';
+import { HangarButton } from '../hangar/HangarEntry';
 import { useApp } from '../store';
 import { formatDuration, formatKm, formatSolarTime } from './callPlan';
 import { useUtcClock } from './useClock';
@@ -52,6 +53,7 @@ export function TitleScreen() {
           <button type="button" className="primary title-begin" onClick={startFlight}>
             Begin Flight 73
           </button>
+          <HangarButton place="title" />
         </div>
       </div>
 
