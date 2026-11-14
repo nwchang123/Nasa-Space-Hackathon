@@ -27,12 +27,30 @@ const KEY_STEP = 5;
 const PAGE_STEP = 45;
 /** The blade fragment lies 15 m west of Ingenuity at home: face west to see it beyond the helicopter. */
 const FRAGMENT_HEADING = 270;
+/** Marks closer than this, degrees, would print their numbers on top of each other: every other one is raised a row. */
+const STAGGER_DEG = 12;
 
 interface Mark {
   key: string;
   heading: number;
   num: string;
   label: string;
+  /** Raised a row, clear of a neighbour's number. */
+  alt?: boolean;
+}
+
+/** Raise every other mark of a run of marks that sit within STAGGER_DEG of each other (also across north). */
+function stagger(marks: Mark[]): Mark[] {
+  const sorted = [...marks].sort((a, b) => a.heading - b.heading);
+  sorted.forEach((m, i) => {
+    const prev = sorted[i - 1];
+    m.alt = !!prev && Math.abs(headingDelta(prev.heading, m.heading)) < STAGGER_DEG && !prev.alt;
+  });
+  // Across north: the last mark and the first one may also be neighbours.
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (sorted.length > 2 && !first.alt && !last.alt && Math.abs(headingDelta(last.heading, first.heading)) < STAGGER_DEG) last.alt = true;
+  return sorted;
 }
 
 const inv = new Matrix4();
@@ -74,7 +92,7 @@ function measureMarks(stop: MachineId): Mark[] {
     if (heading === null || Math.abs(headingDelta(composed, heading)) < BACK_SIDE_DEG) continue;
     marks.push({ key: `hs:${i}`, heading, num: String(i + 1).padStart(2, '0'), label: STORY_LABELS[i] });
   }
-  return marks;
+  return stagger(marks);
 }
 
 export function BearingBar() {
@@ -121,7 +139,7 @@ export function BearingBar() {
           el.style.bottom = `${Math.round(window.innerHeight - r.top + 10)}px`;
         }
         const found = measureMarks(s);
-        const key = found.map(m => `${m.key}@${Math.round(m.heading / 3)}`).join('|');
+        const key = found.map(m => `${m.key}@${Math.round(m.heading / 3)}${m.alt ? '^' : ''}`).join('|');
         if (key !== lastKey) {
           lastKey = key;
           marksRef.current = found;
@@ -229,7 +247,7 @@ export function BearingBar() {
                 if (el) markEls.current.set(m.key, el);
                 else markEls.current.delete(m.key);
               }}
-              className="brg-mark"
+              className={`brg-mark${m.alt ? ' brg-mark-alt' : ''}`}
               style={{ left: `${(m.heading / 360) * 100}%` }}
               title={`${m.num === '◆' ? '' : `${m.num} `}${m.label} · seen from behind`}
               aria-label={`Turn to ${m.label}`}
@@ -249,11 +267,11 @@ export function BearingBar() {
         <span className="brg-hint-icon" aria-hidden="true">
           ◎
         </span>{' '}
-        360° · drag the view or this bar · double-click: wide view
+        360° · drag view or bar · double-click: wide view
         {marks.length > 0 && (
           <>
             {' · '}
-            <span className="brg-legend-dot" aria-hidden="true" /> {stop === HOME ? 'something lies off to one side' : 'detail on the side or back'}
+            <span className="brg-legend-dot" aria-hidden="true" /> {stop === HOME ? 'something off to one side' : 'side or back detail'}
           </>
         )}
       </p>

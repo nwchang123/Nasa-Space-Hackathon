@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLOSE_UP_MAX_M, CLOSE_UP_MIN_M, closeUpDistance, closeUpPose, PAIR_FAR_M, PAIR_NEAR_M, pairView, pairWeight, pickTarget } from '../src/scene/siteFocus';
+import { CLOSE_UP_ELEV, CLOSE_UP_MAX_M, CLOSE_UP_MIN_M, closeUpDistance, closeUpPose, PAIR_FAR_M, PAIR_NEAR_M, pairView, pairWeight, pickTarget, wideCloseUp } from '../src/scene/siteFocus';
 
 const dist3 = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
@@ -113,5 +113,31 @@ describe('scout camera target', () => {
     const mid = pairWeight((PAIR_FAR_M + PAIR_NEAR_M) / 2);
     expect(mid).toBeGreaterThan(0.4);
     expect(mid).toBeLessThan(0.6);
+  });
+});
+
+describe('wide close-ups (the parachute)', () => {
+  it('stands well back from the parachute, for its hotspot and for the decode action', () => {
+    for (const key of ['hs:1', 'sig:decode']) {
+      const w = wideCloseUp('mars2020-edl', key);
+      expect(w).not.toBeNull();
+      expect(w!.dist).toBeGreaterThan(CLOSE_UP_MAX_M * 3);
+      expect(w!.elev).toBeGreaterThan(CLOSE_UP_ELEV);
+      expect(w!.toward).toBeGreaterThan(0);
+      expect(w!.toward).toBeLessThan(1);
+    }
+  });
+
+  it('leaves every other close-up as it was', () => {
+    expect(wideCloseUp('mars2020-edl', 'hs:0')).toBeNull();
+    expect(wideCloseUp('spirit', 'hs:1')).toBeNull();
+  });
+
+  it('raises the camera by the elevation it is given', () => {
+    const steep = closeUpPose([0, 0, 0], [0, 0, 5], [0, 0, -10], 10, 0, null, 0.8);
+    const usual = closeUpPose([0, 0, 0], [0, 0, 5], [0, 0, -10], 10, 0);
+    expect(steep.position[1]).toBeCloseTo(10 * Math.sin(0.8), 6);
+    expect(usual.position[1]).toBeCloseTo(10 * Math.sin(CLOSE_UP_ELEV), 6);
+    expect(dist3(steep.position, steep.target)).toBeCloseTo(10, 6);
   });
 });

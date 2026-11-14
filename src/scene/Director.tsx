@@ -1,7 +1,8 @@
 // Runs first every frame: asks the Choreographer for the shot, applies the reduced-motion dip,
 // turns the globe, and works out the world-space frames everyone else needs (the site diorama's
 // placement on the globe, Ingenuity on its arc, Ingenuity at rest at home). Tells the stage which
-// diorama to mount, and preloads the next stop's model as soon as a flight toward it begins.
+// diorama to mount, and warms the models likely to be needed next (the first stop before lift-off;
+// at a stop the next one and both neighbours; the destination as soon as a flight toward it begins).
 // While boost is held during a flight it banks extra flight time (store.addBoost), so the shot,
 // the odometer and the arrival all speed up together, and Ingenuity leans further forward.
 
@@ -14,7 +15,7 @@ import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
 import { latLonToVec3 } from '../geo';
 import { BOOST_FACTOR, useApp } from '../store';
-import type { MachineId } from '../types';
+import { MACHINE_IDS, type MachineId } from '../types';
 import { useThrottle } from '../ui/throttle';
 import { Choreographer, type Shot } from './choreo';
 import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE, titleSunOffsetDeg } from './layout';
@@ -34,6 +35,8 @@ const SWAY_RAD = 0.35;
 const SWAY_RATE = 0.12;
 /** How quickly the globe settles onto the lit view, 1/s. */
 const SETTLE_RATE = 1.4;
+/** At most one model starts loading in the background per this long, ms (each is 0.3–2.5 MB). */
+const WARM_GAP_MS = 1500;
 
 const sig = (s: Shot) => `${s.siteId ?? ''}|${s.blend > 0.5 ? 1 : 0}|${s.globeShot}`;
 
@@ -72,6 +75,16 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
   const sunKey = useRef(-1);
   const started = useRef(false);
   const boostK = useRef(0);
+  const lastWarm = useRef(0);
+
+  /** Start loading a stop's model if nobody has yet. True if this call started it. */
+  const warm = (id: MachineId): boolean => {
+    const url = MODEL_REGISTRY[id].url;
+    if (!url || preloaded.current.has(url)) return false;
+    preloaded.current.add(url);
+    useGLTF.preload(url, false, true);
+    return true;
+  };
 
   useFrame((_, delta) => {
     let s = useApp.getState();
@@ -166,13 +179,21 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
       live.arc.alt = arcAltitude(arc.p, arc.distanceKm);
       live.arc.valid = true;
 
-      // Fetch the destination's model while we fly (the silhouette shows if it is not ready).
-      const url = MODEL_REGISTRY[arc.to].url;
-      if (url && !preloaded.current.has(url)) {
-        preloaded.current.add(url);
-        useGLTF.preload(url, false, true);
-      }
+      // Fetch the destination's model while we fly, if it is not warm yet.
+      warm(arc.to);
     } else live.arc.valid = false;
+
+    // Begin on the title, before the first dive. During a flight warm the destination's next
+    // neighbour too; at a stop warm both adjacent stops and the following route leg.
+    if (now - lastWarm.current > WARM_GAP_MS && (s.phase === 'title' || s.phase === 'flight')) {
+      const leg = s.phase === 'title' || s.flight.stage === 'prologue' ? -1 : s.flight.leg;
+      for (const i of [leg, leg + 1, leg - 1, leg + 2]) {
+        if (i >= 0 && i < MACHINE_IDS.length && warm(MACHINE_IDS[i])) {
+          lastWarm.current = now;
+          break;
+        }
+      }
+    }
 
     if (cur.siteId !== mounted.current) {
       mounted.current = cur.siteId;

@@ -10,8 +10,8 @@
 
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { SphereGeometry, SRGBColorSpace, Vector3, type Fog, type Group, type Mesh } from 'three';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { SphereGeometry, SRGBColorSpace, Vector3, type Fog, type Group, type Mesh, type Object3D } from 'three';
 import { siteSky, siteSkyAtHour } from '../astro';
 import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
@@ -33,15 +33,24 @@ import { SitePing } from './SitePing';
 import { applySky, createSkyMaterial } from './skyMaterial';
 import { SITE_PRESETS, siteLayout, skyLook, type SkyLook } from './sites';
 import { buildGround } from './terrain';
+import { SITE_FADE, SITE_SKY_RADIUS_M } from './siteTransition';
 
-/** Sky dome radius, m. */
-const DOME_R = 140;
 /** Haze over the site, m. */
 const FOG_NEAR_M = 25;
 const FOG_FAR_M = 110;
 /** Fog distances while no diorama is in view: beyond everything. */
 export const FOG_OFF: [number, number] = [1000, 2000];
+/** A model that finishes loading after the dive has begun fades in over this long, ms. */
+const MODEL_IN_MS = 600;
+/** A light haze for the middle of the dive, m: the patch of ground and the machine come up out of it. */
+const FOG_DIVE_M: [number, number] = [260, 1400];
 
+/**
+ * How the site comes in with the dive (blend 0 = on the globe, 1 = landed) and goes out with the
+ * climb. All of it rises together, so nothing shows bare: the haze thickens from the start; the
+ * sky closes in as the camera enters it; the round ground and then the machine emerge through
+ * that atmosphere. The same curves run backwards on departure.
+ */
 const logLerp = (a: number, b: number, k: number) => Math.exp(Math.log(a) * (1 - k) + Math.log(b) * k);
 
 /** The site's sky before any signature effect, for the real "now" or a picked local solar hour. */
@@ -59,11 +68,19 @@ export function Diorama({ stop }: { stop: MachineId }) {
   const lay = siteLayout(preset);
   const group = useRef<Group>(null);
   const dome = useRef<Mesh>(null);
+  const machine = useRef<Group>(null);
+  const machineFade = useRef({ k: -1 });
+  // When the machine's model came in (it fades in over MODEL_IN_MS if that was late, not pops).
+  const modelAt = useRef(0);
+  const onModelReady = useCallback(() => {
+    modelAt.current = performance.now();
+    machineFade.current.k = -1;
+  }, []);
   const base = useRef<BaseSky | null>(null);
 
   const ground = useMemo(() => buildGround(preset, lay), [preset, lay]);
   const skyMat = useMemo(() => createSkyMaterial(), []);
-  const domeGeom = useMemo(() => new SphereGeometry(DOME_R, 48, 24), []);
+  const domeGeom = useMemo(() => new SphereGeometry(SITE_SKY_RADIUS_M, 48, 24), []);
   // At home, the piece of blade that broke off lies about 15 m away (to the west here).
   const fragment = useMemo(() => {
     if (stop !== HOME) return null;
@@ -120,20 +137,26 @@ export function Diorama({ stop }: { stop: MachineId }) {
     live.siteSun.copy(b.sun).applyQuaternion(live.site.quat).normalize();
     applySky(skyMat, look, [b.sun.x, b.sun.y, b.sun.z]);
 
-    // Fade in with the dive: ground first, then the sky closes in around the camera.
+    // Fade in with the dive (and out with the climb), all together: see SITE_FADE.
     const w = shot.blend;
-    const groundFade = smoothstep(0.02, 0.5, w);
-    for (const mat of ground.materials) mat.opacity = groundFade;
+    const fade = (r: readonly [number, number]) => smoothstep(r[0], r[1], w);
+    const groundFade = fade(SITE_FADE.ground);
+    ground.setFade(groundFade, fade(SITE_FADE.edge));
     ground.ground.visible = ground.rocks.visible = groundFade > 0.001;
-    const domeFade = smoothstep(0.55, 0.95, w);
+    const domeFade = fade(SITE_FADE.dome);
     skyMat.uniforms.opacity.value = look.domeOpacity * domeFade;
     if (dome.current) dome.current.visible = domeFade > 0.001;
+    const modelIn = modelAt.current ? smoothstep(0, MODEL_IN_MS, performance.now() - modelAt.current) : 1;
+    if (machine.current) fadeMachine(machine.current, fade(SITE_FADE.machine) * modelIn, machineFade.current);
 
     const fog = scene.fog as Fog | null;
     if (fog) {
-      const k = smoothstep(0.45, 0.95, w);
-      fog.near = logLerp(FOG_OFF[0], (look.fogNearM ?? FOG_NEAR_M) * SITE_SCALE, k);
-      fog.far = logLerp(FOG_OFF[1], (look.fogFarM ?? FOG_FAR_M) * SITE_SCALE, k);
+      const haze = fade(SITE_FADE.haze);
+      const k = fade(SITE_FADE.fog);
+      const near = logLerp(FOG_OFF[0], FOG_DIVE_M[0] * SITE_SCALE, haze);
+      const far = logLerp(FOG_OFF[1], FOG_DIVE_M[1] * SITE_SCALE, haze);
+      fog.near = logLerp(near, (look.fogNearM ?? FOG_NEAR_M) * SITE_SCALE, k);
+      fog.far = logLerp(far, (look.fogFarM ?? FOG_FAR_M) * SITE_SCALE, k);
       fog.color.setRGB(...look.fog, SRGBColorSpace);
     }
   });
@@ -146,7 +169,9 @@ export function Diorama({ stop }: { stop: MachineId }) {
         <mesh ref={dome} geometry={domeGeom} material={skyMat} renderOrder={-0.5} frustumCulled={false} visible={false} />
         {stop !== HOME && (
           <group rotation-y={lay.machineYaw} name="machine">
-            <MachineModel id={stop} />
+            <group ref={machine}>
+              <MachineModel id={stop} onReady={onModelReady} />
+            </group>
             <Hotspots stop={stop} />
           </group>
         )}
@@ -179,6 +204,39 @@ export function Diorama({ stop }: { stop: MachineId }) {
       )}
     </>
   );
+}
+
+/**
+ * Fade the machine in with the dive (and out with the climb) to `k` of its own opacity. Each
+ * material dithers (alpha hash), so the model never needs transparency sorting against itself,
+ * and casts no shadow until it is fully there; at 1 everything is back as it was. The machine
+ * owns its materials (MachineModel clones them), so the shared model cache is never touched.
+ * Applied again whenever `k` changes, which also catches a model that loaded mid-fade.
+ */
+function fadeMachine(obj: Object3D, k: number, last: { k: number }) {
+  const kk = k >= 0.999 ? 1 : k <= 0.001 ? 0 : Math.round(k * 200) / 200;
+  if (kk === last.k) return;
+  last.k = kk;
+  obj.traverse(o => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    const u = mesh.userData as { fadeCast?: boolean };
+    if (u.fadeCast === undefined) u.fadeCast = mesh.castShadow;
+    mesh.castShadow = kk >= 1 ? u.fadeCast : false;
+    for (const mat of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const d = mat.userData as { fadeOpacity?: number; fadeHash?: boolean };
+      if (d.fadeOpacity === undefined) {
+        d.fadeOpacity = mat.opacity;
+        d.fadeHash = mat.alphaHash;
+      }
+      const hash = kk < 1 || !!d.fadeHash;
+      if (mat.alphaHash !== hash) {
+        mat.alphaHash = hash;
+        mat.needsUpdate = true;
+      }
+      mat.opacity = d.fadeOpacity * kk;
+    }
+  });
 }
 
 /**

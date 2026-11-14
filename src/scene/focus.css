@@ -88,6 +88,12 @@
 .fx-reticle.nudge .fx-lock {
   color: var(--bone, #e9e4d8);
 }
+/* In the Scout Cam, the label goes to the side of the reticle away from the viewfinder's
+   crosshair (the middle of the screen), so the crosshair never runs through it. */
+.fx-reticle.label-up .fx-lock {
+  top: auto;
+  bottom: calc(100% + 16px);
+}
 
 @keyframes fx-spin {
   to {

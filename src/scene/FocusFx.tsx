@@ -26,6 +26,7 @@ import { useReducedMotion } from './useReducedMotion';
 import './focus.css';
 
 const LABELS = ['Why I came', 'What I found', 'My last day', 'Still here'];
+const labelNdc = new Vector3();
 
 function focusKey(): string | null {
   const f = useApp.getState().focus;
@@ -44,13 +45,17 @@ export function FocusReticle({ stop }: { stop: MachineId }) {
   const el = useRef<HTMLDivElement>(null);
   const focus = useApp(s => s.focus);
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     const key = focusKey();
     const p = key ? live.targets.get(key) : undefined;
     const on = !!p && settled(stop);
     if (p && group.current) group.current.position.copy(p);
     // Every frame: a new focus remounts the element (key), which then locks on from larger.
     el.current?.classList.toggle('on', on);
+    // In the Scout Cam the viewfinder's crosshair sits in the middle of the screen: with the
+    // reticle above the middle, its label goes above it too (below it otherwise), away from the cross.
+    const up = on && !!p && useApp.getState().scoutCam && labelNdc.copy(p).project(camera).y > 0;
+    el.current?.classList.toggle('label-up', up);
   });
 
   const label =

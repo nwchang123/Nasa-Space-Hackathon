@@ -28,6 +28,39 @@ import type { SiteLayout, SitePreset } from './sites';
 /** Side of the square of ground, m. The fog hides its edges. */
 export const GROUND_SIZE = 180;
 const GROUND_SEGMENTS = 96;
+/**
+ * The ground's soft round edge, m from the centre: [inner, outer] radius of the fade to clear.
+ * During the dive (seen from high up) the patch melts into the globe instead of showing a square;
+ * once landed it opens slightly but always ends inside the square's 90 m half-width.
+ */
+export const EDGE_DIVE: [number, number] = [50, 88];
+export const EDGE_LANDED: [number, number] = [65, 89];
+
+/**
+ * Add the soft round edge to a ground or rock material: its alpha falls to 0 between uEdge.x and
+ * uEdge.y metres from the diorama's centre (rocks by their instance position). Chains any earlier
+ * onBeforeCompile, as the signature effects do.
+ */
+function addSoftEdge(mat: MeshStandardMaterial, edge: { value: Vector2 }) {
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    prev.call(mat, shader, renderer);
+    shader.uniforms.uEdge = edge;
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying float vEdgeR;').replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+      vec4 edgeP = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        edgeP = instanceMatrix * edgeP;
+      #endif
+      vEdgeR = length(edgeP.xz);`,
+    );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec2 uEdge;\nvarying float vEdgeR;')
+      .replace('#include <alphamap_fragment>', '#include <alphamap_fragment>\ndiffuseColor.a *= 1.0 - smoothstep(uEdge.x, uEdge.y, vEdgeR);');
+  };
+  mat.customProgramCacheKey = () => 'ground-soft-edge';
+}
 
 function hash(ix: number, iz: number, seed: number): number {
   let h = (ix * 374761393 + iz * 668265263 + seed * 144269) | 0;
@@ -244,6 +277,12 @@ export interface Ground {
   rocks: Group;
   /** The two materials that fade in with the dive. */
   materials: MeshStandardMaterial[];
+  /**
+   * Fade the ground and rocks in (`fade`, 0..1) and open the soft edge out (`landed`: 0 = the dive's
+   * round patch, 1 = only the far corners). Once both are complete the materials turn opaque, so
+   * the landed site draws without transparency sorting; any less and they are blended again.
+   */
+  setFade(fade: number, landed: number): void;
   /** Ground height at a diorama-local point, m. */
   heightAt(x: number, z: number): number;
   dispose(): void;
@@ -389,6 +428,7 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
       roughness: 1,
       metalness: 0,
       transparent: true,
+      depthWrite: false,
     }),
   );
   ground.receiveShadow = true;
@@ -403,7 +443,7 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     ...Array.from({ length: ROCK_SHAPES }, (_, i) => rockGeometry(p.seed * 101 + i * 7 + 1, 10, bare, dust)),
     ...Array.from({ length: ROCK_SHAPES }, (_, i) => rockGeometry(p.seed * 131 + i * 11 + 3, 4, bare, dust)),
   ];
-  const rockMat = new MeshStandardMaterial({ roughness: 0.92, metalness: 0, vertexColors: true, transparent: true });
+  const rockMat = new MeshStandardMaterial({ roughness: 0.92, metalness: 0, vertexColors: true, transparent: true, depthWrite: false });
   const perShape = Math.max(1, Math.ceil(p.rocks / ROCK_SHAPES));
   const shapes = rockGeoms.map(g => {
     const im = new InstancedMesh(g, rockMat, perShape);
@@ -455,10 +495,32 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     if (im.instanceColor) im.instanceColor.needsUpdate = true;
   }
 
+  const materials = [ground.material as MeshStandardMaterial, rockMat];
+  const edge = { value: new Vector2(...EDGE_DIVE) };
+  for (const mat of materials) addSoftEdge(mat, edge);
+  let opaque = false;
+
   return {
     ground,
     rocks,
-    materials: [ground.material as MeshStandardMaterial, rockMat],
+    materials,
+    setFade(fade, landed) {
+      const k = Math.min(1, Math.max(0, landed));
+      edge.value.set(EDGE_DIVE[0] + (EDGE_LANDED[0] - EDGE_DIVE[0]) * k, EDGE_DIVE[1] + (EDGE_LANDED[1] - EDGE_DIVE[1]) * k);
+      const settled = fade >= 0.999;
+      for (const mat of materials) mat.opacity = settled ? 1 : fade;
+      if (settled !== opaque) {
+        opaque = settled;
+        for (const mat of materials) {
+          mat.transparent = !settled;
+          // Opaque rendering still needs coverage at the radial edge. Alpha hash discards
+          // coverage before Three's OPAQUE chunk forces the surviving fragments' alpha to 1.
+          mat.alphaHash = settled;
+          mat.depthWrite = settled;
+          mat.needsUpdate = true;
+        }
+      }
+    },
     heightAt,
     dispose() {
       geom.dispose();

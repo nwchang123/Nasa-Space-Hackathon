@@ -18,6 +18,36 @@ export function closeUpDistance(machineRadiusM: number): number {
   return clamp(0.5 * machineRadiusM + 0.9, CLOSE_UP_MIN_M, CLOSE_UP_MAX_M);
 }
 
+/** A close-up that needs more room than the machine's size gives it (see WIDE_CLOSE_UPS). */
+export interface WideCloseUp {
+  /** Camera distance from the aim point, m. */
+  dist: number;
+  /** Camera elevation above the aim point, radians. */
+  elev: number;
+  /** How far the aim moves from the part back toward the machine (the diorama's origin), 0..1. */
+  toward: number;
+}
+
+/**
+ * Close-ups of a part that lies on something big and flat. Perseverance's parachute is 21.5 m
+ * across: from the usual 1.5–3 m its orange-and-white canopy fills the screen with nothing to
+ * judge it by. So the camera stands back and looks down more steeply, aiming part of the way
+ * back toward the backshell, and the canopy's pattern, the backshell and the ground around it
+ * share the frame. Keyed by stop, then by the live.targets key of the focus.
+ */
+export const WIDE_CLOSE_UPS: Partial<Record<string, Record<string, WideCloseUp>>> = {
+  'mars2020-edl': {
+    'hs:1': { dist: 25, elev: 0.8, toward: 0.4 },
+    'hs:3': { dist: 25, elev: 0.8, toward: 0.4 },
+    'sig:decode': { dist: 25, elev: 0.8, toward: 0.4 },
+  },
+};
+
+/** The wide close-up for this stop's focus target (e.g. 'hs:1', 'sig:decode'), if it has one. */
+export function wideCloseUp(stop: string, key: string): WideCloseUp | null {
+  return WIDE_CLOSE_UPS[stop]?.[key] ?? null;
+}
+
 /** Ingenuity joins the close-up's framing as it comes within PAIR_FAR_M of the part, fully by PAIR_NEAR_M. */
 export const PAIR_NEAR_M = 1.8;
 export const PAIR_FAR_M = 3.2;
@@ -55,7 +85,7 @@ export function pairView(part: Vec3, flyer: Vec3, centre: Vec3, from: Vec3): [nu
  * A close-up of `part`: the camera `dist` m away, raised by CLOSE_UP_ELEV, on the outside of the
  * machine (away from `centre`) and leaning toward the side the camera is on now (`from`), so the
  * move in is short and does not swing round through the machine; or from the given `side`
- * (horizontal, toward the camera). Never below `minY`.
+ * (horizontal, toward the camera). Never below `minY`. `elev` raises the camera above the part.
  */
 export function closeUpPose(
   part: Vec3,
@@ -64,6 +94,7 @@ export function closeUpPose(
   dist: number,
   minY: number,
   side: [number, number] | null = null,
+  elev = CLOSE_UP_ELEV,
 ): { position: Vec3; target: Vec3 } {
   const out = flat(part[0] - centre[0], part[2] - centre[2]);
   const toCam = flat(from[0] - part[0], from[2] - part[2]);
@@ -78,8 +109,8 @@ export function closeUpPose(
   }
   dx /= l;
   dz /= l;
-  const h = Math.cos(CLOSE_UP_ELEV) * dist;
-  const y = Math.max(part[1] + Math.sin(CLOSE_UP_ELEV) * dist, minY);
+  const h = Math.cos(elev) * dist;
+  const y = Math.max(part[1] + Math.sin(elev) * dist, minY);
   return { position: [part[0] + dx * h, y, part[2] + dz * h], target: [part[0], part[1], part[2]] };
 }
 

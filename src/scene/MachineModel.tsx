@@ -1,6 +1,7 @@
 // A machine in its diorama: a credited NASA, adapted or authored GLB, with the procedural
-// silhouette shown while it loads and kept if it fails. Native metre frames retain their pivots.
-// Models load when their stop comes up (the Director preloads them as the flight toward it starts).
+// silhouette kept if loading fails. Native metre frames retain their pivots. Models are usually
+// warm before their stop comes up (the Director preloads them). While loading the atmosphere stays
+// in view; `onReady` lets the diorama fade in the real model without a stand-in swapping shapes.
 
 import { useGLTF } from '@react-three/drei';
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
@@ -38,7 +39,7 @@ function Parachute() {
   return <primitive object={obj} />;
 }
 
-function NasaModel({ entry }: { entry: ModelEntry & { url: string } }) {
+function NasaModel({ entry, onReady }: { entry: ModelEntry & { url: string }; onReady?: () => void }) {
   // meshopt (bundled decoder), no Draco: nothing is fetched from a CDN.
   const { scene } = useGLTF(entry.url, false, true);
   const { obj, owned } = useMemo(() => {
@@ -64,12 +65,21 @@ function NasaModel({ entry }: { entry: ModelEntry & { url: string } }) {
         });
         owned.push(lit);
         m.material = lit;
+      } else if (m.material) {
+        // Our own copies of the rest, so the dive's fade-in (Diorama) never touches the shared cache.
+        const own = (x: Material) => {
+          const c = x.clone();
+          owned.push(c);
+          return c;
+        };
+        m.material = Array.isArray(m.material) ? m.material.map(own) : own(m.material);
       }
     });
     return { obj: normalizeModel(c, entry.size), owned };
   }, [scene, entry]);
   const dispose = useMemo(() => () => owned.forEach(m => m.dispose()), [owned]);
   useDisposeWhenDetached(obj, dispose);
+  useEffect(() => onReady?.(), [obj, onReady]);
   return <primitive object={obj} />;
 }
 
@@ -84,14 +94,14 @@ class KeepFallback extends Component<{ fallback: ReactNode; children: ReactNode 
 }
 
 /** The machine at its site, posed (Spirit sunk and tilted), front facing +Z. */
-export function MachineModel({ id }: { id: MachineId }) {
+export function MachineModel({ id, onReady }: { id: MachineId; onReady?: () => void }) {
   const entry = MODEL_REGISTRY[id];
   const pose = entry.pose;
   const silhouette = <Silhouette id={id} />;
   const body = entry.url ? (
     <KeepFallback fallback={silhouette}>
-      <Suspense fallback={silhouette}>
-        <NasaModel entry={entry as ModelEntry & { url: string }} />
+      <Suspense fallback={null}>
+        <NasaModel entry={entry as ModelEntry & { url: string }} onReady={onReady} />
       </Suspense>
     </KeepFallback>
   ) : (

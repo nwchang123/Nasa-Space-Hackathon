@@ -801,6 +801,26 @@ button:disabled {
 
 /* Marker labels drawn by the scene */
 
+/* Everything drei <Html> draws over the 3D view (marker labels, site callouts, story hotspots,
+   signature tags, the target reticle and its lock label, Ingenuity's radio bubble) lives outside
+   the HUD: dragging the view across it must not start a blue text selection. */
+.stage,
+.marker-label,
+.site-tag-wrap,
+.site-tag,
+.hs-wrap,
+.hs,
+.sig-tag-wrap,
+.sig-tag,
+.fx-reticle-wrap,
+.fx-reticle,
+.fx-lock,
+.gb-wrap,
+.gb {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .marker-label {
   pointer-events: none;
   user-select: none;
@@ -1191,15 +1211,17 @@ button:disabled {
   text-transform: uppercase;
   transition: color 0.15s ease;
 }
-/* Narrower desktops: tighter tracking, so "5 · OPPORTUNITY" fits its own column. */
-@media (max-width: 1280px) {
+/* Narrower desktops (up to 1440 px): tighter tracking, so "5 · OPPORTUNITY" fits its own column
+   and the nine names keep clear gaps between them. */
+@media (max-width: 1439px) {
   .hud-route .stop-name {
     letter-spacing: 0.03em;
   }
 }
-/* Below 1280 px the one-row bar cannot hold nine names side by side: only the stop we are at (or
-   flying to) keeps its name, the others show their number, and their name while hovered. */
-@media (max-width: 1279px) {
+/* Up to common laptop widths (1280, 1360) the one-row bar cannot hold nine names side by side
+   without them running together: only the stop we are at (or flying to) keeps its name, the others
+   show their number, and their name while hovered. */
+@media (max-width: 1365px) {
   .hud-route li:not(.here):not(.next) .stop-label {
     display: none;
   }
@@ -1471,8 +1493,16 @@ button:disabled {
 .site-card .scrub-head .icon-btn {
   white-space: nowrap;
 }
+/* The live badge never gets cut: if the label and the badge do not fit side by side (a narrow
+   card or a wider fallback font), the badge drops under the label, still at the right. */
 .site-card .scrub-head {
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+}
+.site-card .scrub-head .live-pill,
+.site-card .scrub-head .icon-btn {
+  flex: none;
+  margin-left: auto;
 }
 .site-card .scrub-label {
   letter-spacing: 0.1em;
@@ -1980,6 +2010,22 @@ button:disabled {
   max-width: 760px;
   margin-left: auto;
   margin-right: auto;
+}
+/* The flight log covers the whole screen, and its figures, lists, photos, buttons and margins are
+   chrome, not copy: a drag that starts anywhere on them must not paint the page blue. Only the
+   copy itself can be selected: the heading, the summary line, the postcard's note, and what the
+   visitor types on the postcard. */
+.report {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.report h2,
+.report-line,
+.report .postcard-box > p,
+.report input,
+.report textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .report h2 {

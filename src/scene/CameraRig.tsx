@@ -42,9 +42,10 @@ import {
 import { navcam } from './navcam';
 import { CAMERA_PRIORITY, live } from './registry';
 import { overFootprint } from './freeFlight';
-import { CAMERA_CLEARANCE_M, closeUpDistance, closeUpPose, pairView, pairWeight } from './siteFocus';
+import { CAMERA_CLEARANCE_M, CLOSE_UP_ELEV, closeUpDistance, closeUpPose, pairView, pairWeight, wideCloseUp } from './siteFocus';
 import { SITE_PRESETS, siteLayout } from './sites';
 import { useReducedMotion } from './useReducedMotion';
+import { siteDepthRange } from './siteTransition';
 
 /** When the globe end of the shot changes, the camera eases over this long, ms. */
 const TRANSITION_MS = 1600;
@@ -68,7 +69,6 @@ const FOCUS_RATE = 3.2;
 const FOCUS_MOVE_RATE = 4;
 /** How fast the camera starts or stops following Ingenuity, 1/s. */
 const FOLLOW_RATE = 2.2;
-
 const tv = new Vector3();
 const invSite = new Matrix4();
 const v3 = (v: Vector3): Vec3 => [v.x, v.y, v.z];
@@ -138,13 +138,20 @@ function machineShape(stop: MachineId): { centre: Vec3; radius: number } | null 
  * part (`flyer`), the shot aims between the two and stands back far enough for both. It aims a
  * little low, so the subject sits above the middle of the screen, clear of the dock.
  */
-function focusPose(stop: MachineId, partW: Vector3, from: Vec3, flyer: Vec3 | null): Pose {
+function focusPose(stop: MachineId, key: string, partW: Vector3, from: Vec3, flyer: Vec3 | null): Pose {
   const part = v3(tv.copy(partW).applyMatrix4(invSite));
   const shape = machineShape(stop);
   const centre = shape?.centre ?? part;
-  const dist = closeUpDistance(shape?.radius ?? 0.6);
-  let p = closeUpPose([part[0], part[1] - 0.12 * dist, part[2]], centre, from, dist, CAMERA_CLEARANCE_M);
-  if (flyer) {
+  // A part on something big and flat (the parachute): stand well back, look down more, aim part
+  // of the way back toward the machine at the origin (siteFocus WIDE_CLOSE_UPS).
+  const wide = wideCloseUp(stop, key);
+  const dist = wide ? wide.dist : closeUpDistance(shape?.radius ?? 0.6);
+  const elev = wide ? wide.elev : CLOSE_UP_ELEV;
+  let p = wide
+    ? closeUpPose([part[0] * (1 - wide.toward), part[1] - 0.1 * dist, part[2] * (1 - wide.toward)], [0, 0, 0], from, dist, CAMERA_CLEARANCE_M, null, elev)
+    : closeUpPose([part[0], part[1] - 0.12 * dist, part[2]], centre, from, dist, CAMERA_CLEARANCE_M);
+  if (flyer && !wide) {
+    // (A wide close-up already holds Ingenuity beside the part: no pair shot that would push in.)
     // Ingenuity arriving beside the part: once it is close, both in the shot, side by side (while
     // it is still on its way, the part alone, so the camera does not chase it round the machine).
     const gap = Math.hypot(flyer[0] - part[0], flyer[1] - part[1], flyer[2] - part[2]);
@@ -182,6 +189,7 @@ export function CameraRig() {
   const reduced = useReducedMotion();
   const lastChase = useRef<Pose | null>(null);
   const lastGlobe = useRef<GlobeShot | null>(null);
+  const lastArc = useRef('');
   const epilogueDir = useRef<Vec3>(TITLE_DIR);
   const trans = useRef<{ from: Pose; at: number } | null>(null);
   const current = useRef<Pose | null>(null);
@@ -223,13 +231,15 @@ export function CameraRig() {
     }
 
     // ---- the globe end of the shot
-    if (shot.globeShot !== lastGlobe.current) {
+    const arcKey = shot.arc ? `${shot.arc.from}:${shot.arc.to}` : '';
+    if (shot.globeShot !== lastGlobe.current || arcKey !== lastArc.current) {
       if (shot.globeShot === 'epilogue') {
         const h = live.rest.pos;
         epilogueDir.current = clampPolar([h.x, h.y + 0.35 * h.length(), h.z]);
       }
       if (lastGlobe.current !== null && current.current && !reduced) trans.current = { from: current.current, at: now };
       lastGlobe.current = shot.globeShot;
+      lastArc.current = arcKey;
     }
     let globe: Pose;
     switch (shot.globeShot) {
@@ -306,7 +316,8 @@ export function CameraRig() {
 
       // Close-up on the focused hotspot or signature part (store.focus), eased in and out.
       const fc = s.focus;
-      const partW = fc && f.stage === 'site' ? live.targets.get(fc.kind === 'hotspot' ? `hs:${fc.id}` : `sig:${fc.id}`) : undefined;
+      const fkey = fc ? (fc.kind === 'hotspot' ? `hs:${fc.id}` : `sig:${fc.id}`) : '';
+      const partW = fc && f.stage === 'site' ? live.targets.get(fkey) : undefined;
       const fr = focus.current;
       if (fc && partW && fc.at !== fr.at) {
         fr.at = fc.at;
@@ -315,7 +326,7 @@ export function CameraRig() {
       const want = fc && partW ? fc.strength : 0;
       if (fc && partW) {
         const withFlyer = fc.strength >= 0.9 && flown && fl.alt > 0.3 ? ([fl.x, fl.ground + fl.alt, fl.z] as Vec3) : null;
-        const goal = focusPose(stop, partW, fr.from, withFlyer);
+        const goal = focusPose(stop, fkey, partW, fr.from, withFlyer);
         if (!fr.pose || fr.k < 1e-3 || reduced) fr.pose = goal;
         else {
           const r = 1 - Math.exp(-FOCUS_MOVE_RATE * dt);
@@ -410,8 +421,8 @@ export function CameraRig() {
       current.current = pose;
     }
 
-    // Near and far follow the zoom, from orbit (~4 units) down to a machine (~0.003); the
-    // navigation camera also keeps the ground below it in view (it flies low over the surface).
+    // Near follows the zoom, from orbit (~4 units) down to a machine (~0.003); the navigation
+    // camera also keeps the ground below it in view (it flies low over the surface).
     const cur = current.current;
 
     // The way the camera faces at a site, as a compass heading (0 = north = diorama −Z, 90 = east
@@ -422,12 +433,19 @@ export function CameraRig() {
       if (Math.hypot(tv.x, tv.z) > 1e-6) live.camHeadingDeg = ((Math.atan2(tv.x, -tv.z) * 180) / Math.PI + 360) % 360;
     } else live.camHeadingDeg = NaN;
 
+    // Only ground-level views and an extremely close Scout Cam need the 4 cm near floor.
+    // The far plane follows the site's dome and camera position after the atmosphere is up.
     const dist = Math.hypot(cur.position[0] - cur.target[0], cur.position[1] - cur.target[1], cur.position[2] - cur.target[2]);
-    let near = Math.min(0.05, Math.max(1e-5, dist * 0.02));
-    if (navcam.k > 0 && live.arc.valid) near = Math.min(near, Math.max(1e-5, (live.arc.alt + ROUTE_BASE - 1) * 0.3));
-    if (Math.abs(camera.near - near) > near * 0.01 || camera.far !== 80 || Math.abs(camera.fov - fov) > 0.01) {
+    let localCamera: Vec3 | null = null;
+    if (shot.siteId && live.site.valid) {
+      invSite.copy(live.site.matrix).invert();
+      localCamera = v3(tv.set(...cur.position).applyMatrix4(invSite));
+    }
+    const { near, far } = siteDepthRange(dist, shot.blend, localCamera, s.scoutCam,
+      navcam.k > 0 && live.arc.valid ? live.arc.alt + ROUTE_BASE - 1 : null);
+    if (Math.abs(camera.near - near) > near * 0.01 || Math.abs(camera.far - far) > far * 0.01 || Math.abs(camera.fov - fov) > 0.01) {
       camera.near = near;
-      camera.far = 80;
+      camera.far = far;
       camera.fov = fov;
       camera.updateProjectionMatrix();
     }

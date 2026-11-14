@@ -100,6 +100,8 @@ export interface Shot {
   ingenuity: boolean;
   /** The prologue rotor fault: how hard Ingenuity shakes, 0..1. */
   judder?: number;
+  /** A direct hop is still climbing out of the previous site. */
+  leaving?: boolean;
 }
 
 interface Moment {
@@ -169,6 +171,7 @@ export class Choreographer {
       this.skip = skipped && fl ? { leg: fl.leg, from: fl.from, t0: fl.t, flyMs: fl.flyMs, at: now } : null;
       if (!(phase === 'flight' && f.stage === 'flying')) this.flying = null;
       this.settledAt = now;
+      if (phase !== 'flight') this.leaving = null;
     }
     const since = now - this.seenAt;
     const dt = this.lastNow ? Math.min(0.1, Math.max(0, (now - this.lastNow) / 1000)) : 0;
@@ -237,11 +240,13 @@ export class Choreographer {
     // A different diorama may only come in once the old one is fully left behind (blend 0): if the
     // story jumps (the epilogue reached from another stop, a hop picked mid-move), climb out of the
     // old site first, then dive into the new one from the globe.
-    if (prev.siteId && next.siteId !== prev.siteId && prev.blend > 0.001) {
+    if (prev.siteId && next.siteId && next.siteId !== prev.siteId && prev.blend > 0.001) {
       if (!this.leaving || this.leaving.site !== prev.siteId) this.leaving = { site: prev.siteId, from: prev.blend, at: now };
       const k = (now - this.leaving.at) / LEAVE_MS;
       const blend = reduced || k >= 1 ? 0 : this.leaving.from * (1 - easeInOut(k));
-      next = { ...next, siteId: prev.siteId, blend, hover: prev.hover };
+      // Keep the old globe pose and arc as well as its terrain. Otherwise the new flight's
+      // camera pulls the still-visible old diorama across the screen before the handoff.
+      next = { ...prev, blend, leaving: true };
     } else if (this.leaving) {
       this.leaving = null;
       this.seenAt = now;

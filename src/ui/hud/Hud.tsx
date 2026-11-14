@@ -2,12 +2,13 @@
 // bottom left, the stage dock at bottom centre. The HUD itself lets the pointer through to the
 // scene (orbiting a site, 3D hotspots); only its panels take it.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { FICTION_NOTE } from '../../data/flight';
 import { MACHINE_BY_ID } from '../../data/machines';
 import { HOME } from '../../flight/route';
+import { live } from '../../scene/registry';
 import { useApp } from '../../store';
-import { MACHINE_IDS } from '../../types';
+import { MACHINE_IDS, type MachineId } from '../../types';
 import { NavcamOverlay } from '../NavcamOverlay';
 import { BearingBar } from './BearingBar';
 import { Dock, FaultBanner } from './Dock';
@@ -22,8 +23,10 @@ export function Hud() {
   useBoostKeys();
 
   // The site card shows only on the ground: at home before lift-off, and at each stop. In flight
-  // and in the epilogue (the camera back over the whole globe) the view stays clear.
-  const cardId = stage === 'site' ? MACHINE_IDS[leg] : stage === 'prologue' ? HOME : null;
+  // and in the epilogue (the camera back over the whole globe) the view stays clear. It also waits
+  // for the picture: never a new stop's text while the camera is still climbing out of the last one.
+  const stageCard = stage === 'site' ? MACHINE_IDS[leg] : stage === 'prologue' ? HOME : null;
+  const cardId = useSceneReached(stageCard);
   return (
     <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}`}>
       <NavcamOverlay />
@@ -37,6 +40,35 @@ export function Hud() {
       <p className="hud-fine">{FICTION_NOTE}</p>
     </div>
   );
+}
+
+/** The card shows a stop once the camera is this far into the dive toward it (shot blend, 0..1). */
+const CARD_BLEND = 0.6;
+
+/**
+ * `id` once the 3D view has reached it: the old site has been left behind (the choreographer's
+ * leaving climb is over) and the camera is well into the dive toward this one. Null until then,
+ * and as soon as `id` changes. Polled each animation frame from the scene's live shot; it
+ * re-renders only when the answer changes, and stays true for that stop once reached.
+ */
+function useSceneReached(id: MachineId | null): MachineId | null {
+  const [reached, setReached] = useState<MachineId | null>(null);
+  useEffect(() => {
+    setReached(null);
+    if (!id) return;
+    let raf = 0;
+    const loop = () => {
+      const shot = live.shot;
+      if (shot.siteId === id && shot.blend >= CARD_BLEND) {
+        setReached(id);
+        return;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => cancelAnimationFrame(raf);
+  }, [id]);
+  return reached === id ? id : null;
 }
 
 /** Hold Space to boost while flying. */

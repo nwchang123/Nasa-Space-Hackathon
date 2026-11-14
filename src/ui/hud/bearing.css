@@ -6,10 +6,12 @@
   left: 50%;
   bottom: 220px;
   z-index: 3;
-  width: min(440px, 42vw);
+  /* Wide enough for the hint line in full at 1280 px. */
+  width: min(500px, 44vw);
   transform: translateX(-50%);
   padding: 3px 10px 4px;
-  background: linear-gradient(to bottom, rgba(7, 10, 15, 0.18), rgba(7, 10, 15, 0.42));
+  /* Dark enough behind the small hint line to read it over bright ground (the parachute). */
+  background: linear-gradient(to bottom, rgba(7, 10, 15, 0.3), rgba(7, 10, 15, 0.58));
   border-radius: 3px;
   font-family: var(--mono, 'Martian Mono', ui-monospace, monospace);
   color: var(--bone-dim, #a9a397);
@@ -160,6 +162,21 @@
 .brg-mark.brg-near .brg-mark-num {
   opacity: 1;
   text-shadow: 0 0 6px rgba(242, 169, 59, 0.9);
+}
+/* Two marks almost on the same heading: the second one's number sits a row higher, joined to its
+   dot by a hairline, so the two numbers never print on top of each other. */
+.brg-mark-alt .brg-mark-num {
+  top: -9px;
+}
+.brg-mark-alt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 12px;
+  margin-left: -0.5px;
+  background: rgba(242, 169, 59, 0.45);
 }
 .brg-mark.brg-near .brg-mark-dot {
   animation: brg-ping 1.1s ease-out infinite;

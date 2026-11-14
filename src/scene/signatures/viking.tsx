@@ -244,7 +244,8 @@ function addFrost(mat: MeshStandardMaterial, u: { value: number }): () => void {
       }`,
     );
   };
-  mat.customProgramCacheKey = () => 'sig-frost';
+  // Keep the earlier patch's key in ours (the ground's soft edge), so the programs never mix up.
+  mat.customProgramCacheKey = () => `${prevKey.call(mat)}|sig-frost`;
   mat.needsUpdate = true;
   return () => {
     mat.onBeforeCompile = prevCompile;
