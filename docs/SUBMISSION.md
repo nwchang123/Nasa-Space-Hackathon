@@ -35,7 +35,7 @@ Ingenuity, the first aircraft on another world, flew 72 times on Mars before a b
 
 ## Use of artificial intelligence
 
-We used Claude Code (Anthropic) as a coding and writing assistant. Under the team's direction it wrote most of the code and drafted the narration and the machines' stories; several AI agents worked in parallel on separate parts and each part was tested before it was combined. Codex (OpenAI) subsequently assisted with local Blender Python modeling, NASA asset adaptation, compression and animation regression checks. The authored/adapted reconstructions and procedural PBR texture bakes are disclosed and labelled illustrative; no cloud image, video, audio or 3D generation service was used. Dates, places and numbers are sourced in `docs/FACT_CHECK.md`. Full details are in `AI_USAGE.md` and `CREDITS.md`.
+We used Claude Code (Anthropic) as a coding and writing assistant. Under the team's direction it wrote most of the code and drafted the narration and the machines' stories; several AI agents worked in parallel on separate parts and each part was tested before it was combined. Codex (OpenAI) subsequently assisted with local Blender Python modeling, NASA asset adaptation, compression and animation regression checks. The authored/adapted reconstructions and procedural PBR texture bakes are disclosed and labelled illustrative; no cloud image, video, audio or 3D generation service was used. Ingenuity's spoken voice is AI-generated speech from the open Kokoro-82M text-to-speech model, run locally. Dates, places and numbers are sourced in `docs/FACT_CHECK.md`. Full details are in `AI_USAGE.md` and `CREDITS.md`.
 
 ## NASA data
 

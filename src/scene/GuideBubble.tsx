@@ -1,6 +1,7 @@
 // Ingenuity as the guide at every stop: a small radio bubble that rides above it in the diorama.
 // On arrival (as Ingenuity hovers in and lands) it types out the stop's arrivalIntro, with radio
-// squelch and telegraph ticks, and reads it aloud when the visitor has switched the voiceover on.
+// squelch and telegraph ticks, and Ingenuity reads it aloud (the voiceover, on unless the visitor
+// switched it off); the typing then keeps pace with the voice, pausing where it pauses.
 // When the visitor finishes the stop's signature action (the scan done, the frost on, the storm at
 // full strength…) it answers with the stop's inheritance line and a telemetry chirp. While the
 // camera is close up on a part, its header says what Ingenuity is scanning. After a while it folds
@@ -20,7 +21,7 @@ import { SIGNATURES, type SignatureDef } from '../data/signatures';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { isMuted, playChirp, playRadioClose, playRadioOpen, playTypeTick } from '../ui/sound';
-import { isVoiceOn, onVoiceChange, setVoice, speak, stopSpeaking, voiceSupported } from '../ui/voice';
+import { isVoiceOn, onVoiceChange, preloadVoice, setVoice, speak, stopSpeaking, voiceSupported, type Speech } from '../ui/voice';
 import { live } from './registry';
 import { SITE_PRESETS, siteLayout } from './sites';
 import { useReducedMotion } from './useReducedMotion';
@@ -43,12 +44,12 @@ const TOP_BAR_PX = 64;
 const DOCK_TOP = 0.68;
 /** Gap kept above the bottom HUD, px. */
 const FLOOR_GAP_PX = 10;
-/** Typing speed, ms per character, and the pauses after punctuation and between lines. */
+/** Typing speed without the voice (or once it stops), ms per character, and the pauses after punctuation and between lines. */
 const CHAR_MS = 26;
 const COMMA_MS = 120;
 const STOP_MS = 260;
 const LINE_MS = 460;
-/** Delay before the first character, ms (lets the squelch play). */
+/** Delay before the first character and the voice, ms (lets the squelch play). */
 const OPEN_MS = 360;
 /** How long a finished message stays open before folding into the chip, ms. */
 const HOLD_INTRO_MS = 12000;
@@ -321,7 +322,14 @@ function RadioBubble({ stop, arrived, rootRef }: { stop: MachineId; arrived: boo
     };
   }, [stop, script]);
 
-  // Type the message out, with radio sounds, and read it aloud if the voiceover is on.
+  // Load this stop's voice clips ahead of the arrival.
+  useEffect(() => {
+    if (voice) preloadVoice([script.arrivalIntro, [script.inheritance]]);
+  }, [voice, script]);
+
+  // Type the message out, with radio sounds, and read it aloud if the voiceover is on. With the
+  // voice, the typing follows the clip's own clock (each phrase typed while it is spoken); without
+  // it, or once it is stopped or fails, the typing runs on a timer from wherever it had got to.
   useEffect(() => {
     if (!msg) return;
     const full = msg.lines.join('\n');
@@ -329,28 +337,58 @@ function RadioBubble({ stop, arrived, rootRef }: { stop: MachineId; arrived: boo
     setHoldKey(0);
     playRadioOpen();
     if (msg.kind === 'react') playChirp();
-    speak(msg.lines);
-    if (reduced) {
-      setTyped(full.length);
-      return;
-    }
-    setTyped(0);
     let i = 0;
     let timer = 0;
-    const step = () => {
-      i++;
+    let raf = 0;
+    let speech: Speech | null = null;
+    if (reduced) {
+      setTyped(full.length);
+      timer = window.setTimeout(() => {
+        speech = speak(msg.lines);
+      }, OPEN_MS);
+      return () => {
+        window.clearTimeout(timer);
+        speech?.stop();
+      };
+    }
+    setTyped(0);
+    /** Show the first n characters, with a tick for the typing and the squelch once it is all out. */
+    const show = (n: number) => {
+      if (n <= i) return;
+      let tick = false;
+      for (let j = i; j < n; j++) if (full[j] !== ' ' && full[j] !== '\n' && (j + 1) % 2 === 0) tick = true;
+      i = Math.min(n, full.length);
       setTyped(i);
+      if (tick) playTypeTick();
+      if (i >= full.length) playRadioClose();
+    };
+    const step = () => {
+      show(i + 1);
+      if (i >= full.length) return;
       const ch = full[i - 1];
-      if (ch !== ' ' && ch !== '\n' && i % 2 === 0) playTypeTick();
-      if (i >= full.length) {
-        playRadioClose();
-        return;
-      }
       const delay = ch === '\n' ? LINE_MS : /[.!?]/.test(ch) ? STOP_MS : /[,;:—]/.test(ch) ? COMMA_MS : CHAR_MS;
       timer = window.setTimeout(step, delay);
     };
-    timer = window.setTimeout(step, OPEN_MS);
-    return () => window.clearTimeout(timer);
+    const follow = () => {
+      const n = speech?.charsAt() ?? null;
+      if (n === null) {
+        speech = null;
+        timer = window.setTimeout(step, CHAR_MS);
+        return;
+      }
+      show(n);
+      if (i < full.length) raf = requestAnimationFrame(follow);
+    };
+    timer = window.setTimeout(() => {
+      speech = speak(msg.lines);
+      if (speech) follow();
+      else step();
+    }, OPEN_MS);
+    return () => {
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      speech?.stop();
+    };
   }, [msg, reduced]);
 
   // A finished message folds into the chip after a while (not while the pointer is on it).
@@ -383,15 +421,15 @@ function RadioBubble({ stop, arrived, rootRef }: { stop: MachineId; arrived: boo
     }, 400);
     return () => window.clearInterval(t);
   }, [voice]);
-  useEffect(() => () => stopSpeaking(), []);
 
   const replay = () => {
     if (msg) setMsg({ ...msg, id: Date.now() });
   };
+  // Switching the voice on replays the message, so it is heard with the typing in step.
   const toggleVoice = () => {
     const on = !voice;
     setVoice(on);
-    if (on && msg) speak(msg.lines);
+    if (on) replay();
   };
 
   const status = focusLabel(focus, stop);

@@ -38,6 +38,11 @@ Authored/adapted models are labelled illustrative. NASA originals show the hardw
 
 No NASA endorsement is implied. No new NASA logos or insignia were added to the reconstructions.
 
+## Voice
+
+- Ingenuity's spoken lines (`public/audio/ingenuity/`) were generated locally with the [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech model by hexgrad (Apache License 2.0), voice `af_aoede`, run through [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) (MIT) and ONNX Runtime (MIT). Its phonemizer, espeak-ng (GPL-3.0), was used only to make the clips and is not shipped. The radio treatment (a slight pitch lift, a faint vocoder layer, chorus, EQ and band limit) is this project's own Python/NumPy processing: `scripts/voice/ingenuity_voice.py`.
+- Without the clips (or for a line that has none), the voiceover falls back to the browser's own speech synthesis. Every other sound is synthesized in the browser.
+
 ## Fonts
 
 - Martian Mono by Evil Martians, SIL Open Font License 1.1, via Fontsource.

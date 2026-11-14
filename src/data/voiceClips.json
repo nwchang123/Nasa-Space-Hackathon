@@ -1,0 +1,686 @@
+[
+ {
+  "stop": "viking-1",
+  "kind": "intro",
+  "file": "audio/ingenuity/viking-1-intro.wav",
+  "text": "We are on Chryse Planitia, the Golden Plain. Meet Viking 1.\nIn 1976 it became the first spacecraft to land safely on Mars and keep working.\nClick a numbered point on the lander, and I will fly over and scan it.",
+  "duration": 14.528,
+  "spans": [
+   [
+    0,
+    26,
+    0.12,
+    1.444
+   ],
+   [
+    26,
+    44,
+    1.555,
+    2.472
+   ],
+   [
+    45,
+    59,
+    2.772,
+    3.864
+   ],
+   [
+    60,
+    139,
+    4.344,
+    10.27
+   ],
+   [
+    140,
+    177,
+    10.75,
+    12.324
+   ],
+   [
+    177,
+    210,
+    12.547,
+    14.278
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/viking-1-inheritance.wav",
+  "text": "Everyone on this flight landed after you. You showed it could be done.",
+  "duration": 3.966,
+  "spans": [
+   [
+    0,
+    41,
+    0.12,
+    2.194
+   ],
+   [
+    42,
+    70,
+    2.494,
+    3.716
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "intro",
+  "file": "audio/ingenuity/viking-2-intro.wav",
+  "text": "Utopia Planitia, a rocky plain nearer the polar ice. This is Viking 2.\nIt landed tilted among the boulders, then sent data home for more than three and a half years.\nClick a numbered point, and I will light up that part for you.",
+  "duration": 14.241,
+  "spans": [
+   [
+    0,
+    16,
+    0.12,
+    1.287
+   ],
+   [
+    16,
+    52,
+    1.472,
+    3.324
+   ],
+   [
+    53,
+    70,
+    3.624,
+    4.883
+   ],
+   [
+    71,
+    107,
+    5.363,
+    7.391
+   ],
+   [
+    107,
+    165,
+    7.715,
+    10.585
+   ],
+   [
+    166,
+    189,
+    11.065,
+    12.056
+   ],
+   [
+    189,
+    228,
+    12.176,
+    13.991
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/viking-2-inheritance.wav",
+  "text": "You were moved north, toward the polar ice. Almost 32 years later, Phoenix went farther north and dug some up.",
+  "duration": 6.568,
+  "spans": [
+   [
+    0,
+    21,
+    0.12,
+    1.0
+   ],
+   [
+    21,
+    43,
+    1.12,
+    2.203
+   ],
+   [
+    44,
+    66,
+    2.503,
+    4.161
+   ],
+   [
+    66,
+    110,
+    4.429,
+    6.318
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "intro",
+  "file": "audio/ingenuity/pathfinder-sojourner-intro.wav",
+  "text": "Ares Vallis. Pathfinder came down here wrapped in giant airbags, bouncing about 15 times.\nIts little rover, Sojourner, was the first ever to drive on Mars.\nClick a numbered point, and I will fly in close to scan it.",
+  "duration": 14.269,
+  "spans": [
+   [
+    0,
+    12,
+    0.12,
+    1.037
+   ],
+   [
+    13,
+    64,
+    1.337,
+    4.327
+   ],
+   [
+    64,
+    89,
+    4.559,
+    6.327
+   ],
+   [
+    90,
+    107,
+    6.807,
+    7.77
+   ],
+   [
+    107,
+    118,
+    7.881,
+    8.52
+   ],
+   [
+    118,
+    155,
+    8.622,
+    10.631
+   ],
+   [
+    156,
+    179,
+    11.111,
+    12.074
+   ],
+   [
+    179,
+    215,
+    12.223,
+    14.019
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/pathfinder-sojourner-inheritance.wav",
+  "text": "Sojourner rolled first. Every NASA rover since has followed her, including the one that carried me here.",
+  "duration": 6.263,
+  "spans": [
+   [
+    0,
+    23,
+    0.12,
+    1.37
+   ],
+   [
+    24,
+    64,
+    1.67,
+    3.957
+   ],
+   [
+    64,
+    104,
+    4.263,
+    6.013
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "intro",
+  "file": "audio/ingenuity/spirit-intro.wav",
+  "text": "Troy, beside Home Plate in Gusev crater. Spirit got stuck in soft soil here.\nDragging a dead wheel, it scraped up signs of ancient hot springs or steam vents.\nClick a numbered point on the rover, and let us take a closer look.",
+  "duration": 13.797,
+  "spans": [
+   [
+    0,
+    40,
+    0.12,
+    2.416
+   ],
+   [
+    41,
+    76,
+    2.716,
+    4.633
+   ],
+   [
+    77,
+    99,
+    5.113,
+    6.224
+   ],
+   [
+    99,
+    158,
+    6.391,
+    9.733
+   ],
+   [
+    159,
+    195,
+    10.213,
+    12.028
+   ],
+   [
+    195,
+    226,
+    12.186,
+    13.547
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/spirit-inheritance.wav",
+  "text": "Stuck in soft soil, you kept working as a science station that could not move. Now I do the same.",
+  "duration": 6.151,
+  "spans": [
+   [
+    0,
+    19,
+    0.12,
+    0.833
+   ],
+   [
+    19,
+    78,
+    0.916,
+    4.5
+   ],
+   [
+    79,
+    97,
+    4.8,
+    5.901
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "intro",
+  "file": "audio/ingenuity/opportunity-intro.wav",
+  "text": "Perseverance Valley, on the rim of Endeavour crater. Here rests Opportunity.\nIt was built to drive one kilometre. It drove more than a marathon, and proved water once lasted here.\nClick a numbered point on the rover, and I will scan it with my light.",
+  "duration": 14.93,
+  "spans": [
+   [
+    0,
+    20,
+    0.12,
+    1.166
+   ],
+   [
+    20,
+    52,
+    1.361,
+    2.805
+   ],
+   [
+    53,
+    76,
+    3.105,
+    4.411
+   ],
+   [
+    77,
+    113,
+    4.891,
+    6.798
+   ],
+   [
+    114,
+    144,
+    7.098,
+    8.728
+   ],
+   [
+    144,
+    179,
+    8.867,
+    10.728
+   ],
+   [
+    180,
+    216,
+    11.208,
+    12.874
+   ],
+   [
+    216,
+    250,
+    13.087,
+    14.68
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/opportunity-inheritance.wav",
+  "text": "You showed that water once lasted here. Perseverance went to Jezero, once a lake, and found possible signs of ancient life.",
+  "duration": 7.716,
+  "spans": [
+   [
+    0,
+    39,
+    0.12,
+    2.027
+   ],
+   [
+    40,
+    68,
+    2.327,
+    4.707
+   ],
+   [
+    68,
+    123,
+    5.059,
+    7.466
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "intro",
+  "file": "audio/ingenuity/phoenix-intro.wav",
+  "text": "The Martian arctic. Phoenix landed farther north than any Mars mission before it.\nIt dug a trench here and found water ice, hiding just under the soil.\nClick a numbered point on the lander, and I will fly over to look.",
+  "duration": 13.019,
+  "spans": [
+   [
+    0,
+    19,
+    0.12,
+    1.157
+   ],
+   [
+    20,
+    81,
+    1.457,
+    4.753
+   ],
+   [
+    82,
+    123,
+    5.233,
+    7.446
+   ],
+   [
+    123,
+    151,
+    7.678,
+    9.113
+   ],
+   [
+    152,
+    189,
+    9.593,
+    11.186
+   ],
+   [
+    189,
+    218,
+    11.399,
+    12.769
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/phoenix-inheritance.wav",
+  "text": "You found ice hiding just under the soil. The helicopters coming after me are meant to look for more.",
+  "duration": 6.003,
+  "spans": [
+   [
+    0,
+    41,
+    0.12,
+    2.287
+   ],
+   [
+    42,
+    101,
+    2.587,
+    5.753
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "intro",
+  "file": "audio/ingenuity/insight-intro.wav",
+  "text": "Elysium Planitia, a quiet plain. This is InSight, the lander that studied the inside of Mars.\nIts seismometer felt 1,319 marsquakes, and waves from two of them revealed a liquid iron core.\nClick a numbered point on the lander, and I will fly in to scan it.",
+  "duration": 17.898,
+  "spans": [
+   [
+    0,
+    32,
+    0.12,
+    2.194
+   ],
+   [
+    33,
+    49,
+    2.494,
+    3.327
+   ],
+   [
+    49,
+    93,
+    3.55,
+    5.716
+   ],
+   [
+    94,
+    132,
+    6.196,
+    10.085
+   ],
+   [
+    132,
+    188,
+    10.178,
+    13.807
+   ],
+   [
+    189,
+    226,
+    14.287,
+    15.861
+   ],
+   [
+    226,
+    256,
+    16.084,
+    17.649
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/insight-inheritance.wav",
+  "text": "You looked inside Mars, all the way down to its core. I only ever saw the surface, from 24 metres up.",
+  "duration": 6.494,
+  "spans": [
+   [
+    0,
+    23,
+    0.12,
+    1.398
+   ],
+   [
+    23,
+    53,
+    1.518,
+    2.926
+   ],
+   [
+    54,
+    82,
+    3.226,
+    4.818
+   ],
+   [
+    82,
+    101,
+    4.966,
+    6.244
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "intro",
+  "file": "audio/ingenuity/mars2020-edl-intro.wav",
+  "text": "Jezero crater, where Perseverance and I came down. Here lie the parachute and backshell that slowed us.\nThat parachute was the biggest ever used on Mars. Its panels hide a message in binary.\nClick a numbered point, and I will scan it again for you.",
+  "duration": 14.8,
+  "spans": [
+   [
+    0,
+    14,
+    0.12,
+    1.064
+   ],
+   [
+    14,
+    50,
+    1.213,
+    3.055
+   ],
+   [
+    51,
+    103,
+    3.355,
+    5.753
+   ],
+   [
+    104,
+    153,
+    6.233,
+    8.965
+   ],
+   [
+    154,
+    190,
+    9.265,
+    11.376
+   ],
+   [
+    191,
+    214,
+    11.856,
+    12.828
+   ],
+   [
+    214,
+    248,
+    12.976,
+    14.55
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/mars2020-edl-inheritance.wav",
+  "text": "You brought Perseverance and me down safely. My photos of you may help future landers come down safer.",
+  "duration": 6.161,
+  "spans": [
+   [
+    0,
+    44,
+    0.12,
+    2.361
+   ],
+   [
+    45,
+    102,
+    2.661,
+    5.911
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "intro",
+  "file": "audio/ingenuity/ingenuity-intro.wav",
+  "text": "Home: Valinor Hills, in Jezero crater. That is the real me, resting with broken blades.\nI was meant to fly five times on Mars. I flew 72.\nClick a numbered point, and I will show you what is left of me.",
+  "duration": 13.347,
+  "spans": [
+   [
+    0,
+    38,
+    0.12,
+    2.342
+   ],
+   [
+    39,
+    59,
+    2.642,
+    3.726
+   ],
+   [
+    59,
+    87,
+    3.892,
+    5.374
+   ],
+   [
+    88,
+    126,
+    5.854,
+    8.104
+   ],
+   [
+    127,
+    137,
+    8.404,
+    9.626
+   ],
+   [
+    138,
+    161,
+    10.106,
+    11.124
+   ],
+   [
+    161,
+    201,
+    11.273,
+    13.097
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "inheritance",
+  "file": "audio/ingenuity/ingenuity-inheritance.wav",
+  "text": "NASA’s SkyFall mission will build on what I proved. Three new helicopters will scout landing sites for astronauts and map buried ice.",
+  "duration": 8.114,
+  "spans": [
+   [
+    0,
+    51,
+    0.12,
+    2.898
+   ],
+   [
+    52,
+    133,
+    3.198,
+    7.864
+   ]
+  ]
+ }
+]
