@@ -166,15 +166,14 @@ button:disabled {
 
 /* ---------- Title ---------- */
 
-/* A mission brief laid over the live globe. The brief sits low on the left while Mars fills the
-   right (CameraRig 'title' shot: ~57–98 % of the width). It is pushed down with margin-top: auto,
-   not justify-content: flex-end, so on a short window it runs into a scroll instead of up past
-   the top edge. */
+/* Documentary cold open laid over live Mars. Four-corner archival slate leaves the middle open
+   for the planet (CameraRig 'title' shot: ~57–98 % of the width). margin-top: auto keeps the brief
+   low while scrolling cleanly on short windows instead of clipping at the top. */
 .title-screen {
   position: fixed;
   z-index: 3;
   inset: 0;
-  /* Only the brief takes the pointer; the rest reaches the globe (hover labels). */
+  /* Only interactive controls and the opening brief take the pointer; the rest reaches the globe. */
   pointer-events: none;
   /* Dragging across the globe or the text must not paint the copy blue. */
   -webkit-user-select: none;
@@ -185,23 +184,49 @@ button:disabled {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  padding: max(28px, 4.5vh) clamp(24px, 6vw, 88px) clamp(28px, 7vh, 80px);
+  padding: clamp(22px, 3.6vh, 36px) clamp(24px, 5.5vw, 80px) clamp(20px, 3.2vh, 34px);
   background:
-    linear-gradient(0deg, rgba(5, 7, 10, 0.5) 0%, transparent 28%),
-    linear-gradient(90deg, rgba(5, 7, 10, 0.92) 0%, rgba(5, 7, 10, 0.62) 36%, transparent 62%);
+    linear-gradient(0deg, rgba(5, 7, 10, 0.55) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(5, 7, 10, 0.42) 0%, transparent 18%),
+    linear-gradient(90deg, rgba(5, 7, 10, 0.84) 0%, rgba(5, 7, 10, 0.46) 34%, transparent 56%);
 }
 .title-screen::-webkit-scrollbar {
   display: none;
 }
 
+/* Top film-slate marginalia: location + UTC on the left, live solar & light readings on the right. */
+.title-slate {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px 24px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  opacity: 0.72;
+}
+.title-slate-loc,
+.title-slate-astro {
+  white-space: nowrap;
+}
+.title-slate-astro {
+  text-align: right;
+  pointer-events: auto;
+}
+
 .title-brief {
   flex: none;
   margin-top: auto;
+  margin-bottom: clamp(28px, 6.5vh, 72px);
   width: 100%;
   /* Clear of Mars, which starts at ~57 % of the width. */
-  max-width: min(600px, 48vw);
+  max-width: min(520px, 44vw);
   pointer-events: auto;
-  container: brief / inline-size;
 }
 
 .kicker {
@@ -212,19 +237,14 @@ button:disabled {
   text-transform: uppercase;
 }
 
-/* One plain console line, led by a breathing beacon: the live clock from Jezero. */
-.title-screen .kicker {
-  display: flex;
-  align-items: center;
-  gap: 0.9em;
-  margin: 0 0 clamp(12px, 2.4vh, 22px);
-  white-space: nowrap;
-  letter-spacing: 0.14em;
-}
-.title-screen .kicker .beacon {
-  flex: none;
-  width: 6px;
-  height: 6px;
+.title-eyebrow {
+  margin: 0 0 clamp(10px, 1.8vh, 18px);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--amber);
 }
 
 /* Bound by height as well as width, so a short window never pushes it off the top. */
@@ -233,98 +253,59 @@ button:disabled {
   font-family: var(--serif);
   font-style: italic;
   font-weight: 400;
-  font-size: clamp(52px, min(10vw, 13vh), 148px);
-  line-height: 0.9;
+  font-size: clamp(54px, min(9.8vw, 13.5vh), 148px);
+  line-height: 0.88;
   letter-spacing: -0.025em;
   white-space: nowrap;
   color: var(--bone);
 }
 
-/* Set like a film credit under the title, in the same serif. */
-.title-screen .subtitle {
-  margin: 0.7em 0 0;
-  font-family: var(--serif);
-  font-size: clamp(14px, min(1.25vw, 2vh), 17px);
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--amber);
-}
-
+/* Upright serif premise: Still Here remains the only italic line on the screen. */
 .lede {
-  margin: clamp(14px, 2.6vh, 24px) 0 0;
-  max-width: 28em;
+  margin: clamp(16px, 2.8vh, 26px) 0 0;
+  max-width: 23em;
   font-family: var(--serif);
-  font-style: italic;
-  font-size: clamp(19px, min(1.85vw, 3.1vh), 26px);
-  line-height: 1.28;
-  color: var(--bone);
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(18px, min(1.65vw, 2.7vh), 23px);
+  line-height: 1.42;
+  color: rgba(233, 228, 216, 0.88);
   text-wrap: balance;
 }
 
-.title-body {
-  margin: clamp(8px, 1.4vh, 14px) 0 0;
-  max-width: 38em;
-  font-family: var(--serif);
-  font-size: clamp(15px, min(1.15vw, 2.1vh), 17px);
-  line-height: 1.5;
-  color: var(--bone-dim);
-  text-wrap: pretty;
-}
-
-/* Three live readings, written as plain console lines: no boxes, rules or labels in capitals.
-   Each line is short enough never to wrap. */
-.title-facts {
-  display: grid;
-  gap: 2px;
-  margin: clamp(14px, 2.6vh, 24px) 0 clamp(20px, 3.6vh, 32px);
-  padding: 0;
-  list-style: none;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--bone-dim);
-}
-.title-facts li {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.title-facts strong {
-  font-weight: 400;
-  color: var(--bone);
-}
-
-/* A phone-wide brief has no room for the date beside the clock; the clock stays. */
-@container brief (max-width: 420px) {
-  .title-screen .kicker {
-    font-size: 9.5px;
-    letter-spacing: 0.12em;
-  }
-  .title-kicker-date {
-    display: none;
-  }
-}
-
+/* Baseline-aligned, so the button label and the hangar link read as one line. */
 .title-actions {
+  margin-top: clamp(22px, 3.8vh, 36px);
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 22px;
+  align-items: baseline;
+  gap: 10px 26px;
 }
 
-/* The one lit control on the page: a flat amber block, nothing else glows. */
+/* A quiet hairline frame at rest; fills flat amber on hover with zero glow. */
 .title-screen .title-begin {
-  padding: 1.1em 1.6em;
+  padding: 0.95em 1.55em;
+  border-color: rgba(242, 169, 59, 0.78);
+  background: rgba(242, 169, 59, 0.08);
+  color: var(--amber);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  box-shadow: none;
+}
+.title-screen .title-begin:hover:not(:disabled) {
   border-color: var(--amber);
   background: var(--amber);
   color: var(--ink);
-  font-weight: 500;
-}
-.title-screen .title-begin:hover:not(:disabled) {
-  border-color: #ffc463;
-  background: #ffc463;
-  color: var(--ink);
   box-shadow: none;
+}
+
+.title-foot {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 24px;
+  flex-wrap: wrap;
 }
 
 .fine {
@@ -333,15 +314,35 @@ button:disabled {
   color: var(--bone-dim);
   opacity: 0.75;
 }
-/* The fiction note in a plain, quiet hand. */
 .title-screen .fine {
-  margin: clamp(16px, 2.8vh, 26px) 0 0;
-  max-width: 34em;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 13.5px;
-  line-height: 1.45;
-  opacity: 0.8;
+  margin: 0;
+  max-width: 58em;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 9.5px;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  color: var(--bone-dim);
+  opacity: 0.56;
+}
+.title-scale {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  opacity: 0.68;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+/* Narrow windows drop only the date; the solar and light readings wrap onto their own line. */
+@media (max-width: 780px) {
+  .title-slate-date {
+    display: none;
+  }
 }
 
 /* ---------- Time-lapse ---------- */
@@ -2310,48 +2311,44 @@ button:disabled {
    camera's aspect rule rather than a width, so the brief never lands on the planet. */
 @media (max-aspect-ratio: 11/10) {
   .title-screen {
-    padding: 28px 20px max(20px, env(safe-area-inset-bottom));
+    padding: 20px 20px max(18px, env(safe-area-inset-bottom));
     background: linear-gradient(
       0deg,
       rgba(5, 7, 10, 0.96) 0%,
-      rgba(5, 7, 10, 0.9) 34%,
-      rgba(5, 7, 10, 0.5) 46%,
-      transparent 56%
+      rgba(5, 7, 10, 0.88) 34%,
+      rgba(5, 7, 10, 0.42) 48%,
+      transparent 58%
     );
   }
+  /* Keep the top 45 % completely open for Mars in portrait; anchor the slate just above the title. */
+  .title-slate {
+    margin-top: auto;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+  }
+  .title-slate-astro {
+    text-align: left;
+  }
   .title-brief {
+    margin-top: 0;
     max-width: 100%;
+    margin-bottom: 18px;
   }
-  .title-screen .kicker {
-    margin-bottom: 12px;
-  }
-  .title-screen .subtitle {
-    margin-top: 0.6em;
-    font-size: 13px;
+  .title-eyebrow {
+    margin-bottom: 10px;
   }
   .lede {
-    margin-top: 12px;
-    font-size: 19px;
-  }
-  .title-body {
-    margin-top: 8px;
-    font-size: 14.5px;
-    line-height: 1.42;
-  }
-  .title-facts {
-    margin: 12px 0 16px;
-    font-size: 10.5px;
-  }
-  .title-screen .fine {
     margin-top: 14px;
-    font-size: 12.5px;
+    font-size: 18.5px;
   }
-}
-/* Short portrait screens (small phones): the lede carries the story, so the body steps aside and
-   Mars keeps the top of the screen. */
-@media (max-aspect-ratio: 11/10) and (max-height: 760px) {
-  .title-body {
-    display: none;
+  .title-actions {
+    margin-top: 20px;
+  }
+  .title-foot {
+    gap: 6px 16px;
   }
 }
 
