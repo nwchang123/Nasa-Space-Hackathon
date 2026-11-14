@@ -335,7 +335,7 @@ export function skyLook(elevationDeg: number): SkyLook {
     ambientGround: mix(mix(hex('#3b2a22'), hex('#6b4631'), day), hex('#2a2a33'), night),
     // Night stays readable: dim, cool light, as if the eye had adapted (an artistic choice; the
     // console states the real Sun elevation).
-    ambientIntensity: 0.75 + 0.75 * day + 0.45 * night,
+    ambientIntensity: 0.75 + 0.75 * day + 0.25 * night,
     nightKey: 1 - smoothstep(-3, 5, elevationDeg),
     stars,
     domeOpacity: 1 - 0.82 * stars,

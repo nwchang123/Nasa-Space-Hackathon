@@ -18,8 +18,9 @@ const GLOBE_GROUND = new Color('#3a2418');
 const tmp = new Color();
 const NIGHT_KEY_COLOR = new Color('#9db2db');
 /** Night key intensity (the day Sun is 3.2). */
-const NIGHT_KEY = 0.35;
-const NIGHT_KEY_ELEV = 40 * (Math.PI / 180);
+const NIGHT_KEY = 0.6;
+/** Low, raking, so ground texture and ripples read at night. */
+const NIGHT_KEY_ELEV = 25 * (Math.PI / 180);
 const dir = new Vector3();
 const flat = new Vector3();
 const lifted = new Vector3();
@@ -44,7 +45,7 @@ export function Lights() {
       target.position.copy(p);
       dir.copy(live.sun);
       if (look.nightKey > 0) {
-        // The Sun's bearing, lifted to 40° above the site's horizon.
+        // The Sun's bearing, lifted to 25° above the site's horizon.
         const up = live.site.up;
         flat.copy(live.sun).addScaledVector(up, -live.sun.dot(up));
         if (flat.lengthSq() < 1e-10) flat.set(1, 0, 0).addScaledVector(up, -up.x);
