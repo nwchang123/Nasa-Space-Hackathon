@@ -68,7 +68,7 @@ React 19, TypeScript, Three.js, React Three Fiber, drei and Zustand. No accounts
 - Lighting, local time and distances are computed, not looked up; `tests/astro.test.ts` checks them against published reference values and JPL Horizons.
 - Resting places known only roughly are marked "approx." in the app.
 - The hands-on actions are re-creations in the 3D scene, never NASA imagery. What they show is sourced; what is staged (a ramp's tilt, a cloud's height, a parachute's bit pattern) is listed as illustrative in the fact check.
-- The globe uses NASA's Viking colour mosaic and MOLA relief. Machines without a NASA 3D model are drawn as simplified silhouettes and labelled illustrative.
+- The globe uses NASA's Viking colour mosaic and MOLA relief. Machines combine credited NASA assets with illustrative Blender reconstructions: detailed MER rovers, Pathfinder/Sojourner, an InSight-derived Phoenix platform and a damaged backshell. Procedural silhouettes remain loading/error fallbacks; the interactive parachute retains its original geometry. See [model production and validation](docs/MODEL_UPGRADE.md).
 
 ## Development record
 

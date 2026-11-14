@@ -8,7 +8,7 @@ import { useReducedMotion } from '../useReducedMotion';
 import { findMachine, groundAt, SigFocus, SigTag, siteShown, sigNow, type SiteSignatureProps } from './common';
 import { ROVER_PATH, sojournerPath } from './logic';
 
-// The procedural lander's ramp (models.ts, pathfinder()): its top and foot, machine-local.
+// Shared with scripts/model-upgrade/build_assets.py: authored rear ramp, machine-local metres.
 const RAMP_TOP = new Vector3(0.39, 0.135, 0.629);
 const RAMP_FOOT = new Vector3(1.256, 0.045, 1.121);
 /** Down the ramp, level. */
@@ -34,6 +34,7 @@ export function SojournerRoll({ stop, ground, lay }: SiteSignatureProps) {
     if (!src.geometry.boundingSphere) src.geometry.computeBoundingSphere();
     const r = src.geometry.boundingSphere?.radius ?? 1;
     const m = new Mesh(src.geometry, src.material);
+    m.name = 'barnacle-bill';
     const p = rockAt();
     const k = ROCK_R / r;
     m.scale.set(k * 1.15, k * 0.8, k);
@@ -63,9 +64,12 @@ export function SojournerRoll({ stop, ground, lay }: SiteSignatureProps) {
   useFrame((_, dt) => {
     const v = sigNow('roll');
     shown.current = v === undefined ? 0 : siteShown(stop);
-    if (!rover.current) {
-      const obj = findMachine(anchor.current)?.getObjectByName('sojourner');
-      if (!obj) return;
+    const loaded = findMachine(anchor.current)?.getObjectByName('sojourner');
+    if (!loaded) return;
+    // A slow GLB load may replace the fallback while the slider is already running.
+    if (rover.current?.obj !== loaded) {
+      restore();
+      const obj = loaded;
       rover.current = { obj, pos: obj.position.clone(), rot: obj.rotation.clone() };
     }
     if (v === undefined) {

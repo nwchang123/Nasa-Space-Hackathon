@@ -1,6 +1,12 @@
-# 素材清单：NASA 3D 模型和火星地图（等你确认后才下载）
+# 素材清单：NASA 3D 模型和火星地图
 
-调研日期：2026-11-14。**到目前为止没有下载任何素材文件。** 文件大小来自 HTTP HEAD 的 `Content-Length`。图片分辨率和模型的三角形数、贴图数，是只读文件开头（HTTP Range，前 64–256 KB，读完即丢、没有存盘）得到的。
+## 2026-11-14 模型升级执行记录
+
+已按用户授权下载 NASA 精细 MER `.blend` ZIP，并在本机 Blender 5.3.0 中导出新的 `mer.glb`。Pathfinder/Sojourner 和背罩改用 Blender Python 重建，Phoenix 从现有官方 `insight.glb` 工程平台改模。四个资产均使用 glTF-Transform 4.5.1 的 meshopt + WebP（最大 1024）压缩，保留独立动画节点；降落伞仍由原代码生成，顶点顺序不变。制作、来源及验证见 [MODEL_UPGRADE.md](MODEL_UPGRADE.md) 和 [CREDITS.md](../CREDITS.md)。
+
+## 以下为升级前的调研与预算记录
+
+调研日期：2026-11-14。下文的“不推荐精细 MER”“尚未安装 Blender”“继续使用剪影”和估算体积描述均为升级前记录，现状以上面的执行记录为准。原始文件来源和下载地址保留备查。
 
 ## 结论
 

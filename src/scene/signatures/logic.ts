@@ -206,7 +206,8 @@ export interface RoverPathPoint {
  * Sojourner's path (m, from the ramp's foot): forward past the rock (at rockS along, rockSide
  * aside), a swerve onto the rock's line, then backing up until its rear is just short of it.
  */
-export const ROVER_PATH = { rockS: 2.1, driveEnd: 3.55, swerveFrom: 2.45, swerveTo: 3.35, rockSide: 0.62, stopAt: 2.68 } as const;
+// Final reverse stop calibrated against the authored rear APXS and Barnacle Bill's actual mesh.
+export const ROVER_PATH = { rockS: 2.1, driveEnd: 3.55, swerveFrom: 2.45, swerveTo: 3.35, rockSide: 0.62, stopAt: 2.56 } as const;
 
 /** Where the slider (0..1) puts Sojourner on its way from the ramp's top to Barnacle Bill. */
 export function sojournerPath(p: number): RoverPathPoint {

@@ -193,7 +193,11 @@ export function PhoenixScoop({ stop, ground, lay }: SiteSignatureProps) {
   useEffect(() => () => puffs.dispose(), [puffs]);
 
   useFrame((state, dt) => {
-    if (!arm.current) arm.current = findMachine(anchor.current)?.getObjectByName('phoenix-arm') ?? null;
+    const loaded = findMachine(anchor.current)?.getObjectByName('phoenix-arm') ?? null;
+    if (loaded !== arm.current) {
+      reset();
+      arm.current = loaded;
+    }
     const p = drive(dt);
     const site = siteShown(stop);
     puffs.update(dt, site);

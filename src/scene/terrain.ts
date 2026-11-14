@@ -262,7 +262,7 @@ const BIG_ROCK = 0.45;
  * pitting, and a flatter base that sits in the sand. Colour: dark grey rock, with dust on the
  * faces that look up and banked against the foot.
  */
-function rockGeometry(seed: number, detail: number, bare: Color, dust: Color): BufferGeometry {
+export function rockGeometry(seed: number, detail: number, bare: Color, dust: Color): BufferGeometry {
   let s = seed;
   const rnd = () => {
     s = (s * 16807) % 2147483647;

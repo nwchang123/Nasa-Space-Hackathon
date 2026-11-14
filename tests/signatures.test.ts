@@ -203,10 +203,10 @@ describe('Sojourner path', () => {
       if (Math.abs(at.s - ROVER_PATH.rockS) < 0.31 + 0.24) expect(ROVER_PATH.rockSide - at.lat).toBeGreaterThan(0.23 + 0.24);
     }
   });
-  it('stops with its rear (~0.31 m behind its centre) just short of the rock', () => {
-    const gap = sojournerPath(1).s - 0.31 - (ROVER_PATH.rockS + 0.24);
-    expect(gap).toBeGreaterThan(0);
-    expect(gap).toBeLessThan(0.1);
+  it('backs up to the authored APXS contact stop (the mesh contact is checked in model-assets)', () => {
+    const along = sojournerPath(1).s - ROVER_PATH.rockS;
+    expect(along).toBeGreaterThan(0.4);
+    expect(along).toBeLessThan(0.5);
   });
 });
 

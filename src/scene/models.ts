@@ -1,9 +1,7 @@
-// The machines in the site dioramas, and Ingenuity. NASA 3D models (meshopt + WebP GLBs in
-// public/models/) are used where NASA publishes one; each is normalised by its bounding box to the
-// machine's real size. Pathfinder/Sojourner, Phoenix and Perseverance's backshell have no NASA
-// model: they, and every model while it loads or if it fails, use procedural silhouettes built
-// from primitives at roughly real size (metres, origin on the ground, front = +Z). Parts that
-// share a finish are merged, so a silhouette costs a handful of draw calls.
+// Site assets: NASA originals and credited Blender reconstructions, compressed with meshopt and
+// WebP. New authored assets already use metres, Y up and +Z front; their articulated nodes must
+// retain their local transforms. Procedural silhouettes remain the loading/error fallback.
+// The EDL canopy is always procedural: its vertex order is part of the decode animation contract.
 
 import {
   Box3,
@@ -43,7 +41,7 @@ import { realSizeScale, type RealSize, type Vec3 } from './layout';
 const modelUrl = (file: string) => `${import.meta.env.BASE_URL}models/${file}`;
 
 export interface ModelEntry {
-  /** NASA GLB, if one exists for this machine. */
+  /** NASA or authored GLB. See CREDITS.md for provenance. */
   url?: string;
   /** Real-world size the model is scaled to (from its bounding box). */
   size?: RealSize;
@@ -62,24 +60,23 @@ export const MODEL_REGISTRY: Record<MachineId, ModelEntry> = {
   // Viking 2 came to rest tilted 8.5° (docs/FACT_CHECK.md, viking-2); the direction of the tilt is
   // illustrative. Lifted a little so the low footpad stays on the ground.
   'viking-2': { ...VIKING, pose: { sink: -0.2, tilt: [0.06, 0, 0.136] } },
-  'pathfinder-sojourner': { illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'] },
+  'pathfinder-sojourner': { url: modelUrl('pathfinder.glb'), illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'] },
   spirit: {
     url: modelUrl('mer.glb'),
-    size: { span: 2.3, height: 1.5 },
     illustrative: true,
     note: MODEL_NOTES.spirit,
     // Stuck at Troy from 2009: wheels dug into soft sand, the deck tilted.
     pose: { sink: 0.09, tilt: [0.07, 0, -0.1] },
   },
-  opportunity: { url: modelUrl('mer.glb'), size: { span: 2.3, height: 1.5 }, illustrative: true, note: MODEL_NOTES.opportunity },
-  phoenix: { illustrative: true, note: MODEL_NOTES.phoenix },
+  opportunity: { url: modelUrl('mer.glb'), illustrative: true, note: MODEL_NOTES.opportunity },
+  phoenix: { url: modelUrl('phoenix.glb'), illustrative: true, note: MODEL_NOTES.phoenix },
   insight: {
     url: modelUrl('insight.glb'),
     size: { span: 6.0 },
     illustrative: true,
     note: MODEL_NOTES.insight,
   },
-  'mars2020-edl': { illustrative: true, note: MODEL_NOTES['mars2020-edl'] },
+  'mars2020-edl': { url: modelUrl('backshell.glb'), illustrative: true, note: MODEL_NOTES['mars2020-edl'] },
   ingenuity: { url: modelUrl('ingenuity.glb'), size: { span: 1.2 }, illustrative: false, note: MODEL_NOTES.ingenuity },
 };
 
@@ -584,6 +581,33 @@ function phoenixArm(): Group {
   return arm;
 }
 
+/** Perseverance's backshell, upright and dented, with the 21.5 m parachute spread out behind it. */
+function backshellAndChute(includeParachute = true): Group {
+  const r = rng(2021);
+  const shellGeom = new CylinderGeometry(0.85, 2.25, 1.35, 40, 6, true);
+  const pos = shellGeom.getAttribute('position');
+  for (let i = 0; i < pos.count; i++) {
+    // Dents from a 126 km/h impact.
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const dent = 1 - 0.06 * Math.max(0, Math.sin(x * 2.1 + z * 1.3)) * (0.6 - y / 1.35);
+    pos.setXYZ(i, x * dent, y, z * dent);
+  }
+  const k = new Kit()
+    .add('shell', shellGeom, [0, 0.55, 0], [0.12, 0, -0.16])
+    .add('dark', cyl(2.27, 2.3, 0.08, 40, true), [0.11, -0.1, -0.08], [0.12, 0, -0.16])
+    .add('shell', cyl(0.85, 0.85, 0.12, 32), [-0.11, 1.26, -0.09], [0.12, 0, -0.16])
+    .add('grey', cyl(0.5, 0.55, 0.3, 24), [-0.14, 1.45, -0.11], [0.12, 0, -0.16]);
+  for (let i = 0; i < 7; i++) {
+    const a = r() * Math.PI * 2;
+    const d = 2.7 + r() * 2.5;
+    k.add(i % 2 ? 'shell' : 'dark', box(0.15 + r() * 0.35, 0.03, 0.1 + r() * 0.25), [d * Math.sin(a), 0.02, d * Math.cos(a)], [0, r() * 3, 0.1]);
+  }
+  const g = k.build('backshell');
+
+  if (includeParachute) g.add(buildParachute());
+  return g;
+}
+
 let goreMap: CanvasTexture | null = null;
 
 /**
@@ -628,28 +652,11 @@ function goreTexture(outer: number, orange: Color, white: Color): CanvasTexture 
   return goreMap;
 }
 
-/** Perseverance's backshell, upright and dented, with the 21.5 m parachute spread out behind it. */
-function backshellAndChute(): Group {
-  const r = rng(2021);
-  const shellGeom = new CylinderGeometry(0.85, 2.25, 1.35, 40, 6, true);
-  const pos = shellGeom.getAttribute('position');
-  for (let i = 0; i < pos.count; i++) {
-    // Dents from a 126 km/h impact.
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const dent = 1 - 0.06 * Math.max(0, Math.sin(x * 2.1 + z * 1.3)) * (0.6 - y / 1.35);
-    pos.setXYZ(i, x * dent, y, z * dent);
-  }
-  const k = new Kit()
-    .add('shell', shellGeom, [0, 0.55, 0], [0.12, 0, -0.16])
-    .add('dark', cyl(2.27, 2.3, 0.08, 40, true), [0.11, -0.1, -0.08], [0.12, 0, -0.16])
-    .add('shell', cyl(0.85, 0.85, 0.12, 32), [-0.11, 1.26, -0.09], [0.12, 0, -0.16])
-    .add('grey', cyl(0.5, 0.55, 0.3, 24), [-0.14, 1.45, -0.11], [0.12, 0, -0.16]);
-  for (let i = 0; i < 7; i++) {
-    const a = r() * Math.PI * 2;
-    const d = 2.7 + r() * 2.5;
-    k.add(i % 2 ? 'shell' : 'dark', box(0.15 + r() * 0.35, 0.03, 0.1 + r() * 0.25), [d * Math.sin(a), 0.02, d * Math.cos(a)], [0, r() * 3, 0.1]);
-  }
-  const g = k.build('backshell');
+/** Stable canopy and lines, mounted outside the GLB's Suspense boundary so decode never loses
+ * its shared vertex buffers when the detailed backshell replaces the loading silhouette. */
+export function buildParachute(): Group {
+  const g = new Group();
+  g.name = 'parachute-rig';
 
   // The canopy: gores of orange and white, folded and dusty. Real diameter 21.5 m; here it lies
   // partly bunched up, about 16 m across.
@@ -704,7 +711,7 @@ function backshellAndChute(): Group {
 }
 
 /** A procedural stand-in for a machine, at real size. Ingenuity's home has no other machine. */
-export function buildPlaceholder(id: MachineId): Group {
+export function buildPlaceholder(id: MachineId, includeParachute = true): Group {
   switch (id) {
     case 'viking-1':
     case 'viking-2':
@@ -720,7 +727,7 @@ export function buildPlaceholder(id: MachineId): Group {
     case 'insight':
       return roundPanelLander('insight');
     case 'mars2020-edl':
-      return backshellAndChute();
+      return backshellAndChute(includeParachute);
     case 'ingenuity':
       return new Group();
   }

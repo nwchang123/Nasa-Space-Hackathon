@@ -1,0 +1,430 @@
+{
+  "pipeline": {
+    "blender": "5.3.0",
+    "gltfTransform": "4.5.1",
+    "geometry": "EXT_meshopt_compression",
+    "textures": "image/webp",
+    "maxTextureSize": 1024,
+    "flatten": false,
+    "join": false,
+    "instance": false,
+    "simplify": false
+  },
+  "assets": {
+    "mer": {
+      "file": "public/models/mer.glb",
+      "bytes": 1073196,
+      "sha256": "0bca9d97548f4a39c26adb34398e151980346d88c9ae6ee4d1f42f6ff3c81d06",
+      "nodes": 42,
+      "triangles": 32562,
+      "drawPrimitives": 55,
+      "textures": [
+        {
+          "name": "tex_arm.psd",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_body_n",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_body.psd",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_suspension_n",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_suspension.psd",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_panels_n",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_panels-silicon",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_instruments",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_panels2_n",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_panels2-silicon",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "tex_mast.psd",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Silver MLI-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Silver MLI-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Silver MLI-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "requiredNodes": [
+        "mer-right-front-contact",
+        "wheel-right-front"
+      ]
+    },
+    "pathfinder": {
+      "file": "public/models/pathfinder.glb",
+      "bytes": 1448448,
+      "sha256": "394a1a7d036a3d0226014ce8e668845fc8185f8969d8db76992de89ba7ca9cae",
+      "nodes": 18,
+      "triangles": 77866,
+      "drawPrimitives": 15,
+      "textures": [
+        {
+          "name": "Airbag Vectran weave-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Airbag Vectran weave-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Airbag Vectran weave-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Thermal white-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Thermal white-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Thermal white-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Wrinkled gold MLI-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Wrinkled gold MLI-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Wrinkled gold MLI-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Dusty silicon cells-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Dusty silicon cells-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Dusty silicon cells-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "requiredNodes": [
+        "sojourner",
+        "sojourner-apxs-tip"
+      ]
+    },
+    "phoenix": {
+      "file": "public/models/phoenix.glb",
+      "bytes": 2267996,
+      "sha256": "c722be4162365aadceb8688d2d98ef72c6a77bd0585946adca92716779c3d5fb",
+      "nodes": 13,
+      "triangles": 114500,
+      "drawPrimitives": 13,
+      "textures": [
+        {
+          "name": "Polar thermal white-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar thermal white-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar thermal white-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silver MLI-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silver MLI-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silver MLI-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silicon cells-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silicon cells-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Polar silicon cells-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Wrinkled gold MLI-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Wrinkled gold MLI-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "requiredNodes": [
+        "phoenix-arm",
+        "phoenix-scoop"
+      ]
+    },
+    "backshell": {
+      "file": "public/models/backshell.glb",
+      "bytes": 725524,
+      "sha256": "443224f0bf673066289e6546852eda1539c9f17e68523b5c33d88c9684ebf313",
+      "nodes": 7,
+      "triangles": 40752,
+      "drawPrimitives": 7,
+      "textures": [
+        {
+          "name": "Weathered backshell thermal coating-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Weathered backshell thermal coating-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Weathered backshell thermal coating-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Exposed composite laminate-normal",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Exposed composite laminate-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Exposed composite laminate-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Thermal white-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        {
+          "name": "Thermal white-rough",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ],
+      "requiredNodes": [
+        "backshell"
+      ]
+    }
+  }
+}

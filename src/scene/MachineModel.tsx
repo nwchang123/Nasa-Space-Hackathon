@@ -1,12 +1,12 @@
-// A machine in its diorama: NASA's model when there is one (normalised to real size by its
-// bounding box), with the procedural silhouette shown while it loads and kept if it fails.
+// A machine in its diorama: a credited NASA, adapted or authored GLB, with the procedural
+// silhouette shown while it loads and kept if it fails. Native metre frames retain their pivots.
 // Models load when their stop comes up (the Director preloads them as the flight toward it starts).
 
 import { useGLTF } from '@react-three/drei';
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
 import { MeshStandardMaterial, type Material, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
 import type { MachineId } from '../types';
-import { buildPlaceholder, disposeObject, MODEL_REGISTRY, normalizeModel, type ModelEntry } from './models';
+import { buildParachute, buildPlaceholder, disposeObject, MODEL_REGISTRY, normalizeModel, type ModelEntry } from './models';
 
 /**
  * Free GPU resources once `obj` has really left the scene. React StrictMode (dev) runs effect
@@ -25,7 +25,14 @@ function useDisposeWhenDetached(obj: Object3D, dispose: () => void) {
 }
 
 function Silhouette({ id }: { id: MachineId }) {
-  const obj = useMemo(() => buildPlaceholder(id), [id]);
+  const obj = useMemo(() => buildPlaceholder(id, false), [id]);
+  const dispose = useMemo(() => () => disposeObject(obj), [obj]);
+  useDisposeWhenDetached(obj, dispose);
+  return <primitive object={obj} />;
+}
+
+function Parachute() {
+  const obj = useMemo(() => buildParachute(), []);
   const dispose = useMemo(() => () => disposeObject(obj), [obj]);
   useDisposeWhenDetached(obj, dispose);
   return <primitive object={obj} />;
@@ -90,11 +97,17 @@ export function MachineModel({ id }: { id: MachineId }) {
   ) : (
     silhouette
   );
-  return pose ? (
+  const model = pose ? (
     <group position={[0, -pose.sink, 0]} rotation={pose.tilt}>
       {body}
     </group>
   ) : (
     body
+  );
+  return (
+    <>
+      {model}
+      {id === 'mars2020-edl' && <Parachute />}
+    </>
   );
 }

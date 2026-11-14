@@ -31,7 +31,7 @@ const NIGHT_KEY_ELEV = 25 * (Math.PI / 180);
 const NIGHT_SHADOW = 0.12;
 /** Night fill: from just above and to the side of the camera, so faces toward the viewer read. */
 const FILL_COLOR = new Color('#c3cde0');
-const FILL_NIGHT = 0.85;
+const FILL_NIGHT = 0.5;
 const FILL_SIDE = 0.45;
 const FILL_UP = 0.35;
 const dir = new Vector3();

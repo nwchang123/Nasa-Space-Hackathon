@@ -1,0 +1,18 @@
+{
+  "sourceSha256": "1233dc2c96a1c0b08ca9a20f7ed9c09e0223f06f14f6ae6371349504c1929149",
+  "nodes": [
+    "polySurfa1",
+    "polySurfa2",
+    "viking_car"
+  ],
+  "meshes": {
+    "polySurfa1": {
+      "triangles": 65500,
+      "trianglePositionSha256": "b6e0c2b7a43cb1126850da136a7317270d732fbf8453794cc3748fb25cf87148"
+    },
+    "polySurfa2": {
+      "triangles": 34026,
+      "trianglePositionSha256": "5b58d5e148c15c42af2d9069c92977d7a499480333a924fec0d336dc92bbc8df"
+    }
+  }
+}

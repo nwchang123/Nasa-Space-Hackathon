@@ -99,6 +99,7 @@ export function SpiritDrag({ stop, ground, lay }: SiteSignatureProps) {
   }, [mat]);
   const puffs = useMemo(() => new Puffs(70, '#c99a74', 0.06), []);
   const built = useRef(false);
+  const contactSource = useRef<Object3D | null>(null);
   const last = useRef<{ back: number; sound: number }>({ back: 0, sound: 0 });
   const drive = useSliderDrive('drag', reduced);
 
@@ -120,6 +121,12 @@ export function SpiritDrag({ stop, ground, lay }: SiteSignatureProps) {
     if (!machine.current) machine.current = findMachine(anchor.current);
     const m = machine.current;
     if (!m) return;
+    const loaded = m.getObjectByName('mer-right-front-contact') ?? m.getObjectByName('mer') ?? null;
+    if (loaded !== contactSource.current) {
+      contactSource.current = loaded;
+      park();
+      built.current = false;
+    }
     const site = siteShown(stop);
     puffs.update(dt, site);
     if (p === null) {

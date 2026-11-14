@@ -158,6 +158,11 @@ export function localBox(root: Object3D, frame: Object3D, out = new Box3()): Box
  * nothing is loaded.
  */
 export function rightFrontFoot(machine: Object3D): Vector3 | null {
+  const contact = machine.getObjectByName('mer-right-front-contact');
+  if (contact) {
+    machine.updateWorldMatrix(true, true);
+    return machine.worldToLocal(contact.getWorldPosition(new Vector3()));
+  }
   const b = localBox(machine, machine);
   if (b.isEmpty()) return null;
   const c = b.getCenter(new Vector3());

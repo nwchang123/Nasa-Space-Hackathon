@@ -112,7 +112,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     clear: 2.6,
     ingenuity: { right: 2.5, toward: 1.2 },
     frame: { left: -3.3, right: 3.2, height: 1.4 },
-    antenna: [0.3, 0.72, -0.2],
+    antenna: [0.3, 0.675, -0.2],
   },
   // Troy, beside Home Plate in Gusev crater: Spirit stuck in soft sand, Husband Hill to the north.
   spirit: {
@@ -127,7 +127,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     clear: 1.8,
     ingenuity: { right: 2.3, toward: 0.8 },
     frame: { left: -1.5, right: 2.9, height: 1.6 },
-    antenna: [-0.3, 0.98, 0.1],
+    antenna: [0.4789, 0.7289, -0.1531],
   },
   // Perseverance Valley, on the inner slope of Endeavour crater's western rim: rim behind, to the west.
   opportunity: {
@@ -144,7 +144,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     clear: 1.8,
     ingenuity: { right: 2.3, toward: 0.8 },
     frame: { left: -1.5, right: 2.9, height: 1.6 },
-    antenna: [-0.3, 0.98, 0.1],
+    antenna: [0.3961, 0.85, -0.21],
   },
   // Vastitas Borealis: pale, flat arctic plain broken into polygons by ground ice.
   phoenix: {
@@ -158,8 +158,8 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     rockSize: 0.18,
     clear: 3.2,
     ingenuity: { right: 3.7, toward: 1.6 },
-    frame: { left: -3, right: 4.3, height: 2.2 },
-    antenna: [0, 1.28, -0.4],
+    frame: { left: -3, right: 4.3, height: 2.5 },
+    antenna: [-0.49, 1.51, -0.42],
   },
   // Homestead hollow, Elysium Planitia: smooth, almost rock-free.
   insight: {
@@ -242,21 +242,20 @@ export const HOTSPOTS: Record<MachineId, [Spot, Spot, Spot, Spot]> = {
   // Body, the low (tilted) footpad, the far side, the other footpad.
   'viking-2': [{ box: [0, 0.5, 0.2] }, { box: [0.75, 0.04, 0.65] }, { box: [-0.65, 0.62, -0.35] }, { box: [-0.7, 0.03, 0.6] }],
   // An airbag, Sojourner, the camera mast (last data), a petal.
-  'pathfinder-sojourner': [{ m: [1.14, 0.3, -0.11] }, { m: [-2.6, 0.38, 0.5] }, { m: [0, 1.22, 0] }, { m: [0, 0.22, -0.85] }],
-  // (The NASA rover model, as placed: about x −0.8…0.9, y 0…1.45, z −0.8…0.9, its arm reaching
-  // forward to z 1.75.) Camera mast, the right-front wheel (the dead one it dragged), a wheel in
-  // the soft soil, the panels.
-  spirit: [{ m: [0.22, 1.36, 0.42] }, { m: [-0.66, 0.1, 0.62] }, { m: [0.72, 0.06, -0.05] }, { m: [0.05, 0.72, -0.55] }],
-  // Camera mast, the arm's rock tools, the dusty panels, a wheel.
-  opportunity: [{ m: [0.22, 1.42, 0.42] }, { m: [0.35, 0.3, 1.55] }, { m: [-0.6, 0.78, -0.25] }, { m: [0.72, 0.12, -0.6] }],
+  'pathfinder-sojourner': [{ m: [1.1391, 0.2357, -0.111] }, { m: [-2.6, 0.3105, 0.5] }, { m: [0.079, 1.18, 0.086] }, { m: [0, 0.1399, 1.2] }],
+  // Detailed MER surfaces measured after normalization. Spirit's anchors include its tilt/sink:
+  // camera, jammed right-front wheel, the exposed top of a wheel in soft soil, and a solar panel.
+  spirit: [{ m: [0.2005, 1.186, 0.4808] }, { m: [-0.5496, 0.0457, 0.5769] }, { m: [0.5106, 0.092, -0.0672] }, { m: [-0.5823, 0.6296, -0.15] }],
+  // Camera, the stowed instrument turret in the NASA source, a panel, and an outer wheel face.
+  opportunity: [{ m: [0.0691, 1.32, 0.3903] }, { m: [0.1, 0.3945, 0.31] }, { m: [-0.65, 0.6457, -0.2] }, { m: [0.5644, 0.12, -0.55] }],
   // The deck (ovens, lab), the scoop in its trench, the array that lost power, the broken array.
-  phoenix: [{ m: [0.1, 1.15, -0.1] }, { m: [-0.5, 0.32, 1.95] }, { m: [-1.79, 1.12, 0] }, { m: [1.6, 0.9, 0] }],
+  phoenix: [{ m: [0.17, 1.27, -0.16] }, { m: [-0.5, 0.087, 1.95] }, { m: [-1.7993, 0.9453, -0.4005] }, { m: [1.7993, 0.9457, -0.4005] }],
   // (NASA model, as placed: deck top ~1.35 m, arrays to x ±3 m, the raised arm at x −1.3…0,
   // y 1.1…2.1, z 0.7…1.7.) The arm, the instruments on the deck's front edge, a dusty array, the
   // deck's top (where the laser reflector is).
   insight: [{ m: [-0.65, 1.95, 1.2] }, { m: [-0.1, 1.28, 0.9] }, { m: [-2.2, 1.22, 0] }, { m: [0.1, 1.4, -0.6] }],
   // The backshell's top, the parachute, a dent from the impact, the canopy's near edge.
-  'mars2020-edl': [{ m: [-0.14, 1.75, -0.11] }, { m: [-1.5, 0.35, -8.2] }, { m: [1.6, 0.75, 0.9] }, { m: [-1.2, 0.25, -3.6] }],
+  'mars2020-edl': [{ m: [-0.21, 1.7427, -0.14] }, { m: [-3.0003, 0.0751, -8.1986] }, { m: [1.2617, 0.5181, 0.843] }, { m: [-1.2018, 0.0573, -3.5988] }],
   // Ingenuity at the diorama's centre: fuselage, rotor, the broken blade (followed live), solar panel.
   ingenuity: [{ m: [0.05, 0.2, 0.05] }, { m: [0.42, 0.44, 0.1] }, { m: [-0.5, 0.44, 0] }, { m: [0, 0.56, 0] }],
 };

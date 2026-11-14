@@ -1,0 +1,574 @@
+{
+  "file": "public/models/viking-lander.glb",
+  "bytes": 3659572,
+  "sha256": "a4e7b03122abb3c2ae0d57a36b7851ecc302618eebb126a4986b874a0f20d70c",
+  "source": "assets-raw/viking-lander.glb",
+  "sourceSha256": "1233dc2c96a1c0b08ca9a20f7ed9c09e0223f06f14f6ae6371349504c1929149",
+  "pipeline": {
+    "blender": "5.3.0",
+    "gltfTransform": "4.5.1",
+    "compression": "EXT_meshopt_compression",
+    "positions": "lossless FLOAT32; no position quantization/decode nodes",
+    "normalTangentBits": 12,
+    "uvBits": 16,
+    "maxTextureSize": 1024,
+    "dataTextureSize": 512,
+    "flatten": false,
+    "join": false,
+    "instance": false,
+    "palette": false,
+    "simplify": false
+  },
+  "triangles": 99526,
+  "nodes": [
+    {
+      "name": "polySurfa1",
+      "children": [],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "polySurfa2",
+      "children": [],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "viking_car",
+      "children": [
+        "polySurfa1",
+        "polySurfa2"
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        1,
+        0,
+        0,
+        4.371138828673793e-8
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "meshes": {
+    "polySurfa1": {
+      "triangles": 65500,
+      "trianglePositionSha256": "b6e0c2b7a43cb1126850da136a7317270d732fbf8453794cc3748fb25cf87148"
+    },
+    "polySurfa2": {
+      "triangles": 34026,
+      "trianglePositionSha256": "5b58d5e148c15c42af2d9069c92977d7a499480333a924fec0d336dc92bbc8df"
+    }
+  },
+  "materials": [
+    "blinn4SG",
+    "blinn6SG",
+    "blinn2SG",
+    "blinn8SG",
+    "blinn11SG",
+    "initialShadingGr",
+    "blinn9SG",
+    "blinn10SG",
+    "blinn12SG"
+  ],
+  "textures": [
+    {
+      "name": "blinn4SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 78834
+    },
+    {
+      "name": "blinn4SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 41682
+    },
+    {
+      "name": "blinn4SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 113520
+    },
+    {
+      "name": "blinn6SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 74084
+    },
+    {
+      "name": "blinn6SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 8766
+    },
+    {
+      "name": "blinn6SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 92364
+    },
+    {
+      "name": "blinn2SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 95272
+    },
+    {
+      "name": "blinn2SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 28638
+    },
+    {
+      "name": "blinn2SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 98734
+    },
+    {
+      "name": "blinn8SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 96434
+    },
+    {
+      "name": "blinn8SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 25924
+    },
+    {
+      "name": "blinn8SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 87250
+    },
+    {
+      "name": "blinn11SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 78766
+    },
+    {
+      "name": "blinn11SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 20832
+    },
+    {
+      "name": "blinn11SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 98594
+    },
+    {
+      "name": "initialShadingGr-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 94588
+    },
+    {
+      "name": "initialShadingGr-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 16436
+    },
+    {
+      "name": "initialShadingGr-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 80932
+    },
+    {
+      "name": "blinn9SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 74304
+    },
+    {
+      "name": "blinn9SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 15646
+    },
+    {
+      "name": "blinn9SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 105018
+    },
+    {
+      "name": "blinn10SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 95048
+    },
+    {
+      "name": "blinn10SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 27692
+    },
+    {
+      "name": "blinn10SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 103934
+    },
+    {
+      "name": "blinn12SG-micro-normal",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 65448
+    },
+    {
+      "name": "blinn12SG-aged-base",
+      "mime": "image/webp",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 24594
+    },
+    {
+      "name": "blinn12SG-roughness-metallic",
+      "mime": "image/webp",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 95866
+    }
+  ],
+  "bake": {
+    "blender": "5.3.0",
+    "size": 1024,
+    "sourceSha256": "1233dc2c96a1c0b08ca9a20f7ed9c09e0223f06f14f6ae6371349504c1929149",
+    "geometry": {
+      "polySurfa1": {
+        "parent": "viking_car",
+        "matrix": [
+          [
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1
+          ]
+        ],
+        "vertices": 34583,
+        "triangles": 65500,
+        "positionHash": "dea681947c963aabc3186881de43eff622c72bf7cd42d862a03703b4eaf05645",
+        "indexHash": "6678c3c14f15b863366a4476700998f590c4575deaa2f22aa7d0131da6829b69"
+      },
+      "polySurfa2": {
+        "parent": "viking_car",
+        "matrix": [
+          [
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1
+          ]
+        ],
+        "vertices": 17111,
+        "triangles": 34026,
+        "positionHash": "6127f7185cde2f38ff66857667bc3d2985825e5b1d3e52b781344251b50b514f",
+        "indexHash": "d5e9ce06b110c6354a0f8f553eff8fd8c2c26b3e81c66bfcb02799b6885ee65c"
+      }
+    },
+    "materials": [
+      {
+        "sourceMaterial": "blinn4SG",
+        "finish": "ivory thermal paint",
+        "family": "paint",
+        "dustMean": 0.06128493696451187,
+        "dustMax": 0.25999999046325684,
+        "roughnessRange": [
+          0.43367657789423447,
+          0.8848548408168
+        ],
+        "metallicRange": [
+          0.042273253202438354,
+          0.7899009314919923
+        ],
+        "uvCoverage": 0.27573299407958984
+      },
+      {
+        "sourceMaterial": "blinn11SG",
+        "finish": "aged thermal paint",
+        "family": "paint",
+        "dustMean": 0.03130565956234932,
+        "dustMax": 0.14761824905872345,
+        "roughnessRange": [
+          0.4567449487404601,
+          0.8477486450624268
+        ],
+        "metallicRange": [
+          0.06983215808868408,
+          0.7009801041298128
+        ],
+        "uvCoverage": 0.578740119934082
+      },
+      {
+        "sourceMaterial": "blinn8SG",
+        "finish": "brushed aluminium legs and pads",
+        "family": "metal",
+        "dustMean": 0.06905761361122131,
+        "dustMax": 0.18028026819229126,
+        "roughnessRange": [
+          0.319656957676077,
+          0.596097128955725
+        ],
+        "metallicRange": [
+          0.7037081122398376,
+          0.84
+        ],
+        "uvCoverage": 0.4816427230834961
+      },
+      {
+        "sourceMaterial": "initialShadingGr",
+        "finish": "satin titanium structure",
+        "family": "metal",
+        "dustMean": 0.10541260242462158,
+        "dustMax": 0.25999999046325684,
+        "roughnessRange": [
+          0.3660483798242307,
+          0.670621714281475
+        ],
+        "metallicRange": [
+          0.6740800285339356,
+          0.8797952795028686
+        ],
+        "uvCoverage": 0.33772850036621094
+      },
+      {
+        "sourceMaterial": "blinn6SG",
+        "finish": "carbon instrument shroud",
+        "family": "dark",
+        "dustMean": 0.052004531025886536,
+        "dustMax": 0.15995125472545624,
+        "roughnessRange": [
+          0.7193242539856846,
+          0.9235932892780965
+        ],
+        "metallicRange": [
+          0.11984614253044129,
+          0.14
+        ],
+        "uvCoverage": 0.5870170593261719
+      },
+      {
+        "sourceMaterial": "blinn9SG",
+        "finish": "charcoal instrument covers",
+        "family": "dark",
+        "dustMean": 0.04867985099554062,
+        "dustMax": 0.14449933171272278,
+        "roughnessRange": [
+          0.6343099964178314,
+          0.84968734898813
+        ],
+        "metallicRange": [
+          0.2174876481294632,
+          0.25
+        ],
+        "uvCoverage": 0.46599292755126953
+      },
+      {
+        "sourceMaterial": "blinn2SG",
+        "finish": "aged copper-gold insulation",
+        "family": "foil",
+        "dustMean": 0.036790426820516586,
+        "dustMax": 0.1498539298772812,
+        "roughnessRange": [
+          0.396206996542576,
+          0.6385385198080618
+        ],
+        "metallicRange": [
+          0.6748025679588318,
+          0.78
+        ],
+        "uvCoverage": 0.7050933837890625
+      },
+      {
+        "sourceMaterial": "blinn10SG",
+        "finish": "brass-gold harness details",
+        "family": "foil",
+        "dustMean": 0.0458579920232296,
+        "dustMax": 0.1416940540075302,
+        "roughnessRange": [
+          0.37218002391967536,
+          0.6093709698591673
+        ],
+        "metallicRange": [
+          0.6979803085327149,
+          0.8
+        ],
+        "uvCoverage": 0.6648321151733398
+      },
+      {
+        "sourceMaterial": "blinn12SG",
+        "finish": "oxidised copper cable braid",
+        "family": "copper",
+        "dustMean": 0.06176508218050003,
+        "dustMax": 0.14183776080608368,
+        "roughnessRange": [
+          0.47509142801441306,
+          0.6513659755598448
+        ],
+        "metallicRange": [
+          0.6280891513824463,
+          0.72
+        ],
+        "uvCoverage": 0.10420036315917969
+      }
+    ]
+  },
+  "note": "NASA geometry retained. PBR finish, panel microrelief, wear and directional Mars dust are illustrative."
+}
