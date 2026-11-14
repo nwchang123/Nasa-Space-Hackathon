@@ -5,7 +5,10 @@
 //   orbits.ts  – heliocentric positions (JPL approximate planetary elements; JPL SBDB for Ceres/Eros)
 //   deep.ts    – rough models for Pioneer 10/11 and Kepler, fitted to JPL Horizons
 
-import type { MachineId, SignalPath, SiteSky, World } from '../types';
+import type { SignalPath, SiteSky } from '../types';
+
+/** Where a signal is headed. The library still knows the Moon and deep space; the app uses 'mars'. */
+export type World = 'moon' | 'mars' | 'deep';
 import { DEG, wrap180 } from '../geo';
 import { AU_KM_CONST, C_KM_S_CONST } from './constants';
 import { jdTT } from './time';
@@ -52,12 +55,21 @@ export function sunElevation(sub: SubPoint, lat: number, lon: number): number {
   return Math.asin(Math.max(-1, Math.min(1, s))) / DEG;
 }
 
+/** Sun azimuth seen from a site, degrees clockwise from north: the initial great-circle bearing toward the sub-solar point. */
+export function sunAzimuth(sub: SubPoint, lat: number, lon: number): number {
+  const dl = (sub.lon - lon) * DEG;
+  const y = Math.sin(dl) * Math.cos(sub.lat * DEG);
+  const x = Math.cos(lat * DEG) * Math.sin(sub.lat * DEG) - Math.sin(lat * DEG) * Math.cos(sub.lat * DEG) * Math.cos(dl);
+  return ((Math.atan2(y, x) / DEG) % 360 + 360) % 360;
+}
+
 /** Sky right now at a site on the Moon or Mars (centre of the Sun's disc, no refraction). */
 export function siteSky(world: 'moon' | 'mars', lat: number, lon: number, date: Date): SiteSky {
   const sub = world === 'moon' ? moonSubSolar(date) : marsSubSolar(date);
   const elevationDeg = sunElevation(sub, lat, lon);
   return {
     elevationDeg,
+    azimuthDeg: sunAzimuth(sub, lat, lon),
     isDay: elevationDeg > 0,
     localSolarHours: world === 'mars' ? marsLocalSolarTime(date, lon) : undefined,
   };
@@ -102,7 +114,7 @@ function smallBodyPath(body: 'ceres' | 'eros', date: Date, note: string): Signal
 }
 
 /** Live distance and round-trip light time for a call to a machine. */
-export function signalPath(id: MachineId, world: World, date: Date): SignalPath {
+export function signalPath(id: string, world: World, date: Date): SignalPath {
   if (world === 'moon') {
     const d = earthMoonDistanceKm(date);
     return { distanceKm: d, roundTripS: (2 * d) / C_KM_S, estimate: false, note: 'Earth–Moon distance right now (Meeus lunar theory)' };
