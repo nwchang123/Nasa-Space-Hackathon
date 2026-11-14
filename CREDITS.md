@@ -12,8 +12,13 @@ NASA material is used for education under NASA's media guidelines. NASA does not
 ## Methods
 
 - Mars local time and Sun position: Allison, M. & McEwen, M. (2000), *A post-Pathfinder evaluation of areocentric solar coordinates*, Planetary and Space Science 48; NASA GISS Mars24 algorithm.
-- Sun and Moon positions: Meeus, J., *Astronomical Algorithms* (2nd ed.).
-- Planet positions: Standish, E. M., *Keplerian Elements for Approximate Positions of the Major Planets*, JPL Solar System Dynamics.
+- Earth–Mars distance and light time: Standish, E. M., *Keplerian Elements for Approximate Positions of the Major Planets*, JPL Solar System Dynamics; checked against JPL Horizons.
+- Time scales and general methods: Meeus, J., *Astronomical Algorithms* (2nd ed.).
+- Distances and headings between sites: great-circle (haversine) formula on a sphere of radius 3,389.5 km.
+
+## Images and 3D models
+
+The Mars globe and the machines in the scene are drawn procedurally in code and are illustrative. If NASA 3D models or maps are added, each file is listed here with its source and licence.
 
 ## Fonts
 
