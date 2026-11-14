@@ -189,7 +189,8 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     cameraElev: 22,
     yawOffset: 0,
     hills: [{ azDeg: 285, dist: 90, radius: 45, height: 11 }],
-    clear: 9,
+    // Wide enough to keep the whole spread-out parachute on flat ground.
+    clear: 15,
     ingenuity: { right: 3.6, toward: 1.5 },
     frame: { left: -8.5, right: 4.3, height: 2.6 },
     antenna: [0, 1.4, 0],

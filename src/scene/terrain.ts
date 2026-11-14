@@ -106,9 +106,10 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
       h += p.ripples * Math.sin(u * ((2 * Math.PI) / 1.7) + 4 * fbm(x / 7, z / 7, p.seed + 3)) * (0.5 + 0.5 * fbm(x / 9, z / 9, p.seed + 5));
     }
     if (p.polygons > 0) h -= 0.06 * (1 - smoothstep(0.05, 0.4, polygonEdge(x, z, p.polygons, p.seed)));
-    h *= f;
+    // Flatten after adding the hills: a big hill's foot reaches the clearing (Jezero's rim added
+    // ~0.2 m there) and would bury anything lying flat on the ground, like the parachute.
     for (const hill of hills) h += hill.h * Math.exp(-((x - hill.x) ** 2 + (z - hill.z) ** 2) / hill.r2);
-    return h;
+    return h * f;
   };
 
   // ---- the ground
