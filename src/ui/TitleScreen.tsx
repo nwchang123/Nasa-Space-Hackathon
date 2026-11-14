@@ -1,3 +1,4 @@
+import { memo, useEffect, useRef } from 'react';
 import { marsLocalSolarTime, signalPath } from '../astro';
 import { FICTION_NOTE } from '../data/flight';
 import { MACHINE_BY_ID } from '../data/machines';
@@ -5,50 +6,121 @@ import { LEGS, TOTAL_KM } from '../flight/route';
 import { HangarButton } from '../hangar/HangarEntry';
 import { useApp } from '../store';
 import { formatDuration, formatKm, formatSolarTime } from './callPlan';
-import { useUtcClock } from './useClock';
+import { prefersReducedMotion, useUtcClock } from './useClock';
 
 /** Ingenuity's real total over its 72 flights (docs/FACT_CHECK.md). */
 const REAL_FLOWN_KM = '17.0 km';
 
 const home = MACHINE_BY_ID.ingenuity;
 const homeCoords = `${Math.abs(home.lat).toFixed(1)}°${home.lat >= 0 ? 'N' : 'S'} ${Math.abs(home.lon).toFixed(1)}°${home.lon >= 0 ? 'E' : 'W'}`;
+/** 'Valinor Hills, Jezero crater' → 'Valinor Hills'. */
+const homeSite = home.site.split(',')[0];
+
+/** Graduations round the reticle's outer ring: every 5°, longer every 30°. */
+const RETICLE_TICKS = Array.from({ length: 72 }, (_, i) => {
+  const a = (i * 5 * Math.PI) / 180;
+  const r0 = 496;
+  const r1 = i % 6 === 0 ? 466 : 484;
+  const f = (n: number) => n.toFixed(1);
+  return `M${f(r0 * Math.cos(a))} ${f(r0 * Math.sin(a))}L${f(r1 * Math.cos(a))} ${f(r1 * Math.sin(a))}`;
+}).join('');
+
+/** A faint observatory reticle behind the title column; drawn once, never re-rendered. */
+const Reticle = memo(function Reticle() {
+  return (
+    <svg className="title-reticle" viewBox="-500 -500 1000 1000" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" strokeWidth="1" vectorEffect="non-scaling-stroke">
+        <circle r="496" vectorEffect="non-scaling-stroke" />
+        <circle r="380" vectorEffect="non-scaling-stroke" />
+        <circle r="250" strokeDasharray="2 7" vectorEffect="non-scaling-stroke" />
+        <circle r="120" vectorEffect="non-scaling-stroke" />
+        <ellipse rx="496" ry="150" transform="rotate(-18)" vectorEffect="non-scaling-stroke" />
+        <ellipse rx="430" ry="96" transform="rotate(24)" strokeDasharray="3 9" vectorEffect="non-scaling-stroke" />
+        <path d="M-500 0H-140M140 0H500M0 -500V-140M0 140V500M-10 0H10M0 -10V10" vectorEffect="non-scaling-stroke" />
+        <path d={RETICLE_TICKS} vectorEffect="non-scaling-stroke" />
+      </g>
+    </svg>
+  );
+});
 
 export function TitleScreen() {
   const startFlight = useApp(s => s.startFlight);
+  const screen = useRef<HTMLElement>(null);
   // Ticks every second, which also keeps the light time and Jezero's solar clock current.
-  const utc = useUtcClock();
+  const utc = useUtcClock().slice(0, 8);
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
   const roundTrip = signalPath('ingenuity', 'mars', now).roundTripS;
   const jezero = formatSolarTime(marsLocalSolarTime(now, home.lon));
 
+  // The reticle and the frame's registration marks drift a few pixels against the cursor, so the
+  // overlay feels coupled to the globe. Mouse only, and never with reduced motion.
+  useEffect(() => {
+    const el = screen.current;
+    if (!el || prefersReducedMotion() || !window.matchMedia?.('(pointer: fine)').matches) return;
+    let frame = 0;
+    let x = 0;
+    let y = 0;
+    const apply = () => {
+      frame = 0;
+      el.style.setProperty('--px', x.toFixed(3));
+      el.style.setProperty('--py', y.toFixed(3));
+    };
+    const move = (e: PointerEvent) => {
+      x = (e.clientX / window.innerWidth) * 2 - 1;
+      y = (e.clientY / window.innerHeight) * 2 - 1;
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', move);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
-    <section className="title-screen" aria-labelledby="title-heading">
-      <header className="title-slate reveal" style={{ animationDelay: '0.1s' }}>
-        <span className="title-slate-loc">
-          Jezero crater <span aria-hidden="true">·</span> {homeCoords} <span aria-hidden="true">·</span>{' '}
-          <span className="title-slate-date">{today} </span>
-          <span className="tabular">{utc}</span>
+    <section ref={screen} className="title-screen" aria-labelledby="title-heading">
+      <div className="title-frame" aria-hidden="true" />
+      <div className="title-marks" aria-hidden="true">
+        <span className="tf-mark tf-tl" />
+        <span className="tf-mark tf-tr" />
+        <span className="tf-mark tf-bl" />
+        <span className="tf-mark tf-br" />
+        <span className="tf-tick tf-t" />
+        <span className="tf-tick tf-b" />
+        <span className="tf-tick tf-l" />
+        <span className="tf-tick tf-r" />
+      </div>
+      <Reticle />
+
+      <header className="title-bar title-bar-top reveal" style={{ animationDelay: '0.1s' }}>
+        <span className="tb-loc">
+          <span aria-hidden="true">[ </span>Jezero <span aria-hidden="true">·</span> {homeCoords}
+          <span aria-hidden="true"> ]</span>
         </span>
         <span
-          className="title-slate-astro tabular"
-          title="Live solar time at Jezero (Mars24) and round-trip Earth–Mars radio light time right now"
+          className="tb-astro tabular"
+          title="Solar time at Jezero right now (Mars24), and the light time from Earth to Mars and back"
         >
           Solar {jezero} <span aria-hidden="true">·</span> Light {roundTrip === null ? '—' : formatDuration(roundTrip)}
         </span>
+        <span className="tb-utc tabular">UTC {utc}</span>
       </header>
 
-      {/* margin-top: auto anchors the opening slate low; on short viewports it scrolls instead of clipping. */}
+      {/* margin-top: auto keeps the brief low; on short viewports the layer scrolls instead of clipping. */}
       <div className="title-brief">
-        <p className="title-eyebrow reveal" style={{ animationDelay: '0.25s' }}>
-          Flight 73
-        </p>
-        <h1 id="title-heading" className="reveal" style={{ animationDelay: '0.45s' }}>
-          Still&nbsp;Here
-        </h1>
-        <p className="lede reveal" style={{ animationDelay: '0.7s' }}>
-          Ingenuity flew 72 times on Mars. This is the flight it never got to make.
-        </p>
+        <div className="title-rail">
+          <p className="title-eyebrow reveal" style={{ animationDelay: '0.25s' }}>
+            <span aria-hidden="true">[ </span>Flight 73 <span aria-hidden="true">// </span>
+            {homeSite}
+            <span aria-hidden="true"> ]</span>
+          </p>
+          <h1 id="title-heading" className="reveal" style={{ animationDelay: '0.45s' }}>
+            Still&nbsp;Here
+          </h1>
+          <p className="lede reveal" style={{ animationDelay: '0.7s' }}>
+            <span>Ingenuity flew 72 times on Mars.</span> <span>This is the flight it never got to make.</span>
+          </p>
+        </div>
         <div className="title-actions reveal" style={{ animationDelay: '0.95s' }}>
           <button type="button" className="primary title-begin" onClick={startFlight}>
             Begin Flight 73
@@ -57,11 +129,13 @@ export function TitleScreen() {
         </div>
       </div>
 
-      <footer className="title-foot reveal" style={{ animationDelay: '1.15s' }}>
+      <footer className="title-bar title-bar-foot reveal" style={{ animationDelay: '1.15s' }}>
         <p className="fine">{FICTION_NOTE} Some 3D models are simplified or illustrative.</p>
         <p className="title-scale tabular" title={`Ingenuity's 72 real flights covered ${REAL_FLOWN_KM}.`}>
+          <span aria-hidden="true">[ </span>
           {formatKm(TOTAL_KM)} <span aria-hidden="true">·</span> {LEGS.length} stops <span aria-hidden="true">·</span>{' '}
           {REAL_FLOWN_KM} real
+          <span aria-hidden="true"> ]</span>
         </p>
       </footer>
     </section>

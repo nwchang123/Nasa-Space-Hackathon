@@ -166,14 +166,20 @@ button:disabled {
 
 /* ---------- Title ---------- */
 
-/* Documentary cold open laid over live Mars. Four-corner archival slate leaves the middle open
-   for the planet (CameraRig 'title' shot: ~57–98 % of the width). margin-top: auto keeps the brief
-   low while scrolling cleanly on short windows instead of clipping at the top. */
+/* An observatory instrument frame over live Mars: one hairline frame with registration marks, a
+   header and a footer bar locked to its edges, and the title column on a thin amber rail. Mars sits
+   inside the same frame on the right (CameraRig 'title' shot: ~57–98 % of the width). The brief is
+   pushed down with margin-top: auto, so a short window scrolls instead of clipping the top. */
 .title-screen {
+  --tf-inset: clamp(10px, 1.4vw, 20px);
+  --tf-pad: clamp(14px, 1.9vw, 28px);
+  --tf-gutter: clamp(22px, 4.6vw, 76px);
+  --tf-line: rgba(143, 179, 201, 0.14);
+  --tf-amber-line: rgba(242, 169, 59, 0.65);
   position: fixed;
   z-index: 3;
   inset: 0;
-  /* Only interactive controls and the opening brief take the pointer; the rest reaches the globe. */
+  /* Only the brief's text and controls take the pointer; the rest reaches the globe. */
   pointer-events: none;
   /* Dragging across the globe or the text must not paint the copy blue. */
   -webkit-user-select: none;
@@ -184,49 +190,195 @@ button:disabled {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  padding: clamp(22px, 3.6vh, 36px) clamp(24px, 5.5vw, 80px) clamp(20px, 3.2vh, 34px);
+  padding: var(--tf-inset);
   background:
-    linear-gradient(0deg, rgba(5, 7, 10, 0.55) 0%, transparent 24%),
-    linear-gradient(180deg, rgba(5, 7, 10, 0.42) 0%, transparent 18%),
-    linear-gradient(90deg, rgba(5, 7, 10, 0.84) 0%, rgba(5, 7, 10, 0.46) 34%, transparent 56%);
+    linear-gradient(0deg, rgba(5, 7, 10, 0.5) 0%, transparent 22%),
+    linear-gradient(90deg, rgba(5, 7, 10, 0.82) 0%, rgba(5, 7, 10, 0.44) 34%, transparent 56%);
 }
 .title-screen::-webkit-scrollbar {
   display: none;
 }
 
-/* Top film-slate marginalia: location + UTC on the left, live solar & light readings on the right. */
-.title-slate {
+/* The instrument frame: one hairline rectangle just inside the viewport. */
+.title-frame {
+  position: fixed;
+  inset: var(--tf-inset);
+  border: 1px solid var(--tf-line);
+  pointer-events: none;
+  opacity: 0;
+  animation: fade-in 1.2s ease 0.05s forwards;
+}
+
+/* Registration crosses at the corners and ticks at mid-edge, drifting a few px with the cursor. */
+.title-marks {
+  position: fixed;
+  inset: var(--tf-inset);
+  pointer-events: none;
+  opacity: 0;
+  animation: fade-in 1.2s ease 0.2s forwards;
+  transform: translate3d(calc(var(--px, 0) * -3px), calc(var(--py, 0) * -3px), 0);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.tf-mark {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+}
+.tf-mark::before,
+.tf-mark::after {
+  content: '';
+  position: absolute;
+  background: rgba(143, 179, 201, 0.5);
+}
+.tf-mark::before {
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 1px;
+}
+.tf-mark::after {
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 1px;
+}
+.tf-tl {
+  left: -6px;
+  top: -6px;
+}
+.tf-tr {
+  right: -6px;
+  top: -6px;
+}
+.tf-bl {
+  left: -6px;
+  bottom: -6px;
+}
+.tf-br {
+  right: -6px;
+  bottom: -6px;
+}
+.tf-tick {
+  position: absolute;
+  background: rgba(143, 179, 201, 0.4);
+}
+.tf-t,
+.tf-b {
+  left: 50%;
+  width: 1px;
+  height: 7px;
+}
+.tf-t {
+  top: -3px;
+}
+.tf-b {
+  bottom: -3px;
+}
+.tf-l,
+.tf-r {
+  top: 50%;
+  width: 7px;
+  height: 1px;
+}
+.tf-l {
+  left: -3px;
+}
+.tf-r {
+  right: -3px;
+}
+
+/* A faint orbital reticle fills the upper left behind the title column; z-index -1 keeps it under
+   the text. It stays left of Mars, and portrait moves it down behind the brief. */
+.title-reticle {
+  --rs: min(56vw, 90vh);
+  --rx: 27vw;
+  --ry: 40vh;
+  position: fixed;
+  z-index: -1;
+  left: calc(var(--rx) - var(--rs) / 2);
+  top: calc(var(--ry) - var(--rs) / 2);
+  width: var(--rs);
+  height: var(--rs);
+  color: var(--ghost);
+  pointer-events: none;
+  opacity: 0;
+  animation: title-reticle-in 2.4s ease 0.3s forwards;
+  transform: translate3d(calc(var(--px, 0) * -6px), calc(var(--py, 0) * -6px), 0);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+@keyframes title-reticle-in {
+  to {
+    opacity: 0.05;
+  }
+}
+
+/* Header and footer bars, locked to the frame's top and bottom edges between hairlines. */
+.title-bar {
   flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
   align-items: baseline;
-  gap: 16px 24px;
+  gap: 4px 24px;
+  padding: 11px var(--tf-pad) 10px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 400;
+  line-height: 1.5;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--bone-dim);
-  opacity: 0.72;
 }
-.title-slate-loc,
-.title-slate-astro {
+.title-bar-top {
+  grid-template-columns: 1fr auto 1fr;
+  border-bottom: 1px solid var(--tf-line);
+}
+.title-bar-top > span {
   white-space: nowrap;
+  opacity: 0.82;
 }
-.title-slate-astro {
-  text-align: right;
+.tb-loc {
+  justify-self: start;
+}
+.tb-astro {
+  justify-self: center;
   pointer-events: auto;
+}
+.tb-utc {
+  justify-self: end;
+}
+.title-bar-foot {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  border-top: 1px solid var(--tf-line);
 }
 
 .title-brief {
   flex: none;
-  margin-top: auto;
-  margin-bottom: clamp(28px, 6.5vh, 72px);
-  width: 100%;
+  margin: auto 0 clamp(28px, 6vh, 64px) var(--tf-gutter);
   /* Clear of Mars, which starts at ~57 % of the width. */
-  max-width: min(520px, 44vw);
+  max-width: min(540px, 46vw);
   pointer-events: auto;
+}
+
+/* The title stack hangs on a thin amber rail, with a short tick at each end. */
+.title-rail {
+  position: relative;
+  padding-left: clamp(14px, 1.5vw, 22px);
+  border-left: 1px solid rgba(242, 169, 59, 0.35);
+}
+.title-rail::before,
+.title-rail::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 7px;
+  height: 1px;
+  background: rgba(242, 169, 59, 0.6);
+}
+.title-rail::before {
+  top: 0;
+}
+.title-rail::after {
+  bottom: 0;
 }
 
 .kicker {
@@ -242,12 +394,14 @@ button:disabled {
   font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 400;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--amber);
 }
 
-/* Bound by height as well as width, so a short window never pushes it off the top. */
+/* Bound by height as well as width, so a short window never pushes it off the top. The only
+   italic line on the screen. */
 .title-screen h1 {
   margin: 0;
   font-family: var(--serif);
@@ -260,52 +414,57 @@ button:disabled {
   color: var(--bone);
 }
 
-/* Upright serif premise: Still Here remains the only italic line on the screen. */
+/* Upright premise, one sentence per line, two lines at most. */
 .lede {
-  margin: clamp(16px, 2.8vh, 26px) 0 0;
-  max-width: 23em;
+  margin: clamp(14px, 2.6vh, 24px) 0 0;
   font-family: var(--serif);
   font-style: normal;
   font-weight: 400;
-  font-size: clamp(18px, min(1.65vw, 2.7vh), 23px);
+  font-size: clamp(17px, min(1.6vw, 2.7vh), 23px);
   line-height: 1.42;
   color: rgba(233, 228, 216, 0.88);
-  text-wrap: balance;
+}
+.lede > span {
+  display: block;
 }
 
-/* Baseline-aligned, so the button label and the hangar link read as one line. */
+/* Begin Flight 73 and the AR hangar as one joined, square-cornered control strip; the hangar
+   segment and its divider are styled in hangar/entry.css. */
 .title-actions {
-  margin-top: clamp(22px, 3.8vh, 36px);
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px 26px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: clamp(22px, 3.8vh, 34px);
+  border: 1px solid var(--tf-amber-line);
+  border-radius: 2px;
 }
-
-/* A quiet hairline frame at rest; fills flat amber on hover with zero glow. */
 .title-screen .title-begin {
-  padding: 0.95em 1.55em;
-  border-color: rgba(242, 169, 59, 0.78);
-  background: rgba(242, 169, 59, 0.08);
+  border: 0;
+  border-radius: 0;
+  padding: 1em 1.6em;
+  background: rgba(242, 169, 59, 0.1);
   color: var(--amber);
   font-weight: 400;
   letter-spacing: 0.18em;
   box-shadow: none;
 }
 .title-screen .title-begin:hover:not(:disabled) {
-  border-color: var(--amber);
   background: var(--amber);
   color: var(--ink);
   box-shadow: none;
 }
-
-.title-foot {
-  flex: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px 24px;
-  flex-wrap: wrap;
+.title-actions button {
+  white-space: nowrap;
+}
+.title-actions button:focus-visible {
+  outline-offset: -4px;
+}
+/* Phones: tighter segments, so the strip stays one row of two single-line labels. */
+@media (max-width: 480px) {
+  .title-screen .title-begin {
+    padding: 1em 1.15em;
+    letter-spacing: 0.12em;
+  }
 }
 
 .fine {
@@ -314,34 +473,44 @@ button:disabled {
   color: var(--bone-dim);
   opacity: 0.75;
 }
+/* Untracked mono, so it keeps to two lines beside the scale down to ~800 px. */
 .title-screen .fine {
   margin: 0;
-  max-width: 58em;
   font-family: var(--mono);
   font-style: normal;
   font-size: 9.5px;
   line-height: 1.5;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--bone-dim);
-  opacity: 0.56;
+  opacity: 0.58;
 }
 .title-scale {
   margin: 0;
   font-family: var(--mono);
   font-size: 9.5px;
   line-height: 1.5;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--bone-dim);
-  opacity: 0.68;
   white-space: nowrap;
+  color: var(--bone-dim);
+  opacity: 0.72;
   pointer-events: auto;
 }
 
-/* Narrow windows drop only the date; the solar and light readings wrap onto their own line. */
-@media (max-width: 780px) {
-  .title-slate-date {
-    display: none;
+/* Narrow windows: the header stacks to two rows (place and clock, then the live readings) and the
+   footer to one column. */
+@media (max-width: 720px) {
+  .title-bar-top {
+    grid-template-columns: 1fr auto;
+  }
+  .tb-astro {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .title-bar-foot {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2294,24 +2463,20 @@ button:disabled {
 
 /* ---------- Small screens: console becomes a bottom sheet ---------- */
 
-/* Small landscape windows (and phones on their side): Mars stays on the right, so the brief stays
-   a left column, with the side gutter cut to make room. */
+/* Compact landscape windows (and phones on their side): Mars stays on the right, so the brief
+   stays a left column, a little wider to keep the premise on two lines. */
 @media (max-width: 900px) and (min-aspect-ratio: 11/10) {
-  .title-screen {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
   .title-brief {
-    max-width: 50vw;
+    max-width: 48vw;
   }
 }
 
 /* Portrait windows: CameraRig frames Mars in the top 45 % whenever aspect ≤ 1.1 (layout.ts
-   LANDSCAPE_ASPECT), so the brief spans the width below it, on a soft dark floor. This follows the
-   camera's aspect rule rather than a width, so the brief never lands on the planet. */
+   LANDSCAPE_ASPECT). The header bar moves down above the title so the top 45 % stays Mars alone,
+   and the brief spans the frame below it on a soft dark floor. */
 @media (max-aspect-ratio: 11/10) {
   .title-screen {
-    padding: 20px 20px max(18px, env(safe-area-inset-bottom));
+    padding-bottom: max(var(--tf-inset), env(safe-area-inset-bottom));
     background: linear-gradient(
       0deg,
       rgba(5, 7, 10, 0.96) 0%,
@@ -2320,35 +2485,29 @@ button:disabled {
       transparent 58%
     );
   }
-  /* Keep the top 45 % completely open for Mars in portrait; anchor the slate just above the title. */
-  .title-slate {
-    margin-top: auto;
-    margin-bottom: 14px;
-    flex-wrap: wrap;
-    gap: 4px 14px;
-    font-size: 9.5px;
-    letter-spacing: 0.12em;
+  .title-reticle {
+    --rs: min(96vw, 50vh);
+    --rx: 50vw;
+    --ry: 74vh;
   }
-  .title-slate-astro {
-    text-align: left;
+  .title-bar-top {
+    margin-top: auto;
+    border-top: 1px solid var(--tf-line);
   }
   .title-brief {
-    margin-top: 0;
-    max-width: 100%;
-    margin-bottom: 18px;
+    margin: 18px var(--tf-pad) 20px;
+    max-width: none;
   }
   .title-eyebrow {
     margin-bottom: 10px;
+    letter-spacing: 0.22em;
   }
   .lede {
     margin-top: 14px;
-    font-size: 18.5px;
+    font-size: 17px;
   }
   .title-actions {
     margin-top: 20px;
-  }
-  .title-foot {
-    gap: 6px 16px;
   }
 }
 

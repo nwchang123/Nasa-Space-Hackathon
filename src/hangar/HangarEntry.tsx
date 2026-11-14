@@ -7,7 +7,8 @@ import './entry.css';
 export function HangarButton({ place }: { place: 'title' | 'top' }) {
   const openHangar = useApp(s => s.openHangar);
   if (place === 'title') {
-    // A quiet text link beside Begin Flight 73; its accessible name stays exactly "AR hangar".
+    // The right segment of the title's control strip. The [09] count is decoration (aria-hidden),
+    // so the accessible name stays exactly "AR hangar".
     return (
       <button
         type="button"
@@ -16,6 +17,9 @@ export function HangarButton({ place }: { place: 'title' | 'top' }) {
         title="AR hangar: the nine NASA machines in 3D, and on your own table in AR"
       >
         AR hangar
+        <span className="hangar-entry-count" aria-hidden="true">
+          [09]
+        </span>
       </button>
     );
   }
