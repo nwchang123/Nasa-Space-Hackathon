@@ -1,6 +1,6 @@
 # Submission draft — Still Here: Flight 73
 
-> 草稿，提交前对照 Space Apps 提交表单的实际字段和字数限制再改。英文部分可以直接粘贴。带 [TODO] 的地方要等第二版完成、部署好以后再填。
+> 草稿，提交前对照 Space Apps 提交表单的实际字段和字数限制再改。英文部分可以直接粘贴。已按第三版（全屏 HUD、开场转子测试、每站互动）更新。带 [TODO] 的地方要等部署好以后再填。
 
 ## Project name
 
@@ -8,7 +8,7 @@ Still Here: Flight 73
 
 ## High-level summary
 
-Ingenuity, the first aircraft on another world, flew 72 times on Mars before a broken rotor blade grounded it for good in January 2024. *Still Here: Flight 73* imagines the one flight it never got to make. Starting from its resting place in Jezero crater, Ingenuity flies about 53,000 km across Mars to visit the NASA landers and rovers whose work on Mars is done, in the order they arrived, and then flies home. At each stop the abandoned machine tells its own story (why it came, what it found, how its last day went and what its work still does today) and Ingenuity names what it inherited from it. The flight is fiction; every machine, place and date is real, and each distance is measured between the machines' recorded resting places. Mars is lit by the Sun's real position at this moment, each site shows its real local solar time, and radio calls from Earth wait on tonight's real Earth–Mars light time before the silence comes back. The result turns hardware that most people think of as junk into a chain of inheritance that runs from Viking in 1976 to the helicopters NASA plans to send next.
+Ingenuity, the first aircraft on another world, flew 72 times on Mars before a broken rotor blade grounded it for good in January 2024. *Still Here: Flight 73* imagines the one flight it never got to make. The visitor first tries to spin up the real helicopter's damaged rotors; when they fail, an imagined Ingenuity lifts off without it. Starting from its resting place in Jezero crater, Ingenuity flies about 53,000 km across Mars to visit the NASA landers and rovers whose work on Mars is done, in the order they arrived, and then flies home. At each stop the abandoned machine tells its own story (why it came, what it found, how its last day went and what its work still does today), the visitor gets one hands-on moment from its mission, and Ingenuity names what it inherited from it. The flight is fiction; every machine, place and date is real, and each distance is measured between the machines' recorded resting places. Mars is lit by the Sun's real position at this moment, each site shows its real local solar time, and radio calls from Earth wait on tonight's real Earth–Mars light time before the silence comes back. The result turns hardware that most people think of as junk into a chain of inheritance that runs from Viking in 1976 to the helicopters NASA plans to send next.
 
 ## Links
 
@@ -18,15 +18,20 @@ Ingenuity, the first aircraft on another world, flew 72 times on Mars before a b
 
 ## Project details
 
-**What it does.** A browser experience in three parts: a short prologue at Ingenuity's resting place, a nine-leg flight across a 3D Mars, and a flight log with a postcard the visitor can save. Each leg shows the real great-circle distance and heading. Each stop shows the machine's site in its real current light, its first-person story in four short beats, a radio call that goes unanswered, and one line of inheritance from Ingenuity.
+**What it does.** A full-screen 3D browser experience in three parts.
 
-**How it works.** React, TypeScript and Three.js (React Three Fiber), built as a static site with no server, accounts or tracking. Sun position and local solar time on Mars use the Mars24 algorithm (Allison & McEwen, 2000). Earth–Mars distance uses JPL's approximate planetary elements and is checked against JPL Horizons. Distances between sites use the great-circle formula on Mars. These calculations are unit tested against published reference values.
+- *Prologue.* At Ingenuity's resting place the visitor spins up its rotors. They never reach flight speed, a rotor-fault warning names the blades damaged on Flight 72, and a translucent, imagined Ingenuity lifts off while the real one stays on the sand.
+- *Flight.* Nine legs across a 3D Mars lit by the real Sun, with the real great-circle distance and heading of each leg. The visitor can hold Space to boost, skip a leg, or switch to a black-and-white navcam looking straight down, with live latitude, longitude, heading and Sun height.
+- *Stops.* Each site can be orbited with the mouse and is lit as it is right now; a 24-hour slider shows it at any hour of today's sol. Numbered hotspots on the hardware open the machine's first-person story in four short beats. Each stop has one hands-on moment from its mission: scanning Viking 1's first photo from the surface, Viking 2's winter frost, Sojourner rolling down its ramp, Spirit dragging its jammed wheel, the 2018 dust storm darkening Opportunity's sky, Phoenix scooping ice and seeing snow, a marsquake under InSight, the binary message in Perseverance's parachute, and Ingenuity's daily wake-up routine. A radio call from Earth waits on the real light time and goes unanswered, and Ingenuity says what it inherited.
+- *Home.* The imagined Ingenuity settles back into the real one. A flight log totals the trip, and the visitor can write a postcard to one machine and save it as an image.
+
+**How it works.** React, TypeScript and Three.js (React Three Fiber), built as a static site with no server, accounts or tracking. The globe uses NASA's Viking colour mosaic with MOLA relief shaded by the real Sun, and the machines use NASA 3D Resources models where NASA publishes one. Sun position and local solar time on Mars use the Mars24 algorithm (Allison & McEwen, 2000), for the current moment or any hour of the sol. Earth–Mars distance uses JPL's approximate planetary elements and is checked against JPL Horizons. Distances between sites use the great-circle formula on Mars. These calculations are unit tested against published reference values.
 
 **Why it matters.** The challenge asks how equipment left on the Moon and Mars can be remembered. Most people know a few rover names and nothing about what happened to the machines afterwards. Seeing the hardware through the eyes of another abandoned machine makes the history personal, the real distances make the scale of Mars felt, and the inheritance line shows that each "dead" machine is the reason the next one worked. The tone is honest: the app says clearly what is imagined, sources every claim, and marks resting places that are known only approximately.
 
-**Who it is for.** The general public, with no prior knowledge needed. A full flight takes about 10–15 minutes; every leg can be skipped and every story can be read without making the call.
+**Who it is for.** The general public, with no prior knowledge needed, on a desktop or laptop browser. A full flight takes about 10–15 minutes; every leg can be boosted or skipped, any stop can be reached straight from the route bar, and every story can be read without making the call.
 
-**What we would do next.** [TODO after version 2: e.g. other languages, more hardware such as heat shields and backshells, a classroom mode]
+**What we would do next.** Other languages, starting with Malay and Chinese. More of the hardware left behind, such as heat shields, descent stages and the Mars 2020 sky crane, and the same idea for NASA hardware on the Moon. A classroom mode with short activities for each stop. A phone layout. [TODO 团队确认这几条]
 
 ## Use of artificial intelligence
 
@@ -37,7 +42,9 @@ We used Claude Code (Anthropic) as a coding and writing assistant. Under the tea
 - NASA Science and NASA JPL mission pages for Viking 1 and 2, Mars Pathfinder and Sojourner, Spirit, Opportunity, Phoenix, InSight, Mars 2020 and Ingenuity: dates, landing sites, mission events and current status. [TODO: paste the final list of URLs from docs/FACT_CHECK.md]
 - NASA Space Science Data Coordinated Archive (NSSDCA) mission records.
 - JPL Horizons, used to check the Earth–Mars distance calculation.
-- [TODO if approved and used: NASA 3D Resources models and a NASA Mars global map, with file names]
+- NASA 3D Resources models: "Viking Lander" (used for Viking 1 and 2), "InSight Cruise Lander (arm deployed)", "Ingenuity Mars Helicopter" and "Mars Exploration Rover – Opportunity (MER-B)" (used for Spirit and Opportunity).
+- Mars globe: Viking MDIM 2.1 colour mosaic (NASA/JPL-Caltech/USGS) and MGS MOLA elevation (NASA/GSFC MOLA Science Team), both from NASA Solar System Treks (Mars Trek).
+- NASA Photojournal and JPL news releases behind the hands-on moments, e.g. PIA00381 (Viking 1's first photo) and PIA24431 (the parachute's code), listed in `docs/FACT_CHECK.md`.
 
 ## Space agency partner and other data
 
@@ -56,19 +63,24 @@ Screen recording only, no stock footage. Captions on screen, no voice-over requi
 
 | Time | Picture | Caption |
 |---|---|---|
-| 0–4 s | Title screen, Mars turning, Ingenuity at Jezero | Ingenuity flew 72 times on Mars. |
-| 4–8 s | Prologue: the broken blade, "Lift off" pressed | This is the flight it never got to make. |
-| 8–13 s | Flying: route line across the globe, odometer running | 53,000 km to every NASA lander and rover whose work on Mars is done. |
-| 13–18 s | Arrival at Opportunity, site lit by the real current Sun | Every machine, place and date is real. Even the light. |
-| 18–23 s | Radio call: signal meter, real light time, silence | Calls from Earth take tonight's real light time. Nothing answers. |
-| 23–27 s | Inheritance line, then the flight log and postcard | Each one handed something on. |
+| 0–3 s | Title screen, Mars turning, route breathing, Ingenuity's beacon at Jezero | Ingenuity flew 72 times on Mars. |
+| 3–7 s | Prologue: rotors spin up, shake, "Rotor imbalance" warning; the translucent Ingenuity lifts off | This is the flight it never got to make. |
+| 7–11 s | Flying over the lit globe, odometer running, Space held for boost; a second of navcam | 53,000 km to every NASA lander and rover whose work on Mars is done. |
+| 11–15 s | Viking 1: orbit around the lander, the first photo scanning in | Every machine, place and date is real. |
+| 15–19 s | Opportunity: dust-storm slider dragged up, the sky goes dark, "Last signal · 10 June 2018" | Even the light: each site is lit by the Sun as it is right now. |
+| 19–23 s | InSight marsquake rings, then the parachute decoding DARE MIGHTY THINGS | Touch what each one did. |
+| 23–27 s | Home: the two Ingenuities merge, wake-up routine, flight log | Each one handed something on. |
 | 27–30 s | Title card with project name and link | Still Here: Flight 73 · [link] |
+
+Screenshots for each shot are in `docs/screenshots/flight-73/` (01–15).
 
 ## Checklist before 18:00 on 15 November
 
 - [ ] Deployed to GitHub Pages and opened in Chrome on a laptop (desktop only; no phone layout planned)
+- [ ] Frame rate checked in Chrome with `?fps` on a laptop like the judges' (title, a flight, a site with an action running)
+- [ ] Sound checked once with speakers on (rotor spin-up, fault, quake, shutter)
 - [ ] Demo recorded and uploaded
 - [ ] All [TODO] above filled
-- [ ] FACT_CHECK.md has a source for every number shown in the app
+- [ ] FACT_CHECK.md has a source for every number shown in the app (V3 sections are in; one last pass after the final text freeze)
 - [ ] CREDITS.md lists every downloaded asset with its licence
-- [ ] Final screenshots in `docs/screenshots/`
+- [x] Screenshots of version 3 in `docs/screenshots/flight-73/`
