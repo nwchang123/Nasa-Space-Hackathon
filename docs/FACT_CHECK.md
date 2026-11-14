@@ -1,32 +1,29 @@
-# Fact check: the 18 machines
+# Fact check: Flight 73
 
-Every date, number and claim in `src/data/machines.ts`, with where it was checked.
-Pages were read on 14 November 2026. NSSDCA (nssdc.gsfc.nasa.gov) could not be opened from the
-build environment, so NASA Science and nasa.gov pages were used instead; NSSDCA links from the
-challenge's resource list are kept as extra references for the Apollo entries.
+> The Moon and deep-space sections (Surveyor 3, Apollo 11/14/15/17, Pioneer 10/11,
+> NEAR Shoemaker, Dawn, Kepler) were removed when the project moved to Mars only. They are in
+> git history before commit `dca821e`.
+
+Every date, number and claim in `src/data/machines.ts` (the nine stops) and `src/data/flight.ts`
+(Ingenuity's lines for Flight 73), with where it was checked. Pages were read on 14 November 2026.
+NSSDCA (nssdc.gsfc.nasa.gov) could not be opened from the build environment, so NASA Science,
+nasa.gov and JPL pages were used instead.
 
 **Conventions**
 
 - Dates are UTC. Where a NASA page gives a US local date, the UTC date is noted.
 - Coordinates are planetocentric latitude and east longitude (−180..180).
-- **Marked ⚠** = not confirmed on a NASA page in this pass. These are either well-established
-  figures stated as approximate, or values flagged `approxPosition: true` in the data.
+- **Marked ⚠** = not confirmed on a NASA page in this pass. These are well-established figures
+  stated as approximate, values flagged `approxPosition: true` in the data, or claims derived
+  from the data (and tested in `tests/flight.test.ts`).
+- Flight 73 itself is fiction. The UI says so on the title screen and in the footer
+  (`FICTION_NOTE`). Nothing below is about the imagined flight; it is about the real facts it
+  passes.
 
 Short source keys:
 
 | Key | URL |
 |---|---|
-| S3 | https://science.nasa.gov/mission/surveyor-3/ |
-| A11O | https://www.nasa.gov/missions/apollo/apollo-11/apollo-11-mission-overview/ |
-| A11PSE | https://science.nasa.gov/resource/apollo-11-seismic-experiment/ |
-| LLR | https://www.nasa.gov/missions/apollo/apollo-11/the-apollo-experiment-that-keeps-on-giving/ |
-| LLR2 | https://www.nasa.gov/missions/laser-beams-reflected-between-earth-and-moon-boost-science/ |
-| RR | https://www.nasa.gov/image-article/retroreflectors-from-apollo-mars/ |
-| A14 | https://www.nasa.gov/missions/apollo/apollo-14-mission-details/ |
-| A15 | https://www.nasa.gov/missions/apollo/apollo-15-mission-details/ |
-| A17 | https://www.nasa.gov/missions/apollo/apollo-17-mission-details/ |
-| A17L | https://www.nasa.gov/history/50-years-ago-apollo-17-lands-at-taurus-littrow/ |
-| A17P | https://www.nasa.gov/history/50-years-ago-apollo-17-post-mission-activities/ |
 | V1 | https://science.nasa.gov/mission/viking-1/ |
 | V2 | https://science.nasa.gov/mission/viking-2/ |
 | MPF | https://science.nasa.gov/mission/mars-pathfinder/ |
@@ -42,83 +39,18 @@ Short source keys:
 | INSR | https://www.nasa.gov/missions/insight/nasa-retires-insight-mars-lander-mission-after-years-of-science/ |
 | INSC | https://www.nasa.gov/missions/insight/nasa-insight-study-provides-clearest-look-ever-at-martian-core/ |
 | INSD | https://www.nasa.gov/missions/insight/nasa-mars-orbiter-spots-retired-insight-lander-to-study-dust-movement/ |
+| RR | https://www.nasa.gov/image-article/retroreflectors-from-apollo-mars/ |
+| M2020 | https://science.nasa.gov/mission/mars-2020-perseverance/ |
+| JPL2022 | https://www.jpl.nasa.gov/news/nasas-mars-helicopter-spots-gear-that-helped-perseverance-rover-land/ |
+| JPLFRS | https://www.jpl.nasa.gov/news/nasas-mars-perseverance-rover-provides-front-row-seat-to-landing-first-audio-recording-of-red-planet/ |
+| DECODER | https://science.nasa.gov/resource/mars-decoder-ring/ |
+| RBASICS | https://science.nasa.gov/planetary-science/programs/mars-exploration/rover-basics/ |
+| PIA24333 | https://science.nasa.gov/photojournal/perseverance-and-mars-2020-spacecraft-components-on-the-surface/ |
 | ING | https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/ |
 | INGB | https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasas-ingenuity-mars-helicopter-team-says-goodbye-for-now/ |
-| P10 | https://science.nasa.gov/mission/pioneer-10/ |
-| P11 | https://science.nasa.gov/mission/pioneer-11/ |
-| NEAR | https://science.nasa.gov/mission/near-shoemaker/ |
-| DAWN | https://science.nasa.gov/mission/dawn/ |
-| DAWNE | https://www.nasa.gov/news-release/nasas-dawn-mission-to-asteroid-belt-comes-to-end/ |
-| DAWNS | https://science.nasa.gov/mission/dawn/mission-status/ |
-| DAWNC | https://www.nasa.gov/news-release/nasa-spacecraft-becomes-first-to-orbit-a-dwarf-planet/ |
-| DAWNB | https://www.nasa.gov/centers-and-facilities/jpl/mystery-solved-bright-areas-on-ceres-come-from-salty-water-below/ |
-| KEP | https://science.nasa.gov/mission/kepler/ |
-| KEPG | https://science.nasa.gov/universe/exoplanets/goodnight-kepler-final-commands-for-space-telescope/ |
+| INGX | https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasa-performs-first-aircraft-accident-investigation-on-another-world/ |
 
-## Moon
-
-### surveyor-3
-| Claim | Source |
-|---|---|
-| Launched 17 Apr 1967 (07:05 UT); landed 20 Apr 1967 (00:04 UT); last contact 4 May 1967 | S3 |
-| 3° S, 23.41° W, Ocean of Storms | S3 |
-| Reflective rocks confused the descent radar; bounced twice (10 m, 3 m) | S3 |
-| TV camera and surface sampler; 4 trenches, bearing tests; soil like wet sand, able to support an Apollo LM | S3 |
-| 6,326 TV pictures | S3 |
-| Last contact two days after lunar night began | S3 |
-| Apollo 12 landed ~197 yd (180 m) away; crew recovered the camera and scoop on 19 Nov 1969; ~2½ years of exposure | S3 |
-| Planned life "one lunar day" ⚠ (solar-powered Surveyor; S3 confirms contact ended at nightfall) | S3 / ⚠ |
-
-### apollo-11
-| Claim | Source |
-|---|---|
-| Launch 16 Jul 1969; landing 20 Jul 1969 | A11O |
-| Coordinates 0.71° N, 23.63° E | A11O |
-| Descent stage left behind as the launch pad | Challenge resources (NASA Space Apps) |
-| First seismometer on the Moon; detected moonquakes and meteorite hits; solar-powered | A11PSE |
-| Stopped responding to commands 04:00 UT 25 Aug 1969, probably from midday overheating; ~3 weeks of data | A11PSE |
-| Retroreflector of 100 corner cubes; needs no power; still used | LLR, RR |
-| Observatories in New Mexico, France, Italy and Germany fire lasers at the arrays | LLR |
-| Moon recedes 3.8 cm (1.5 in) per year | LLR, LLR2 |
-| Crew stay "about 21½ hours" ⚠ (standard Apollo figure, 21 h 36 min) | ⚠ |
-| "Laser echo in under 3 s" — round trip at 356,000–407,000 km is ~2.4–2.7 s | derived |
-
-### apollo-14
-| Claim | Source |
-|---|---|
-| Launch 31 Jan 1971 (4:03 pm EST = 21:03 UTC); landed 5 Feb 1971 | A14 |
-| Most precise landing to date, ~87 ft from target | A14 |
-| Coordinates 3.65° S, 17.48° W (Fra Mauro) | A14 |
-| Seismometers at Apollo 12, 14, 15, 16 transmitted until Sept 1977; gave a look at internal structure | A11PSE |
-| All ALSEP stations shut down 30 Sep 1977 when funding ran out; >1 trillion bits returned | A17P |
-| 100 corner cubes; older reflectors return weaker signal, dust suspected | LLR2 |
-| New generation of reflectors approved | LLR |
-| Crew stay "about 33½ hours" ⚠ (standard Apollo figure, 33 h 31 min) | ⚠ |
-
-### apollo-15
-| Claim | Source |
-|---|---|
-| Launch 26 Jul 1971; landed 30 Jul 1971 at Hadley–Apennine | A15 |
-| Coordinates 26.08° N, 3.66° E | A15 |
-| First car humans drove on the Moon; 3 EVAs; 17.5 miles driven; >170 lb samples; ALSEP set up | A15 |
-| Lunar stay "almost three days" | A15 |
-| Rover carried folded on the side of the LM | A17L (same LRV design) |
-| Reflector of 300 corner cubes, largest of the Apollo arrays | LLR, LLR2 |
-| Laser ranging shows a fluid lunar core and tests Einstein's gravity (no composition dependence) | LLR |
-| Station silent 30 Sep 1977 | A17P |
-
-### apollo-17
-| Claim | Source |
-|---|---|
-| Launch 7 Dec 1972 (12:33 am EST = 05:33 UTC); landing 11 Dec 1972 | A17 |
-| Coordinates 20.16° N, 30.77° E | A17 |
-| Schmitt first scientist-astronaut on the Moon; LRV 30.5 km; 110.4 kg samples; 75 h surface stay | A17 |
-| TV camera on the rover steered from MCC by Ed Fendell, "Captain Video" | A17L |
-| Rover parked at the "VIP site" ~158 m from the LM; televised the liftoff | A17L |
-| Liftoff 14 Dec 1972 | A17 |
-| ALSEP switched off 30 Sep 1977 | A17P |
-
-## Mars
+## The nine stops (`src/data/machines.ts`)
 
 ### viking-1
 | Claim | Source |
@@ -126,10 +58,12 @@ Short source keys:
 | Launch 20 Aug 1975; landed 20 Jul 1976 (11:53 UT); stopped 11 Nov 1982 after a faulty command; recovery failed | V1 |
 | First truly successful Mars landing; designed to look for evidence of life | V1 |
 | Coordinates: V1 gives 22.483° N, 47.94° W (planetographic); data use 22.27° N, −47.95° (planetocentric equivalent) ⚠ conversion | V1 / ⚠ |
+| Landed seven years to the day after Apollo 11 (20 Jul 1969), kept as a date anchor only | V1 (landing date) |
 | Biology results a weak positive; organic-compound test found none | V1 |
 | Daily, then weekly weather reports; renamed Thomas Mutch Memorial Station in Jan 1982 | V1 |
 | Two SNAP-19 RTGs per lander; landers returned 4,500 photos | V1 |
 | Record 6 years 116 days broken by Opportunity on 20 May 2010 | OPP |
+| "The question I came to ask is still open": Perseverance's 2025 sample holds *potential* biosignatures that need more study | M2020 |
 | Planned life "90 days" ⚠ (Viking primary mission) | ⚠ |
 
 ### viking-2
@@ -139,6 +73,7 @@ Short source keys:
 | Original site rough; moved to Utopia Planitia near the polar cap for water and a better chance of life | V2 |
 | 47.968° N, 225.71° W (planetographic) → 47.64° N, 134.29° E ⚠ conversion | V2 / ⚠ |
 | Tilted 8.5°; 6,460 km from Viking 1; three soil samples; inconclusive; UV-made reactants suspected | V2 |
+| Note: the route's great circle between our two Viking coordinates is 6,511 km. NASA's 6,460 km is a rounded figure; the 0.8 % gap comes from rounding and the coordinate conversion. The fact chip keeps NASA's number. | V2 / derived |
 | Orbiter ended 24 Jul 1978 after leaks | V2 |
 | Renamed Gerald Soffen Memorial Station (July 2001) | V2 |
 | Orbiters: 52,663 images, ~97% mapped; landers: 4,500 photos | V1, V2 |
@@ -148,6 +83,7 @@ Short source keys:
 |---|---|
 | Launch 4 Dec 1996; landed 4 Jul 1997 at Ares Vallis | MPF |
 | Airbags first used; ~15 bounces, up to 15 m high | MPF |
+| First-ever robotic rover on Mars (Sojourner) | MPF |
 | Sojourner 10.6 kg; rolled down the ramp on sol 2 | MPF |
 | >16,500 lander images; rounded pebbles suggest running water in a warmer past | MPF |
 | Carl Sagan Memorial Station | MPF |
@@ -160,9 +96,10 @@ Short source keys:
 |---|---|
 | Launch 10 Jun 2003 (17:58 UTC); landed 3 Jan 2004 20:35 PST = 4 Jan 2004 UTC; 28 bounces | SPI |
 | Landing 14.5692° S, 175.4729° E; Gusev a possible former lake | SPI, MER |
+| Twins sent to opposite sides of Mars | SPI, MER |
 | Front wheel stopped (2006); dragged wheel exposed nearly pure silica (2007) → hot springs or steam vents | SPI |
 | Driving backwards dragging the right-front wheel at Troy | TROY |
-| Stuck in soft soil 1 May 2009 near Home Plate; made a stationary platform; tilt not achieved | SPI |
+| Stuck in soft soil 1 May 2009 near Home Plate; made a stationary platform; tilt not achieved | SPI, TROY |
 | Last contact 22 Mar 2010; >1,300 commands; search ended 25 May 2011; cold the likely cause | SPI |
 | 7.73 km; 6 y 2 m 19 d; >25× planned life | SPI |
 | Final position −14.6°, 175.5° ⚠ approximate (within a few km of the landing point; 7.73 km total drive) | ⚠ |
@@ -183,12 +120,13 @@ Short source keys:
 | Claim | Source |
 |---|---|
 | Launch 4 Aug 2007; landed 25 May 2008 (23:38 UT); 68.22° N, 234.25° E (= −125.75°) | PHX |
-| Farther north than any previous mission; latitude like northern Alaska | PHX |
-| Robotic arm, tiny ovens, portable lab | PHX |
-| Bright clumps in the trench were water ice; perchlorate (microbe energy source, possible oxygen) | PHX, PHX15 |
+| Farther north than any previous mission; latitude like northern Alaska | PHX, PHX15 |
+| Robotic arm, tiny ovens, portable lab | PHX, PHX15 |
+| Bright clumps in the trench were water ice, just below the surface; perchlorate (microbe energy source, possible oxygen) | PHX, PHX15 |
 | Snow falling from cirrus clouds | PHX15 |
 | Nominal mission 90 sols; last signal 2 Nov 2008 (sol 157); final post "triumph" in binary | PHX15 |
 | No contact in Jan 2010; MRO images show damage, likely from CO₂ ice | PHX15 |
+| "Knowing ice lies this close to the surface matters to anyone planning to live on Mars": NASA's SkyFall helicopters are meant to scout human landing sites and map subsurface water ice; perchlorate a possible oxygen source for future missions | ING, PHX15 |
 
 ### insight
 | Claim | Source |
@@ -202,77 +140,106 @@ Short source keys:
 | 1.8 m arm | INS |
 | Planned life "1 Mars year" ⚠ (prime mission length) | ⚠ |
 
+### mars2020-edl (Perseverance's parachute and backshell) — new
+| Claim | Source |
+|---|---|
+| Launched with Perseverance 30 Jul 2020; landed 18 Feb 2021 | M2020, ING, JPL2022 |
+| The cone-shaped backshell protected the rover in deep space and during its fiery descent on 18 Feb 2021 | JPL2022 |
+| Ingenuity rode under the rover's belly | ING (see ingenuity) |
+| Hit the Martian atmosphere at nearly 20,000 km/h (12,500 mph) | JPL2022 |
+| Parachute deployed in less than a second, from a 46 × 66 cm (18 × 26 in) packed cylinder to 21.5 m (70.5 ft) wide | JPLFRS |
+| Biggest parachute ever deployed on Mars | JPL2022 |
+| White and international-orange gores spell DARE MIGHTY THINGS in binary; outer band gives GPS coordinates for JPL | DECODER, RBASICS |
+| Perseverance jettisoned the parachute and backshell earlier in the landing sequence; the hovering descent stage lowered the rover (sky crane) | PIA24333 |
+| Backshell hit the surface at about 126 km/h (78 mph); sits upright; parachute spread out and dust-covered | JPL2022 |
+| Ingenuity photographed it on Flight 26, 19 Apr 2022: 10 aerial colour images | JPL2022 |
+| Mars Sample Return engineers asked for the images; they could help ensure safer landings for future spacecraft such as the Sample Return lander | JPL2022 |
+| `lastContact` 2021-02-18 with label "Separated": the hardware never had a radio, so the date is when Perseverance let go of it, not a signal | PIA24333 / data convention |
+| "About 7 months" = launch 30 Jul 2020 to landing 18 Feb 2021 | derived |
+| Position 18.44° N, 77.45° E ⚠ — the backshell's own coordinates were not found on a NASA page. PIA24333 shows it near Perseverance's landing point (widely cited 18.4447° N, 77.4508° E), so the data use that point, rounded, with `approxPosition: true` | PIA24333 / ⚠ |
+
 ### ingenuity
 | Claim | Source |
 |---|---|
 | Launch 30 Jul 2020; landed 18 Feb 2021 (under Perseverance) | ING |
 | Air <1% as dense as Earth's | ING |
 | First flight 19 Apr 2021, first powered controlled flight on another planet; planned ≤5 flights in 30 days; 72 flights | ING |
-| Aerial scout for scientists and rover planners | ING |
-| Last flight 18 Jan 2024; rotor blades damaged; mission ended 25 Jan 2024 | ING, INGB |
-| Final team downlink 16 Apr 2024; stays at Valinor Hills; daily wake-up, solar panel and battery tests, photo, temperatures | INGB |
+| Aerial scout for scientists and rover planners (and for engineers studying Perseverance's landing-gear debris) | ING |
+| Last flight 18 Jan 2024; hard landing; rotor blades significantly damaged; mission ended 25 Jan 2024 | ING, INGB, INGX |
+| Final team downlink 16 Apr 2024; stays at Valinor Hills as a stationary testbed | INGB |
+| `lastContactLabel` "Last team downlink": INGX (Dec 2024) says Ingenuity still beamed weather and avionics data to Perseverance about once a week, so 16 Apr 2024 is not its last signal ever | INGB, INGX |
+| Accident findings expected to benefit future Mars helicopters | INGX |
 | 17.0 km flown; 24.0 m max altitude; 1.8 kg | ING |
-| SkyFall helicopters build on Ingenuity | ING |
 | Position 18.4° N, 77.4° E ⚠ approximate (Jezero crater) | ⚠ |
 
-## Deep space
+## Flight 73 script (`src/data/flight.ts`) — new
 
-### pioneer-10
-| Claim | Source |
-|---|---|
-| Launch 2 Mar 1972 local (01:49 UT on 3 Mar; the NASA page pairs "March 2" with the UT time); data use 1972-03-03 | P10 |
-| First through the asteroid belt; first past Jupiter (closest 4 Dec 1973); first all-nuclear electrical power | P10 |
-| Fewer asteroid hits than expected; ~500 Jupiter pictures incl. the Great Red Spot; radiation-triggered false commands | P10 |
-| Designed for 21 months; lasted >30 years; last signal 23 Jan 2003 from 12.23 billion km | P10 |
-| Heading in the general direction of Aldebaran; ~2 million years; plaque (man, woman, 14 pulsars) | P10 |
-| `headingEclipticLon` 80.8° (ecliptic lat +3.0°): heliocentric position in 2026 from JPL Horizons | JPL Horizons (via astro module) |
+`FICTION_NOTE`: "Flight 73 never happened. Every machine, place and date on the way is real."
 
-### pioneer-11
-| Claim | Source |
+### Prologue
+| Line / claim | Source |
 |---|---|
-| Launch 6 Apr 1973 (02:11 UT); Jupiter 3 Dec 1974; Saturn 1 Sep 1979 | P11 |
-| First pictures of Jupiter's polar regions; first spacecraft to fly by Saturn | P11 |
-| ~13,000 mi (20,900 km) from Saturn; 114,000 km/h; ring-plane crossing beyond the outer ring; 440 images; first conclusive evidence of a magnetic field | P11 |
-| Last routine contact 30 Sep 1995; last engineering data 24 Nov 1995 (used as `lastContact`) | P11 |
-| Toward Aquila; near Lambda Aquilae in almost four million years; carries a message | P11 |
-| `headingEclipticLon` 284.7° (ecliptic lat +13.8°): heliocentric position in 2026 from JPL Horizons | JPL Horizons (via astro module) |
+| Flight 72 on 18 Jan 2024 was planned as a brief vertical hop to check flight systems (and photograph the area) | INGX |
+| "The sand below was probably too smooth for my navigation camera to follow": NASA's most likely cause is too little surface texture in featureless sand ripples for the downward-looking navigation camera. The line says "probably" because NASA does. | INGX |
+| Hard landing; rotor blades broke (a blade piece lies ~15 m away) | INGB, INGX |
+| Team said goodbye with a final downlink on 16 Apr 2024; unable to fly | INGB |
 
-### near-shoemaker
-| Claim | Source |
-|---|---|
-| Launch 17 Feb 1996; Mathilde flyby 27 Jun 1997; Eros orbit 14 Feb 2000; first to orbit an asteroid | NEAR |
-| Landed 12 Feb 2001 (19:44 UT) at 6.4 km/h south of Himeros; 69 descent photos; first to land on an asteroid | NEAR |
-| Not designed as a lander; returned gamma-ray data ~2 weeks; last contact 28 Feb 2001 (cold) | NEAR |
-| Contact attempt 10 Dec 2002 failed; renamed for Eugene M. Shoemaker | NEAR |
-| No magnetic field; >70% mapped by near-infrared spectrometer | NEAR |
-| Planned "about 1 year orbiting Eros" ⚠ (orbit lasted Feb 2000–Feb 2001) | ⚠ |
+### En route and inheritance lines
+| Stop | Line / claim | Source |
+|---|---|---|
+| viking-1 | Viking 1 landed 1976, almost 45 years before Ingenuity (20 Jul 1976 → 18 Feb 2021 = 44.6 y) | V1, ING / derived, tested |
+| viking-1 | Stops are visited in the order they landed | `MACHINE_IDS`, tested |
+| viking-1 | "Everyone on this flight landed after you. You showed it could be done." First truly successful Mars landing | V1, tested |
+| viking-2 | Shortest way to Viking 2 runs almost over the north pole (route reaches 88° N) | `route.ts` interpolate, tested |
+| viking-2 | Both Viking landers worked at once from 1976 to 1980 | V1, V2, tested |
+| viking-2 | Viking 2 moved north toward the polar ice; almost 32 years later (Sep 1976 → May 2008) Phoenix landed farther north and dug ice up | V2, PHX15 / derived, tested |
+| pathfinder | No NASA landing for almost 21 years after the Vikings (Sep 1976 → Jul 1997) ⚠ no NASA Mars landing in between (Mars Observer and Mars Global Surveyor were orbiters) | ⚠ derived, tested |
+| pathfinder | Pathfinder carried the first rover on Mars | MPF |
+| pathfinder | "Every NASA rover since has followed her, including the one that carried me here" ⚠ chronological (Spirit, Opportunity, Curiosity, Perseverance) | ⚠, ING |
+| spirit | Leg crosses the equator; Spirit is the first southern stop | `route.ts`, tested |
+| spirit | Spirit landed Jan 2004; Opportunity 21 days later | SPI, OPP, tested |
+| spirit | Stuck in soft soil, Spirit became a stationary science platform; Ingenuity is now a stationary testbed | SPI, TROY, INGB |
+| opportunity | Longest leg of Flight 73; twins on opposite sides of Mars; path passes close to the south pole (route reaches 86° S) | `route.ts` (tested), SPI, MER |
+| opportunity | Opportunity showed water lasted on the surface | MER |
+| opportunity | Jezero was once a lake; Perseverance found potential biosignatures ("Sapphire Canyon", published Sept 2025), which need more study — the line says "possible signs" | M2020 |
+| phoenix | Phoenix in the Martian arctic, chosen in concert with NASA's "follow the water" strategy | PHX15 |
+| phoenix | Reused the cancelled Mars Surveyor 2001 spacecraft | PHX15 |
+| phoenix | Carries a DVD for future visitors, called "the first library on Mars" (installed by The Planetary Society) | PHX15 |
+| phoenix | Water ice just below the surface; future helicopters (SkyFall) are meant to map subsurface water ice | PHX15, ING |
+| insight | Landed Nov 2018, just over two years before Ingenuity (2.2 y) | INS / derived, tested |
+| insight | Stationary lander; seismometer recorded marsquakes | INS, INSR |
+| insight | Looked inside Mars down to its liquid core; Ingenuity's highest altitude 24 m | INSC, ING |
+| mars2020-edl | Ingenuity photographed the parachute and backshell on Flight 26, Apr 2022 | JPL2022 |
+| mars2020-edl | The images may help future landings be safer | JPL2022 |
+| ingenuity | Last hop is the shortest leg | `route.ts`, tested |
+| ingenuity | Perseverance photographed part of a rotor blade ~15 m (49 ft) west of Ingenuity (image 24 Feb 2024) | INGB, INGX |
+| ingenuity | SkyFall will build on Ingenuity; a trio of next-gen helicopters, deployed mid-air, to scout human landing sites and map subsurface water ice | ING |
 
-### dawn
-| Claim | Source |
+### Epilogue
+| Line / claim | Source |
 |---|---|
-| Launch 27 Sep 2007; ion propulsion; Vesta 2011–2012; Ceres orbit 6 Mar 2015 | DAWN, DAWNC |
-| First to orbit a dwarf planet; first to orbit two extraterrestrial targets | DAWNC, DAWNE |
-| Bright areas mostly sodium carbonate from a brine reservoir ~40 km deep | DAWNB |
-| Dipped to 35 km above Ceres | DAWNB, DAWNS |
-| Hydrazine ran out late Oct 2018; missed sessions 31 Oct and 1 Nov; 6.9 billion km travelled | DAWNE, DAWNS |
-| Orbit lasts at least 20 years, >99% confidence for 50; planetary protection | DAWNE |
-| Dwarf planets could have hosted oceans, potentially still do | DAWNE |
-| `lastContact` 2018-10-30 ⚠: last healthy status report (DAWNS); exact last-signal time not published | DAWNS / ⚠ |
-
-### kepler
-| Claim | Source |
-|---|---|
-| Launch 6 Mar 2009 local (7 Mar 2009 UTC) | KEP |
-| Single instrument with a spacecraft built around it; largest digital camera in space at the time; 1.4 m mirror | KEP |
-| 150,000 stars in Cygnus; designed for 3½ years; transits | KEP |
-| Lost precise pointing in 2013 → K2 | KEP |
-| >2,600 planets; more planets than stars | KEP |
-| Retired 30 Oct 2018; "goodnight" commands 15 Nov 2018 shut down transmitters; anniversary of Johannes Kepler's death (1630) | KEPG |
-| Earth-trailing, safe orbit around the Sun; data mined for years | KEPG, challenge resources |
+| Ingenuity stands near the apex of a sand ripple at Valinor Hills | INGB |
+| Software update makes it wake daily, test solar panel, batteries (and electronics), take a colour photo and collect temperature data. The line says the update "tells me to" — whether it still runs in Nov 2026 is not known | INGB |
+| Memory could hold about 20 years of daily data, kept for whoever revisits Valinor Hills | INGB |
+| SkyFall helicopters planned for Mars (no launch date given) | ING |
 
 ## Not used, on purpose
 
-- No transmissions are quoted. The popular line attributed to Opportunity is a reporter's
-  paraphrase of telemetry, not a message, so it is left out.
-- Opportunity's final wake-up song, Phoenix ice "vanishing" over days, and Apollo 17's tracks
-  seen from orbit were left out because they were not confirmed in this pass.
+- No transmissions or quotes are put in anyone's mouth. The popular line attributed to
+  Opportunity is a reporter's paraphrase of telemetry, so it is left out. The team leads' quotes
+  in INGB and INGX are paraphrased as facts (e.g. "for whoever visits next"), never quoted.
+- Opportunity's final wake-up song was not confirmed in this pass. Phoenix's ice clumps vanishing
+  over four days *is* in PHX15 but was not needed.
+- "Viking → follow the water" was dropped: NASA ties the "follow the water" strategy to the
+  Phoenix era (PHX15), not to Viking, so it appears only on the Phoenix leg.
+- Viking 1's old line "Every Mars lander since has chased the question I asked" was removed:
+  Pathfinder and InSight were not life-detection missions.
+- "All four blades snapped" (INGX) is NASA's most likely scenario, not a confirmed finding, so
+  the text says only that the blades broke.
+- No terrain names along the legs (volcanoes, plains, canyons). Only geometric claims checked
+  with `interpolate()` in `route.ts` are used ("almost over the north pole", "crosses the equator").
+- The backshell's own coordinates and its distance from Ingenuity: not found on a NASA page.
+- Mars Sample Return's present status and SkyFall's launch date: not claimed. Only the 2022 MSR
+  request and the SkyFall plan as NASA describes it are used.
+- Ingenuity "still working in 2026": not claimed. The latest NASA report found (Dec 2024) says
+  weekly weather data to Perseverance; the epilogue describes the programmed routine.

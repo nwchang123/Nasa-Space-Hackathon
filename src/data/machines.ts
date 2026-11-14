@@ -27,7 +27,7 @@ export const MACHINES: Machine[] = [
       why: 'I was the first spacecraft to land safely on Mars and keep working. I touched down on 20 July 1976, seven years to the day after Apollo 11 reached the Moon. My mission was to look for life.',
       found: 'My arm scooped soil into a tiny biology lab inside me. Some tests gave a weak signal that looked like life. But my chemistry instrument found no organic compounds, so the answer stayed inconclusive.',
       lastDay: 'Long after my main mission I kept sending weather reports, first daily, then weekly. On 11 November 1982, a faulty command sent from Earth cut me off. Every attempt to reach me again failed.',
-      stillHere: 'In 1982 I was renamed the Thomas Mutch Memorial Station, after my imaging team’s leader. My record of 6 years and 116 days on Mars stood until Opportunity passed it in 2010. Every Mars lander since has chased the question I asked.',
+      stillHere: 'In 1982 I was renamed the Thomas Mutch Memorial Station, after my imaging team’s leader. My record of 6 years and 116 days on Mars stood until Opportunity passed it in 2010. The question I came to ask is still open.',
     },
     facts: ['First successful Mars landing', '2 nuclear power generators', '4,500 photos from both landers'],
     sources: [{ label: 'NASA Science · Viking 1', url: 'https://science.nasa.gov/mission/viking-1/' }],
@@ -74,7 +74,7 @@ export const MACHINES: Machine[] = [
       why: 'We were sent to test new ways to land on Mars and to drive there. Instead of rockets all the way down, I fell wrapped in giant airbags. On 4 July 1997 I bounced about 15 times, up to 15 metres high.',
       found: 'My rover, Sojourner, weighed 10.6 kilograms and rolled down my ramp on the second sol. She studied rocks while I took more than 16,500 pictures. Rounded pebbles here hinted at running water, back when Mars was warmer.',
       lastDay: 'Sojourner was built for a seven-day mission and worked for 83. My final data reached Earth at 10:23 UTC on 27 September 1997. Engineers kept trying for five months, then ended the mission on 10 March 1998.',
-      stillHere: 'I am the Carl Sagan Memorial Station, named after the astronomer who died the year before I landed. My airbag landing worked so well that Spirit and Opportunity used the same kind. Every Mars rover since follows Sojourner’s tracks.',
+      stillHere: 'I am the Carl Sagan Memorial Station, named after the astronomer who died the year before I landed. My airbag landing worked so well that Spirit and Opportunity used the same kind.',
     },
     facts: ['First rover on Mars', '10.6 kg rover', '16,500+ lander images', 'About 15 airbag bounces'],
     sources: [
@@ -192,25 +192,38 @@ export const MACHINES: Machine[] = [
     ],
   },
   {
-    // DRAFT — the content fork verifies and rewrites this entry.
     id: 'mars2020-edl',
     name: 'Perseverance’s parachute and backshell',
     shortName: 'Backshell',
     kind: 'Landing hardware',
-    site: 'Jezero crater',
-    lat: 18.4,
-    lon: 77.5,
+    site: 'Jezero crater, near Perseverance’s landing site',
+    // ⚠ No NASA page found giving the backshell's own coordinates. NASA's orbital image (PIA24333)
+    // shows it near Perseverance's landing point (widely cited 18.4447°N, 77.4508°E), so this is
+    // that point, rounded. Approximate.
+    lat: 18.44,
+    lon: 77.45,
     approxPosition: true,
     launched: '2020-07-30',
     arrived: '2021-02-18',
+    // No radio of its own: this is the day Perseverance let go of it during the landing.
     lastContact: '2021-02-18',
-    lastContactLabel: 'Cut loose',
-    plannedLife: 'About 7 minutes of descent',
-    actualLife: 'Draft',
+    lastContactLabel: 'Separated',
+    plannedLife: 'Launch to landing',
+    actualLife: 'About 7 months, as planned',
     noRadio: true,
-    story: { why: 'Draft.', found: 'Draft.', lastDay: 'Draft.', stillHere: 'Draft.' },
-    facts: ['Draft', 'Draft'],
-    sources: [{ label: 'NASA Science · Ingenuity', url: 'https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/' }],
+    story: {
+      why: 'We shielded Perseverance on its trip through deep space, with Ingenuity tucked under its belly. On 18 February 2021 we hit the Martian air at nearly 20,000 km/h. Our job was to slow everyone down.',
+      found: 'Our parachute burst open in less than a second, from a 46 by 66 cm bundle to 21.5 metres wide. It was the biggest parachute ever used on Mars. Its orange and white panels hid “Dare Mighty Things” in binary, with JPL’s GPS coordinates around the edge.',
+      lastDay: 'Partway down, Perseverance let go of us and flew on under rocket power. We fell and hit the ground at about 126 km/h. Our work ended that day, 18 February 2021.',
+      stillHere: 'We still lie in Jezero crater, the backshell upright, the parachute spread out under dust. In April 2022 Ingenuity flew over us and took 10 colour photos. Engineers planning Mars Sample Return had asked for them, to help make future landings safer.',
+    },
+    facts: ['21.5 m parachute, biggest on Mars', '“Dare Mighty Things” in binary', 'Hit the ground at ~126 km/h', 'Photographed by Ingenuity, 2022'],
+    sources: [
+      { label: 'JPL · NASA’s Mars Helicopter Spots Gear That Helped Perseverance Rover Land', url: 'https://www.jpl.nasa.gov/news/nasas-mars-helicopter-spots-gear-that-helped-perseverance-rover-land/' },
+      { label: 'JPL · Perseverance Provides Front-Row Seat to Landing', url: 'https://www.jpl.nasa.gov/news/nasas-mars-perseverance-rover-provides-front-row-seat-to-landing-first-audio-recording-of-red-planet/' },
+      { label: 'NASA Science · Mars Decoder Ring', url: 'https://science.nasa.gov/resource/mars-decoder-ring/' },
+      { label: 'NASA Science · Spacecraft Components on the Surface (PIA24333)', url: 'https://science.nasa.gov/photojournal/perseverance-and-mars-2020-spacecraft-components-on-the-surface/' },
+    ],
   },
   {
     id: 'ingenuity',
@@ -224,19 +237,23 @@ export const MACHINES: Machine[] = [
     approxPosition: true,
     launched: '2020-07-30',
     arrived: '2021-02-18',
+    // The team's last downlink. NASA reported in December 2024 that Ingenuity still sent weather
+    // data to Perseverance about once a week, so this is not its last signal ever.
     lastContact: '2024-04-16',
+    lastContactLabel: 'Last team downlink',
     plannedLife: 'Up to 5 flights in 30 days',
     actualLife: '72 flights in nearly 3 years',
     story: {
       why: 'I rode to Mars tucked under the belly of the Perseverance rover. The air there is less than one percent as thick as Earth’s. Nobody knew if a helicopter could fly in it, so I was sent to try.',
       found: 'On 19 April 2021 I lifted off: the first powered, controlled flight on another planet. I was meant to fly five times. I flew 72, scouting routes and science targets for the rover from above.',
       lastDay: 'On 18 January 2024 I made a hard landing that broke my rotor blades. I could never fly again. My team gathered for one last downlink on 16 April 2024.',
-      stillHere: 'I stay at Valinor Hills as a tiny weather and engineering station. A last software update lets me wake each day, test my solar panel and batteries, take a photo and log temperatures. NASA’s planned SkyFall helicopters will build on what I proved.',
+      stillHere: 'I stay at Valinor Hills as a stationary testbed. In December 2024 I was still sending weather data to Perseverance about once a week. Even my crash is useful: what it taught should help future Mars helicopters.',
     },
     facts: ['72 flights, 5 planned', '17.0 km flown', '24 m highest altitude', '1.8 kg'],
     sources: [
       { label: 'NASA Science · Ingenuity Mars Helicopter', url: 'https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/' },
       { label: 'NASA · Ingenuity Team Says Goodbye … for Now', url: 'https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasas-ingenuity-mars-helicopter-team-says-goodbye-for-now/' },
+      { label: 'NASA · First Aircraft Accident Investigation on Another World', url: 'https://www.nasa.gov/missions/mars-2020-perseverance/ingenuity-helicopter/nasa-performs-first-aircraft-accident-investigation-on-another-world/' },
     ],
   },
 ];
