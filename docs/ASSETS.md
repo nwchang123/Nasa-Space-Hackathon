@@ -224,7 +224,7 @@ No NASA endorsement is implied.
 | 文件 | 来源 | 实际下载量 | 放进网站的文件 |
 |---|---|---|---|
 | MGS MOLA 全球高程，第 3 层，128 张 PNG 瓦片，拼成 4096×2048 | NASA Mars Trek，`mola128_mola64_merge_90Nto90S_SimpleC_clon0` | 2,924,785 B | `src/scene/maps/mars-height.jpg`（轻微模糊去掉 8 位阶梯，JPEG q92，648,143 B） |
-| Viking MDIM 2.1 彩色拼接图，第 4 层，512 张 JPEG 瓦片，拼成 8192×4096 | NASA Mars Trek，`Mars_Viking_MDIM21_ClrMosaic_global_232m` | 见下方提交记录 | `src/scene/maps/mars-8k.webp` |
+| Viking MDIM 2.1 彩色拼接图，第 4 层，512 张 JPEG 瓦片，拼成 8192×4096 | NASA Mars Trek，`Mars_Viking_MDIM21_ClrMosaic_global_232m` | 26,076,267 B | `src/scene/maps/mars-8k.webp`（8192×4096 WebP，5,971,858 B） |
 
 - 高程图核对过：Olympus Mons 和 Arsia Mons 最亮（灰度 255，山顶被拉伸截平），Hellas 盆地最暗（19），位置和彩色图一致。
 - 高程用来算坡度、按真实太阳方向打明暗，起伏有夸张，不代表真实海拔（米）。
