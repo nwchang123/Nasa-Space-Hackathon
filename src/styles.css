@@ -1090,6 +1090,14 @@ button:disabled {
   line-height: 1.6;
   color: var(--bone);
 }
+.model-note {
+  margin: -10px 0 18px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line);
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--ghost);
+}
 .sky-now .label {
   display: block;
   font-size: 9.5px;
@@ -1210,7 +1218,7 @@ button:disabled {
 
 .report-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1.6fr 1fr 1fr;
   gap: 16px;
   margin-top: 28px;
   margin-bottom: 28px;
@@ -1225,8 +1233,9 @@ button:disabled {
 .report-stats strong {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(40px, 5vw, 60px);
+  font-size: clamp(36px, 4.2vw, 56px);
   line-height: 1;
+  white-space: nowrap;
 }
 .report-stats span {
   font-size: 10px;

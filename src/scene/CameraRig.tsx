@@ -13,13 +13,10 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { EPILOGUE_HOLD_MS, type GlobeShot } from './choreo';
-import { blendPose, cameraGoal, chaseGoal, clampPolar, easeInOut, horizonDir, type Pose, type Vec3 } from './layout';
+import { REPORT_DIR, TITLE_DIR, blendPose, cameraGoal, chaseGoal, clampPolar, easeInOut, horizonDir, type Pose, type Vec3 } from './layout';
 import { CAMERA_PRIORITY, live } from './registry';
 import { SITE_PRESETS, siteLayout } from './sites';
 import { useReducedMotion } from './useReducedMotion';
-
-const TITLE_DIR: Vec3 = clampPolar([0, 0.22, 1]);
-const REPORT_DIR: Vec3 = clampPolar([0.12, 0.3, 1]);
 /** When the globe end of the shot changes, the camera eases over this long, ms. */
 const TRANSITION_MS = 1600;
 const Y: Vec3 = [0, 1, 0];

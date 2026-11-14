@@ -14,7 +14,7 @@ import { latLonToVec3 } from '../geo';
 import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { Choreographer, type Shot } from './choreo';
-import { arcAltitude, legPoint, siteFrame, SITE_SCALE } from './layout';
+import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE } from './layout';
 import { MODEL_REGISTRY } from './models';
 import { DIRECTOR_PRIORITY, groups, live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
@@ -22,6 +22,13 @@ import { useReducedMotion } from './useReducedMotion';
 const FADE_OUT_S = 0.22;
 const FADE_IN_S = 0.35;
 const FIRST_FADE_IN_S = 0.9;
+/** On the title and in the flight log the Sun sits this far to the camera's left, so Mars shows its day side. */
+const LIT_OFFSET_DEG = -50;
+/** …and the globe sways ±20° about that view (period ≈ 52 s) instead of turning into the night side. */
+const SWAY_RAD = 0.35;
+const SWAY_RATE = 0.12;
+/** How quickly the globe settles onto the lit view, 1/s. */
+const SETTLE_RATE = 1.4;
 
 const sig = (s: Shot) => `${s.siteId ?? ''}|${s.blend > 0.5 ? 1 : 0}|${s.globeShot}`;
 
@@ -76,10 +83,24 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     const cur = shown.current;
     live.shot = cur;
 
-    // The globe turns only when nothing is anchored to it.
-    const turning =
-      !reduced && cur.blend === 0 && !cur.arc && (s.phase === 'title' || s.phase === 'report' || (s.phase === 'flight' && s.flight.stage === 'epilogue'));
-    if (turning) live.yaw += dt * (s.phase === 'title' ? 0.06 : 0.035);
+    if (s.nowMs !== sunKey.current) {
+      sunKey.current = s.nowMs;
+      const sub = marsSubSolar(new Date(s.nowMs));
+      sunBody.set(...latLonToVec3(sub.lat, sub.lon));
+    }
+
+    // The globe turns only when nothing is anchored to it. On the title and in the flight log it
+    // settles on the day side (the Sun is real, so a fixed view could be all night) and sways there.
+    const free = cur.blend === 0 && !cur.arc;
+    if (free && (s.phase === 'title' || s.phase === 'report')) {
+      const sway = reduced ? 0 : SWAY_RAD * Math.sin((now / 1000) * SWAY_RATE);
+      const goal = litYaw([sunBody.x, sunBody.y, sunBody.z], s.phase === 'title' ? TITLE_DIR : REPORT_DIR, LIT_OFFSET_DEG) + sway;
+      const d = angleDelta(live.yaw, goal);
+      // Snap while the screen is still black at start-up; otherwise ease (no visible jump).
+      live.yaw += !started.current || reduced ? d : d * (1 - Math.exp(-dt * SETTLE_RATE));
+    } else if (free && !reduced && s.phase === 'flight' && s.flight.stage === 'epilogue') {
+      live.yaw += dt * 0.035;
+    }
     const globe = groups.globe;
     if (globe) {
       globe.rotation.y = live.yaw;
@@ -87,11 +108,6 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     }
     const gm = globe ? globe.matrixWorld : m4.identity();
 
-    if (s.nowMs !== sunKey.current) {
-      sunKey.current = s.nowMs;
-      const sub = marsSubSolar(new Date(s.nowMs));
-      sunBody.set(...latLonToVec3(sub.lat, sub.lon));
-    }
     live.sun.copy(sunBody).transformDirection(gm);
 
     // The diorama's frame on the globe.

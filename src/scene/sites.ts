@@ -307,7 +307,7 @@ export interface SkyLook {
 const DAY = { zenith: hex('#a67d5a'), horizon: hex('#d6b089'), glow: hex('#f2dcc0') };
 // Dust scatters blue light forward, so the Sun sets in a blue glow on Mars.
 const DUSK = { zenith: hex('#2c2a2f'), horizon: hex('#5f4a3f'), glow: hex('#6e9ad0') };
-const NIGHT = { zenith: hex('#04060a'), horizon: hex('#0b0e13'), glow: hex('#000000') };
+const NIGHT = { zenith: hex('#05070c'), horizon: hex('#161c27'), glow: hex('#000000') };
 
 export function skyLook(elevationDeg: number): SkyLook {
   const day = smoothstep(-1, 12, elevationDeg); // 0 at sunset, 1 once the Sun is well up
@@ -323,10 +323,11 @@ export function skyLook(elevationDeg: number): SkyLook {
     sunUp: elevationDeg > -0.3 ? 1 : 0,
     sunColor: mix(hex('#f0b47e'), hex('#fff0dc'), smoothstep(0, 20, elevationDeg)),
     sunIntensity: 3.2 * smoothstep(-0.5, 8, elevationDeg),
-    ambientSky: mix(mix(hex('#5d6f8c'), hex('#d2aa82'), day), hex('#3a4660'), night),
-    ambientGround: mix(hex('#3b2a22'), hex('#6b4631'), day),
-    // Night stays readable: dim, cool light, as if the eye had adapted.
-    ambientIntensity: 0.75 + 0.75 * day - 0.15 * night,
+    ambientSky: mix(mix(hex('#5d6f8c'), hex('#d2aa82'), day), hex('#8094bd'), night),
+    ambientGround: mix(mix(hex('#3b2a22'), hex('#6b4631'), day), hex('#2a2a33'), night),
+    // Night stays readable: dim, cool light, as if the eye had adapted (an artistic choice; the
+    // console states the real Sun elevation).
+    ambientIntensity: 0.75 + 0.75 * day + 0.45 * night,
     stars,
     domeOpacity: 1 - 0.82 * stars,
     fog: horizon,

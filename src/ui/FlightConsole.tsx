@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { siteSky } from '../astro';
 import { EPILOGUE, FICTION_NOTE, LEG_SCRIPTS, PROLOGUE } from '../data/flight';
 import { MACHINE_BY_ID } from '../data/machines';
+import { MODEL_NOTES } from '../data/modelNotes';
 import { HOME, LEGS, TOTAL_KM, compass, flyDurationMs, hop } from '../flight/route';
 import { currentStop, standingAt, useApp } from '../store';
 import { MACHINE_IDS, type Machine } from '../types';
@@ -326,6 +327,7 @@ function MachineHeader({ machine }: { machine: Machine }) {
       <p className="sky-now">
         <span className="label">Here, right now</span> {skyWords(sky.elevationDeg, sky.localSolarHours)}
       </p>
+      {MODEL_NOTES[machine.id] && <p className="model-note">{MODEL_NOTES[machine.id]}</p>}
     </>
   );
 }

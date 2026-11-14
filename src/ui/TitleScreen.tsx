@@ -36,7 +36,7 @@ export function TitleScreen() {
         Begin Flight 73 <span aria-hidden="true">→</span>
       </button>
       <p className="fine reveal" style={{ animationDelay: '1.7s' }}>
-        {FICTION_NOTE} Surface maps and some models are illustrative.
+        {FICTION_NOTE} Some 3D models are simplified or illustrative.
       </p>
     </section>
   );

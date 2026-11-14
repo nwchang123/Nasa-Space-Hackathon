@@ -31,6 +31,7 @@ import {
   type Side,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { MODEL_NOTES } from '../data/modelNotes';
 import type { MachineId } from '../types';
 import { realSizeScale, type RealSize, type Vec3 } from './layout';
 
@@ -53,31 +54,29 @@ export interface ModelEntry {
 }
 
 const VIKING: ModelEntry = { url: modelUrl('viking-lander.glb'), size: { height: 2.0 }, illustrative: false };
-const MER = 'Simplified NASA model of a Mars Exploration Rover.';
-const NO_MODEL = 'Illustrative silhouette: NASA publishes no 3D model of this hardware.';
 
 export const MODEL_REGISTRY: Record<MachineId, ModelEntry> = {
   'viking-1': VIKING,
   'viking-2': VIKING,
-  'pathfinder-sojourner': { illustrative: true, note: NO_MODEL },
+  'pathfinder-sojourner': { illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'] },
   spirit: {
     url: modelUrl('mer.glb'),
     size: { span: 2.3, height: 1.5 },
     illustrative: true,
-    note: MER,
+    note: MODEL_NOTES.spirit,
     // Stuck at Troy from 2009: wheels dug into soft sand, the deck tilted.
     pose: { sink: 0.09, tilt: [0.07, 0, -0.1] },
   },
-  opportunity: { url: modelUrl('mer.glb'), size: { span: 2.3, height: 1.5 }, illustrative: true, note: MER },
-  phoenix: { illustrative: true, note: NO_MODEL },
+  opportunity: { url: modelUrl('mer.glb'), size: { span: 2.3, height: 1.5 }, illustrative: true, note: MODEL_NOTES.opportunity },
+  phoenix: { illustrative: true, note: MODEL_NOTES.phoenix },
   insight: {
     url: modelUrl('insight.glb'),
     size: { span: 6.0 },
     illustrative: true,
-    note: 'Model illustrative: it shows the instruments on the deck; by February 2019 both stood on the ground.',
+    note: MODEL_NOTES.insight,
   },
-  'mars2020-edl': { illustrative: true, note: NO_MODEL },
-  ingenuity: { url: modelUrl('ingenuity.glb'), size: { span: 1.2 }, illustrative: false },
+  'mars2020-edl': { illustrative: true, note: MODEL_NOTES['mars2020-edl'] },
+  ingenuity: { url: modelUrl('ingenuity.glb'), size: { span: 1.2 }, illustrative: false, note: MODEL_NOTES.ingenuity },
 };
 
 /** Wrap a loaded model so it stands on the ground (y = 0) at its real size. Shares geometry. */

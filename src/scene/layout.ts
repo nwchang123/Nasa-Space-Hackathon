@@ -251,6 +251,28 @@ export function clampPolar(dir: Vec3, maxY = 0.82): Vec3 {
   return [(x / h) * s, ny, (z / h) * s];
 }
 
+/** Camera directions (from the globe's centre) for the title and the flight log. */
+export const TITLE_DIR: Vec3 = clampPolar([0, 0.22, 1]);
+export const REPORT_DIR: Vec3 = clampPolar([0.12, 0.3, 1]);
+
+/**
+ * Globe yaw (rotation about +Y, the spin axis) that puts the real Sun `offsetDeg` to one side of
+ * the camera, so a globe shot shows mostly day side with the terminator in view. The lighting
+ * stays real (the Sun is fixed to the globe at the true sub-solar point); only the view turns.
+ * Negative offsets put the Sun on the camera's left.
+ */
+export function litYaw(sunBody: Vec3, cameraDir: Vec3, offsetDeg: number): number {
+  const bodyAz = Math.atan2(sunBody[0], sunBody[2]);
+  const camAz = Math.atan2(cameraDir[0], cameraDir[2]);
+  return camAz + offsetDeg * DEG - bodyAz;
+}
+
+/** Shortest signed angle from a to b, radians, in (−π, π]. */
+export function angleDelta(a: number, b: number): number {
+  const d = (((b - a) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
+  return d === -Math.PI ? Math.PI : d;
+}
+
 // ---------------------------------------------------------------- chase camera
 
 export interface ChaseInput {
