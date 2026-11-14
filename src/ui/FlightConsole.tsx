@@ -146,23 +146,28 @@ function HomeSky() {
   );
 }
 
+/** Prologue pacing: quick enough that "Lift off" is on screen within two seconds. */
+const PROLOGUE_START = 0.2;
+const PROLOGUE_STEP = 0.4;
+const PROLOGUE_CTA = PROLOGUE_START + (PROLOGUE.length - 1) * PROLOGUE_STEP;
+
 function Prologue() {
   const flyTo = useApp(s => s.flyTo);
   const reduced = useMemo(prefersReducedMotion, []);
   return (
     <div className="stage-panel">
       <p className="speaker">Ingenuity · Valinor Hills, Jezero crater</p>
-      <Lines lines={PROLOGUE} instant={reduced} />
+      <Lines lines={PROLOGUE} start={PROLOGUE_START} step={PROLOGUE_STEP} instant={reduced} />
       <HomeSky />
       <button
         type="button"
         className="primary reveal"
-        style={{ animationDelay: reduced ? '0s' : `${0.4 + PROLOGUE.length * 1.1}s` }}
+        style={{ animationDelay: reduced ? '0s' : `${PROLOGUE_CTA}s` }}
         onClick={() => flyTo(0, reduced ? 0 : flyDurationMs(LEGS[0].distanceKm))}
       >
         Lift off <span aria-hidden="true">→</span>
       </button>
-      <p className="jump-hint reveal" style={{ animationDelay: reduced ? '0s' : `${0.6 + PROLOGUE.length * 1.1}s` }}>
+      <p className="jump-hint reveal" style={{ animationDelay: reduced ? '0s' : `${PROLOGUE_CTA + 0.2}s` }}>
         Short on time? Pick any dot on the route above to fly straight to that stop.
       </p>
     </div>

@@ -88,8 +88,20 @@ export function Ingenuity() {
   const rig = useRef<IngenuityRig | null>(null);
   const angle = useRef(0);
   const reduced = useReducedMotion();
-  const sink = useMemo<RigSink>(() => r => (rig.current = r), []);
-  useEffect(() => () => void (rig.current = null), []);
+  const sink = useMemo<RigSink>(
+    () => r => {
+      rig.current = r;
+      live.brokenTip = r?.brokenTip ?? null;
+    },
+    [],
+  );
+  useEffect(
+    () => () => {
+      rig.current = null;
+      live.brokenTip = null;
+    },
+    [],
+  );
 
   useFrame((_, delta) => {
     const g = group.current;

@@ -26,8 +26,8 @@ import {
   RingGeometry,
   SphereGeometry,
   Vector3,
+  Object3D,
   type Material,
-  type Object3D,
   type Side,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -224,8 +224,18 @@ export interface IngenuityRig {
   setRotor(angle: number): void;
   /** Translucent discs that stand in for the blur of fast-spinning blades. */
   blur: [Mesh, Mesh];
+  /** An empty marker at the end of the broken blade's stub; it turns with the rotor (null if not broken). */
+  brokenTip: Object3D | null;
   /** Free what this rig owns (never the shared GLB geometry or materials). */
   dispose(): void;
+}
+
+function tipMarker(parent: Object3D, at: Vector3): Object3D {
+  const o = new Object3D();
+  o.name = 'broken-tip';
+  o.position.copy(at);
+  parent.add(o);
+  return o;
 }
 
 function blurDiscs(root: Group, heights: [number, number]): [Mesh, Mesh] {
@@ -263,6 +273,7 @@ export function buildIngenuity(broken: boolean): IngenuityRig {
   const root = body.build('ingenuity');
 
   const base = [0.6, 2.1];
+  let brokenTip: Object3D | null = null;
   const rotors = rotorY.map((y, i) => {
     const kit = new Kit().add('dark', cyl(0.03, 0.03, 0.03, 12), [0, 0, 0]);
     kit.add('dark', box(0.58, 0.008, 0.075), [0.31, 0, 0], [0.08, 0, 0]);
@@ -277,6 +288,7 @@ export function buildIngenuity(broken: boolean): IngenuityRig {
     g.position.y = y;
     g.rotation.y = base[i];
     root.add(g);
+    if (broken && i === 1) brokenTip = tipMarker(g, new Vector3(-0.39, 0, 0));
     return g;
   });
   const blur = blurDiscs(root, rotorY);
@@ -284,6 +296,7 @@ export function buildIngenuity(broken: boolean): IngenuityRig {
   return {
     root,
     blur,
+    brokenTip,
     setRotor(a) {
       rotors[0].rotation.y = base[0] + a;
       rotors[1].rotation.y = base[1] - a;
@@ -307,15 +320,20 @@ export function ingenuityFromGltf(scene: Object3D, broken: boolean): IngenuityRi
   const rotorNodes = [model.getObjectByName('rotors_02'), model.getObjectByName('rotors_01')];
 
   const upper = rotorNodes[1];
+  let brokenTip: Object3D | null = null;
   if (broken && upper) {
+    const meshes: Mesh[] = [];
     upper.traverse(o => {
       const m = o as Mesh;
-      if (!m.isMesh || (m.material as Material).name !== 'blades') return;
+      if (m.isMesh && (m.material as Material).name === 'blades') meshes.push(m);
+    });
+    for (const m of meshes) {
       const g = m.geometry.clone();
-      clipOneBlade(g);
+      const tip = clipOneBlade(g);
       ownedGeometry.push(g);
       m.geometry = g;
-    });
+      if (tip && !brokenTip) brokenTip = tipMarker(m, tip);
+    }
   }
 
   const root = new Group();
@@ -333,6 +351,7 @@ export function ingenuityFromGltf(scene: Object3D, broken: boolean): IngenuityRi
   return {
     root,
     blur,
+    brokenTip,
     setRotor(a) {
       rotorNodes.forEach((n, i) => {
         const b = base[i];
@@ -353,12 +372,15 @@ export function ingenuityFromGltf(scene: Object3D, broken: boolean): IngenuityRi
   };
 }
 
-/** Clip the blade on one side of a two-blade rotor mesh (blades run along its longest axis). */
-function clipOneBlade(g: BufferGeometry) {
+/**
+ * Clip the blade on one side of a two-blade rotor mesh (blades run along its longest axis).
+ * Returns the middle of the break, in the geometry's own space.
+ */
+function clipOneBlade(g: BufferGeometry): Vector3 | null {
   const pos = g.getAttribute('position');
   g.computeBoundingBox();
   const bb = g.boundingBox;
-  if (!bb) return;
+  if (!bb) return null;
   const size = bb.getSize(new Vector3());
   const axes = [0, 1, 2].sort((a, b) => size.getComponent(b) - size.getComponent(a));
   const long = axes[0];
@@ -380,8 +402,11 @@ function clipOneBlade(g: BufferGeometry) {
     if (get(i, long) < cut) set(i, long, cut);
   }
   pos.needsUpdate = true;
+  const tip = bb.getCenter(new Vector3());
+  tip.setComponent(long, centre - half * 0.55);
   g.computeBoundingBox();
   g.computeBoundingSphere();
+  return tip;
 }
 
 /** The piece of rotor blade that broke off, lying on the sand. */

@@ -1,7 +1,7 @@
 // Live, per-frame values shared between scene components. The Director writes them first every
 // frame (useFrame priority DIRECTOR_PRIORITY); everyone else reads them. Never rendered by React.
 
-import { Matrix4, Quaternion, Vector3, type Group } from 'three';
+import { Matrix4, Quaternion, Vector3, type Group, type Object3D } from 'three';
 import type { Shot } from './choreo';
 import { HOME_YAW } from './layout';
 import type { SkyLook } from './sites';
@@ -47,4 +47,6 @@ export const live = {
     pos: new Vector3(),
     quat: new Quaternion(),
   },
+  /** The end of Ingenuity's broken blade (an empty inside its rig, turning with the rotor), or null. */
+  brokenTip: null as Object3D | null,
 };

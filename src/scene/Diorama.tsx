@@ -2,10 +2,12 @@
 // metres scaled by SITE_SCALE): procedural ground and rocks, the machine, a sky dome coloured for
 // the site's real Sun right now, and the radio call effect. It fades in as the camera dives
 // toward it and out as the camera climbs away. Only the current stop's diorama is mounted; it is
-// built on mount and disposed on unmount.
+// built on mount and disposed on unmount. At home, two small callouts point out the damage from
+// flight 72: the end of the broken blade on Ingenuity, and the piece that lies 15 m to the west.
 
+import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { SphereGeometry, SRGBColorSpace, type Fog, type Group, type Mesh } from 'three';
 import { siteSky } from '../astro';
 import { MACHINE_BY_ID } from '../data/machines';
@@ -107,17 +109,97 @@ export function Diorama({ stop }: { stop: MachineId }) {
   });
 
   return (
-    <group ref={group} matrixAutoUpdate={false} visible={false}>
-      <primitive object={ground.ground} />
-      <primitive object={ground.rocks} />
-      <mesh ref={dome} geometry={domeGeom} material={skyMat} renderOrder={-0.5} frustumCulled={false} visible={false} />
-      {stop !== HOME && (
-        <group rotation-y={lay.machineYaw}>
-          <MachineModel id={stop} />
-        </group>
+    <>
+      <group ref={group} matrixAutoUpdate={false} visible={false}>
+        <primitive object={ground.ground} />
+        <primitive object={ground.rocks} />
+        <mesh ref={dome} geometry={domeGeom} material={skyMat} renderOrder={-0.5} frustumCulled={false} visible={false} />
+        {stop !== HOME && (
+          <group rotation-y={lay.machineYaw}>
+            <MachineModel id={stop} />
+          </group>
+        )}
+        {fragment && (
+          <>
+            <primitive object={fragment} />
+            <SiteTag position={[fragment.position.x, fragment.position.y + 0.02, fragment.position.z]} faint>
+              Blade fragment<span className="marker-label-tag"> · 15 m W</span>
+            </SiteTag>
+          </>
+        )}
+        <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
+      </group>
+      {stop === HOME && (
+        <SiteTag follow>
+          Broken rotor tip<span className="marker-label-tag"> · Flight 72</span>
+        </SiteTag>
       )}
-      {fragment && <primitive object={fragment} />}
-      <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
+    </>
+  );
+}
+
+/**
+ * How much the home callouts show: once the camera has settled at home (not while Ingenuity is
+ * still landing, its rotor turning, or the screen is fading).
+ */
+function homeTagFade(): number {
+  const shot = live.shot;
+  if (shot.siteId !== HOME || !live.site.valid) return 0;
+  return (
+    smoothstep(0.85, 1, shot.blend) *
+    (1 - smoothstep(0.02, 0.15, shot.rotor)) *
+    (1 - smoothstep(0.03, 0.12, shot.hover)) *
+    (1 - Math.min(1, live.black * 2))
+  );
+}
+
+/**
+ * A small callout in the scene: a dot on the spot, a hairline up, and a label in the marker style.
+ * With `follow` it tracks the end of Ingenuity's broken blade (world space); otherwise it sits at
+ * `position` in the diorama's metres.
+ */
+function SiteTag({
+  position,
+  follow = false,
+  faint = false,
+  children,
+}: {
+  position?: [number, number, number];
+  follow?: boolean;
+  faint?: boolean;
+  children: ReactNode;
+}) {
+  const anchor = useRef<Group>(null);
+  const el = useRef<HTMLDivElement>(null);
+  const shown = useRef(-1);
+
+  useFrame(() => {
+    const a = anchor.current;
+    let k = homeTagFade();
+    if (follow) {
+      const tip = live.brokenTip;
+      if (!tip || !live.shot.ingenuity) k = 0;
+      else if (a && k > 0) {
+        tip.updateWorldMatrix(true, false);
+        tip.getWorldPosition(a.position);
+      }
+    }
+    k = Math.round(k * 100) / 100;
+    if (k === shown.current || !el.current) return;
+    shown.current = k;
+    el.current.style.opacity = String(k * (faint ? 0.7 : 1));
+    el.current.style.visibility = k > 0 ? 'visible' : 'hidden';
+  });
+
+  return (
+    <group ref={anchor} position={position}>
+      <Html zIndexRange={[4, 0]} pointerEvents="none" className="site-tag-wrap">
+        <div ref={el} className={`site-tag${faint ? ' faint' : ''}`} style={{ opacity: 0, visibility: 'hidden' }}>
+          <span className="site-tag-dot" aria-hidden="true" />
+          <span className="site-tag-line" aria-hidden="true" />
+          <span className="marker-label-inner site-tag-label">{children}</span>
+        </div>
+      </Html>
     </group>
   );
 }
