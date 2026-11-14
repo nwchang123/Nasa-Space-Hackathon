@@ -1,4 +1,5 @@
-// Flight 73's route on the globe. The planned route is a faint dashed line; the hop being flown
+// Flight 73's route on the globe. The planned route is a faint dashed line (already shown on the
+// title screen, fainter still, as a preview of the whole flight); the hop being flown
 // (a planned leg or a direct hop picked from the route strip) draws itself solid amber behind
 // Ingenuity; hops already flown stay as faint solid lines. In the epilogue and the flight log the
 // whole route glows. Everything fades away as the camera dives into a site. Constant pixel width
@@ -89,6 +90,7 @@ export function RouteLines() {
 
     const all = s.phase === 'report' || (s.phase === 'flight' && f.stage === 'epilogue');
     const inFlight = s.phase === 'flight' && !all;
+    const title = s.phase === 'title';
     const fade = 1 - smoothstep(0.3, 0.7, shot.blend);
     const pulse = all && !reduced ? 0.12 * Math.sin(t * 0.9) : 0;
 
@@ -101,6 +103,7 @@ export function RouteLines() {
     for (const l of planned) {
       if (all) style(l, 0.4 + pulse, 1.6);
       else if (inFlight) style(l, 0.22, 1.2);
+      else if (title) style(l, 0.25, 1.2);
       else l.line.visible = false;
     }
 

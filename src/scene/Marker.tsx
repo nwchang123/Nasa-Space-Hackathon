@@ -51,8 +51,9 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
     const t = state.clock.elapsedTime;
     const blend = live.shot.blend;
     const interactive = markersInteractive(s.phase) && blend < 0.2 && live.black < 0.5;
+    const status = markerStatus(id, s.phase, s.flight, s.visited);
     const v = markerVisual({
-      status: markerStatus(id, s.phase, s.flight, s.visited),
+      status,
       hovered: s.hoverId === id,
       interactive,
       t,
@@ -108,7 +109,9 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
     ringMat.opacity = ringOpacity * facing;
     ring.current.scale.setScalar(size * ringScale);
 
-    hit.current.scale.setScalar(Math.max(dist * 0.026, 0.012));
+    // Nearby stops overlap (Ingenuity and the backshell are both in Jezero): the destination's hit
+    // sphere is a little larger, so its nearer surface wins the pointer.
+    hit.current.scale.setScalar(Math.max(dist * 0.026, 0.012) * (status === 'destination' ? 1.35 : 1));
     const active = interactive && facing > 0.35;
     hit.current.userData.active = active;
     if (!active && s.hoverId === id) {

@@ -14,7 +14,7 @@ import { latLonToVec3 } from '../geo';
 import { useApp } from '../store';
 import type { MachineId } from '../types';
 import { Choreographer, type Shot } from './choreo';
-import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE } from './layout';
+import { REPORT_DIR, TITLE_DIR, angleDelta, arcAltitude, legPoint, litYaw, siteFrame, SITE_SCALE, titleSunOffsetDeg } from './layout';
 import { MODEL_REGISTRY } from './models';
 import { DIRECTOR_PRIORITY, groups, live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
@@ -22,8 +22,10 @@ import { useReducedMotion } from './useReducedMotion';
 const FADE_OUT_S = 0.22;
 const FADE_IN_S = 0.35;
 const FIRST_FADE_IN_S = 0.9;
-/** On the title and in the flight log the Sun sits this far to the camera's left, so Mars shows its day side. */
+/** In the flight log the Sun sits this far to the camera's left, so Mars shows its day side. On
+ * the title it may sit up to 75° to either side, to bring Ingenuity's spot (the start) into view. */
 const LIT_OFFSET_DEG = -50;
+const START = latLonToVec3(MACHINE_BY_ID[HOME].lat, MACHINE_BY_ID[HOME].lon);
 /** …and the globe sways ±20° about that view (period ≈ 52 s) instead of turning into the night side. */
 const SWAY_RAD = 0.35;
 const SWAY_RATE = 0.12;
@@ -94,7 +96,9 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     const free = cur.blend === 0 && !cur.arc;
     if (free && (s.phase === 'title' || s.phase === 'report')) {
       const sway = reduced ? 0 : SWAY_RAD * Math.sin((now / 1000) * SWAY_RATE);
-      const goal = litYaw([sunBody.x, sunBody.y, sunBody.z], s.phase === 'title' ? TITLE_DIR : REPORT_DIR, LIT_OFFSET_DEG) + sway;
+      const sun: [number, number, number] = [sunBody.x, sunBody.y, sunBody.z];
+      const goal =
+        (s.phase === 'title' ? litYaw(sun, TITLE_DIR, titleSunOffsetDeg(sun, START)) : litYaw(sun, REPORT_DIR, LIT_OFFSET_DEG)) + sway;
       const d = angleDelta(live.yaw, goal);
       // Snap while the screen is still black at start-up; otherwise ease (no visible jump).
       live.yaw += !started.current || reduced ? d : d * (1 - Math.exp(-dt * SETTLE_RATE));

@@ -107,9 +107,9 @@ export function CameraRig() {
         break;
       }
       case 'title':
-        // The title text sits on the left (its column ends by ~54 % of the width): Mars on the
-        // right, its left edge at ~60 %, so the two never touch.
-        globe = orbitPose(TITLE_DIR, aspect, fov, { anchorX: 0.76, anchorY: 0.5, fillWidth: 0.42 });
+        // The title text sits on the left (its column ends by ~54 % of the width): Mars large on
+        // the right, from ~57 % to ~98 % of the width, so the two never touch.
+        globe = orbitPose(TITLE_DIR, aspect, fov, { anchorX: 0.775, anchorY: 0.5, fillWidth: 0.56 });
         break;
       case 'epilogue':
         globe = orbitPose(epilogueDir.current, aspect, fov, { radius: 1.1 });

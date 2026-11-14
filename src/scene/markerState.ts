@@ -11,20 +11,26 @@ export const PALETTE = {
   dim: '#2a3440',
 } as const;
 
-/** Where a stop stands on the flight: still ahead, being flown to (or stood at), or already visited. */
+/**
+ * Where a stop stands on the flight: still ahead, being flown to (or stood at), or already visited.
+ * On the title screen Ingenuity's own spot, where Flight 73 starts, is marked like a destination.
+ */
 export type MarkerStatus = 'upcoming' | 'destination' | 'visited';
 
 export function markerStatus(id: MachineId, phase: Phase, flight: FlightState, visited: Partial<Record<MachineId, true>>): MarkerStatus {
-  if (phase === 'title') return 'upcoming';
+  if (phase === 'title') return id === 'ingenuity' ? 'destination' : 'upcoming';
   if (phase === 'flight' && (flight.stage === 'flying' || flight.stage === 'site') && MACHINE_IDS.indexOf(id) === flight.leg) {
     return 'destination';
   }
   return visited[id] ? 'visited' : 'upcoming';
 }
 
-/** Hover labels work everywhere except behind the title text. */
-export function markersInteractive(phase: Phase): boolean {
-  return phase !== 'title';
+/**
+ * Hover labels work in every phase. On the title screen only the text column takes the pointer
+ * (see .title-screen in styles.css), so the globe beside it can be explored.
+ */
+export function markersInteractive(_phase: Phase): boolean {
+  return true;
 }
 
 export type RingStyle = 'none' | 'pulse';

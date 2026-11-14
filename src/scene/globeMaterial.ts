@@ -107,7 +107,9 @@ const fragmentShader = /* glsl */ `
     float shade = mix(0.1, 1.0, pow(clamp(ndl, 0.0, 1.0), shadePow));
     vec3 col = albedo * (sunColor * day * shade + ambientColor);
     float fres = pow(1.0 - max(dot(normalize(vWorldNormal), normalize(vViewDir)), 0.0), 3.0);
-    col += rimColor * rimStrength * fres * smoothstep(-0.25, 0.35, ndl0);
+    // Full rim on the day side; a faint one (12 %) on the night side, so the dark limb still
+    // shows the planet's outline and night-side markers do not seem to float in space.
+    col += rimColor * rimStrength * fres * mix(0.12, 1.0, smoothstep(-0.25, 0.35, ndl0));
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }

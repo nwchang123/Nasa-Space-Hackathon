@@ -267,6 +267,32 @@ export function litYaw(sunBody: Vec3, cameraDir: Vec3, offsetDeg: number): numbe
   return camAz + offsetDeg * DEG - bodyAz;
 }
 
+/** Title view: the Sun's preferred place relative to the camera, degrees (negative = left). */
+export const TITLE_SUN_DEG = -50;
+/** …and how far from the camera the Sun may go (either side) to bring Flight 73's start into view. */
+export const TITLE_SUN_MAX_DEG = 75;
+
+/**
+ * Title view: where the Sun sits relative to the camera, degrees (negative = to the left), for
+ * litYaw. The preferred view shows the day side with the Sun on the left. If Flight 73's start
+ * (Ingenuity's spot, `start`) would then be more than 55° from the centre, the view turns toward it,
+ * keeping the Sun 50–75° to either side, so the start shows (by day, or on the night side near the
+ * terminator) whenever it can. When it cannot be shown (around its local midnight), the preferred
+ * view stays.
+ */
+export function titleSunOffsetDeg(sunBody: Vec3, start: Vec3): number {
+  // Azimuth of the start east of the Sun, degrees; a point at that azimuth sits at offset + h from
+  // the camera once litYaw has turned the globe.
+  const h = angleDelta(Math.atan2(sunBody[0], sunBody[2]), Math.atan2(start[0], start[2])) / DEG;
+  const fromCentre = (off: number) => Math.abs(angleDelta(0, (off + h) * DEG)) / DEG;
+  if (fromCentre(TITLE_SUN_DEG) <= 55) return TITLE_SUN_DEG;
+  const lo = 50, hi = TITLE_SUN_MAX_DEG;
+  const left = -Math.min(hi, Math.max(lo, h));
+  const right = Math.min(hi, Math.max(lo, -h));
+  const best = fromCentre(left) <= fromCentre(right) ? left : right;
+  return fromCentre(best) <= 70 ? best : TITLE_SUN_DEG;
+}
+
 /** Shortest signed angle from a to b, radians, in (−π, π]. */
 export function angleDelta(a: number, b: number): number {
   const d = (((b - a) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI) - Math.PI;

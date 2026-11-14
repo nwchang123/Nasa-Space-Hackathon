@@ -171,6 +171,8 @@ button:disabled {
   position: fixed;
   z-index: 3;
   inset: 0;
+  /* Only the text column takes the pointer; the rest reaches the globe (hover labels). */
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -181,8 +183,9 @@ button:disabled {
 }
 
 .title-screen > * {
-  /* Keeps the text column clear of Mars, which starts at ~60 % of the width. */
+  /* Keeps the text column clear of Mars, which starts at ~57 % of the width. */
   max-width: min(620px, 48vw);
+  pointer-events: auto;
 }
 
 .kicker {
@@ -191,6 +194,19 @@ button:disabled {
   font-size: 10.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
+}
+
+/* One line, led by a breathing beacon: a live feed from Jezero. */
+.title-screen .kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  white-space: nowrap;
+}
+.title-screen .kicker .beacon {
+  flex: none;
+  width: 6px;
+  height: 6px;
 }
 
 .title-screen h1 {
@@ -221,21 +237,45 @@ button:disabled {
   color: var(--bone-dim);
 }
 
-.live-notes {
-  margin: 1.6em 0 2em;
+/* Telemetry strip: three compact readouts. */
+.telemetry {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 1.5em 0 1.9em;
   padding: 0;
   list-style: none;
-  color: var(--bone);
-  font-size: 11px;
-  line-height: 1.9;
 }
-.live-notes li::before {
-  content: '◦ ';
+.telemetry li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 11px 13px 12px;
+  border: 1px solid var(--line);
+  background: rgba(5, 7, 10, 0.5);
+}
+.telemetry strong {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(19px, 1.7vw, 24px);
+  line-height: 1.1;
   color: var(--amber);
+  white-space: nowrap;
+}
+.telemetry span {
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
 }
 
 .title-screen .primary {
   align-self: flex-start;
+  background: rgba(242, 169, 59, 0.14);
+  box-shadow:
+    0 0 26px rgba(242, 169, 59, 0.28),
+    inset 0 0 14px rgba(242, 169, 59, 0.12);
 }
 
 .fine {
