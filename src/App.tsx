@@ -1,8 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { useApp } from './store';
-import { Console } from './ui/Console';
+import { FlightConsole } from './ui/FlightConsole';
 import { Report } from './ui/Report';
-import { Timelapse } from './ui/Timelapse';
 import { TitleScreen } from './ui/TitleScreen';
 import { useLiveClock } from './ui/useClock';
 
@@ -15,15 +14,14 @@ export default function App() {
   return (
     <div className="app" data-phase={phase}>
       <div className="stage" aria-hidden={phase === 'report'}>
-        <Suspense fallback={<div className="stage-loading">Acquiring signal…</div>}>
+        <Suspense fallback={<div className="stage-loading">Spinning up the rotors…</div>}>
           <Stage />
         </Suspense>
       </div>
       <div className="vignette" aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
       {phase === 'title' && <TitleScreen />}
-      {phase === 'timelapse' && <Timelapse />}
-      {phase === 'rollcall' && <Console />}
+      {phase === 'flight' && <FlightConsole />}
       {phase === 'report' && <Report />}
     </div>
   );

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { MACHINES, MACHINE_BY_ID } from '../data/machines';
+import { LEGS, TOTAL_KM } from '../flight/route';
 import { useApp } from '../store';
-import { formatDate, yearsBetween } from './callPlan';
+import type { MachineId } from '../types';
+import { formatDate, formatKm, yearsBetween } from './callPlan';
 import { renderPostcard } from './postcard';
 
 const POSTCARD_KEY = 'still-here-postcards';
@@ -16,18 +18,18 @@ function savePostcard(entry: { id: string; message: string; from: string; at: st
   }
 }
 
+/** The flight log: every stop with its leg, plus a postcard to one machine. */
 export function Report() {
-  const called = useApp(s => s.called);
-  const setPhase = useApp(s => s.setPhase);
-  const setView = useApp(s => s.setView);
+  const visited = useApp(s => s.visited);
+  const startFlight = useApp(s => s.startFlight);
   const reset = useApp(s => s.reset);
-  const ids = MACHINES.map(m => m.id).filter(id => called[id]);
-  const echoes = ids.filter(id => called[id] === 'echo');
-  const years = useMemo(() => ids.reduce((sum, id) => sum + yearsBetween(MACHINE_BY_ID[id].arrived, MACHINE_BY_ID[id].lastContact), 0), [ids]);
-  const reflectorsTotal = MACHINES.filter(m => m.reflector).length;
-  const complete = ids.length === MACHINES.length;
+  const years = useMemo(
+    () => MACHINES.filter(m => !m.noRadio).reduce((sum, m) => sum + yearsBetween(m.arrived, m.lastContact), 0),
+    [],
+  );
+  const radioCount = MACHINES.filter(m => !m.noRadio).length;
 
-  const [target, setTarget] = useState(ids[0] ?? MACHINES[0].id);
+  const [target, setTarget] = useState<MachineId>(MACHINES[0].id);
   const [message, setMessage] = useState('');
   const [from, setFrom] = useState('');
   const [status, setStatus] = useState<string | null>(null);
@@ -51,45 +53,43 @@ export function Report() {
 
   return (
     <section className="report" aria-labelledby="report-heading">
-      <p className="kicker">Shift report · {new Date().toISOString().slice(0, 10)}</p>
-      <h2 id="report-heading">{complete ? 'Roll call complete.' : 'Shift ended.'}</h2>
+      <p className="kicker">Flight log · {new Date().toISOString().slice(0, 10)}</p>
+      <h2 id="report-heading">Flight 73, logged.</h2>
 
       <div className="report-stats">
         <div>
-          <strong className="tabular">{ids.length}</strong>
-          <span>machines called</span>
+          <strong className="tabular">{formatKm(TOTAL_KM)}</strong>
+          <span>flown in imagination</span>
         </div>
         <div>
-          <strong className="tabular green">{echoes.length}</strong>
-          <span>answered</span>
+          <strong className="tabular">{Object.keys(visited).length}</strong>
+          <span>stops visited</span>
         </div>
         <div>
-          <strong className="tabular">{years < 10 ? years.toFixed(1) : Math.round(years)}</strong>
-          <span>years of work between them</span>
+          <strong className="tabular">{Math.round(years)}</strong>
+          <span>years of work by {radioCount} machines</span>
         </div>
       </div>
 
-      {echoes.length > 0 ? (
-        <p className="report-line">
-          {echoes.length === reflectorsTotal ? 'All three' : `${echoes.length} of ${reflectorsTotal}`} Apollo reflectors returned your
-          laser. They have no power and no moving parts, and observatories still aim at them to measure the Moon&rsquo;s distance.
-          Abandoned does not mean finished.
-        </p>
-      ) : (
-        <p className="report-line">
-          Nothing answered tonight. But three machines on this list still would. Go back to the Moon and try the laser.
-        </p>
-      )}
+      <p className="report-line">
+        None of them answers any more. All of them are still there, exactly where their work ended, and what they found is still
+        being used by the missions that came after.
+      </p>
 
       <ol className="report-list">
-        {MACHINES.map(m => (
-          <li key={m.id} className={called[m.id] ?? 'uncalled'}>
-            <span className="glyph" aria-hidden="true" />
-            <span className="r-name">{m.shortName}</span>
-            <span className="r-state">{called[m.id] === 'echo' ? 'answered' : called[m.id] === 'silent' ? 'silent' : 'not called'}</span>
-            <span className="r-date tabular">last signal {formatDate(m.lastContact)}</span>
-          </li>
-        ))}
+        {LEGS.map(leg => {
+          const m = MACHINE_BY_ID[leg.to];
+          return (
+            <li key={leg.to} className={visited[leg.to] ? 'silent' : 'uncalled'}>
+              <span className="glyph" aria-hidden="true" />
+              <span className="r-name">{m.shortName}</span>
+              <span className="r-state tabular">{formatKm(leg.distanceKm)}</span>
+              <span className="r-date tabular">
+                {m.site} · {m.lastContactLabel ?? 'last signal'} {formatDate(m.lastContact)}
+              </span>
+            </li>
+          );
+        })}
       </ol>
 
       <div className="postcard-box">
@@ -97,10 +97,10 @@ export function Report() {
         <p className="dim">Pick one machine and tell it something. The card is drawn in your browser and saved as an image; nothing is uploaded.</p>
         <label>
           <span>To</span>
-          <select value={target} onChange={e => setTarget(e.target.value)}>
-            {(ids.length ? ids : MACHINES.map(m => m.id)).map(id => (
-              <option key={id} value={id}>
-                {MACHINE_BY_ID[id].name}
+          <select value={target} onChange={e => setTarget(e.target.value as MachineId)}>
+            {MACHINES.map(m => (
+              <option key={m.id} value={m.id}>
+                {m.name}
               </option>
             ))}
           </select>
@@ -125,20 +125,11 @@ export function Report() {
       </div>
 
       <div className="report-actions">
-        {!complete && (
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => {
-              setView(echoes.length === 0 ? 'moon' : 'overview');
-              setPhase('rollcall');
-            }}
-          >
-            Back to the roll call
-          </button>
-        )}
+        <button type="button" className="ghost" onClick={startFlight}>
+          Fly it again
+        </button>
         <button type="button" className="ghost" onClick={reset}>
-          Start a new shift
+          Back to the start
         </button>
       </div>
     </section>
