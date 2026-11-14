@@ -8,15 +8,16 @@ import { useMemo, useRef } from 'react';
 import {
   AdditiveBlending,
   BufferGeometry,
+  CylinderGeometry,
   Float32BufferAttribute,
   Line,
   LineBasicMaterial,
+  Mesh,
+  MeshBasicMaterial,
   Points,
   PointsMaterial,
   Quaternion,
   Vector3,
-  type Mesh,
-  type MeshBasicMaterial,
   type Sprite,
   type SpriteMaterial,
 } from 'three';
@@ -31,6 +32,7 @@ import { useReducedMotion } from './useReducedMotion';
 const SHIMMER_N = 28;
 const RINGS = 3;
 const Z = new Vector3(0, 0, 1);
+const Y = new Vector3(0, 1, 0);
 
 export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: number }) {
   const reduced = useReducedMotion();
@@ -50,6 +52,32 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
     l.renderOrder = 14;
     return l;
   }, []);
+
+  // A thin glowing tube around the 1-px line so the beam reads at any screen size.
+  const glow = useMemo(() => {
+    const m = new Mesh(
+      new CylinderGeometry(1, 1, 1, 10, 1, true),
+      new MeshBasicMaterial({ color: PALETTE.signal, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false }),
+    );
+    m.frustumCulled = false;
+    m.renderOrder = 14;
+    m.visible = false;
+    return m;
+  }, []);
+  const segDir = useMemo(() => new Vector3(), []);
+  const setGlow = (a: Vector3, b: Vector3, opacity: number) => {
+    segDir.subVectors(b, a);
+    const len = segDir.length();
+    if (len < 1e-6 || opacity <= 0) {
+      glow.visible = false;
+      return;
+    }
+    glow.position.addVectors(a, b).multiplyScalar(0.5);
+    glow.quaternion.setFromUnitVectors(Y, segDir.normalize());
+    glow.scale.set(radius * 0.006, len, radius * 0.006);
+    (glow.material as MeshBasicMaterial).opacity = opacity;
+    glow.visible = true;
+  };
 
   const shimmer = useMemo(() => {
     const g = new BufferGeometry();
@@ -88,6 +116,7 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
     const hideAll = () => {
       beamMat.opacity = 0;
       beam.visible = false;
+      glow.visible = false;
       shimmer.visible = false;
       if (pulse.current) pulse.current.visible = false;
       if (reticle.current) reticle.current.visible = false;
@@ -126,7 +155,8 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
         pos.setXYZ(0, far.x, far.y, far.z);
         pos.setXYZ(1, head.x, head.y, head.z);
         beam.visible = true;
-        beamMat.opacity = reduced ? 0.35 * k : 0.4;
+        beamMat.opacity = reduced ? 0.35 * k : 0.6;
+        setGlow(far, head, reduced ? 0.3 * k : 0.55);
         if (pulse.current && !reduced) {
           pulse.current.visible = true;
           pulse.current.position.copy(head);
@@ -146,7 +176,8 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
           head.lerpVectors(site, far, reduced ? 1 : k);
           pos.setXYZ(0, site.x, site.y, site.z);
           pos.setXYZ(1, head.x, head.y, head.z);
-          beamMat.opacity = 0.7;
+          beamMat.opacity = 0.9;
+          setGlow(site, head, 0.8);
           if (pulse.current && !reduced) {
             pulse.current.visible = true;
             pulse.current.position.copy(head);
@@ -157,6 +188,7 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
           pos.setXYZ(0, far.x, far.y, far.z);
           pos.setXYZ(1, site.x, site.y, site.z);
           beamMat.opacity = 0.35 * (1 - k);
+          setGlow(far, site, 0.3 * (1 - k));
         }
         if (reticle.current) {
           reticle.current.visible = true;
@@ -218,6 +250,7 @@ export function GlobePing({ world, radius }: { world: 'moon' | 'mars'; radius: n
   return (
     <>
       <primitive object={beam} />
+      <primitive object={glow} />
       <primitive object={shimmer} />
       <sprite ref={pulse} visible={false} renderOrder={15}>
         <spriteMaterial map={glowTexture()} color={PALETTE.signal} transparent depthTest={false} depthWrite={false} blending={AdditiveBlending} toneMapped={false} />

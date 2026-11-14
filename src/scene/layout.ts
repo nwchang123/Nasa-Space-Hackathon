@@ -81,6 +81,12 @@ export interface FramingInput {
   halfHeight?: number;
   aspect: number;
   fovDeg: number;
+  /** Landscape only: where the subject's centre sits, as a fraction of the width from the left. Default 0.31 (clear of the console). */
+  anchorX?: number;
+  /** Landscape only: where the subject's centre sits, as a fraction of the height from the top. Default 0.5. */
+  anchorY?: number;
+  /** Landscape only: share of the screen width the subject may fill. Default 0.62. */
+  fillWidth?: number;
 }
 
 export interface CameraGoal {
@@ -103,10 +109,14 @@ export function cameraGoal(input: FramingInput): CameraGoal {
   const aspect = Math.max(0.2, input.aspect);
   const landscape = aspect > LANDSCAPE_ASPECT;
 
+  const anchorX = input.anchorX ?? 0.31;
+  const anchorY = input.anchorY ?? 0.5;
+  const fillWidth = input.fillWidth ?? 0.62;
+
   let d: number;
   if (landscape) {
-    // Fit in ~62 % of the width (75 % fill) and ~72 % of the height.
-    d = Math.max((2 * hx) / (0.75 * 0.62 * 2 * t * aspect), (2 * hy) / (0.72 * 2 * t));
+    // Fit in fillWidth of the width (75 % fill) and ~72 % of the height.
+    d = Math.max((2 * hx) / (0.75 * fillWidth * 2 * t * aspect), (2 * hy) / (0.72 * 2 * t));
   } else {
     // Fit in 85 % of the width and 85 % of the top 45 % of the height.
     d = Math.max((2 * hx) / (0.85 * 2 * t * aspect), (2 * hy) / (0.85 * 0.45 * 2 * t));
@@ -131,8 +141,9 @@ export function cameraGoal(input: FramingInput): CameraGoal {
   const H = 2 * d * t;
   let sx = 0, sy = 0, sz = 0;
   if (landscape) {
-    const k = 0.19 * W; // subject at 31 % from the left
-    sx = rx * k; sy = ry * k; sz = rz * k;
+    const k = (0.5 - anchorX) * W; // subject anchorX from the left (default 31 %)
+    const v = (anchorY - 0.5) * H; // and anchorY from the top (default centred)
+    sx = rx * k + ux * v; sy = ry * k + uy * v; sz = rz * k + uz * v;
   } else {
     const k = -0.275 * H; // subject centred in the top 45 %
     sx = ux * k; sy = uy * k; sz = uz * k;

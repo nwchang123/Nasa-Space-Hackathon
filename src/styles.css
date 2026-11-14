@@ -391,6 +391,11 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 1em;
+  white-space: nowrap;
+}
+
+.result-anchor {
+  scroll-margin-top: 120px;
 }
 
 .icon-btn {

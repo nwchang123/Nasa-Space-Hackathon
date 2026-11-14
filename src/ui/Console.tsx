@@ -49,7 +49,7 @@ export function Console() {
       <header className="console-head">
         <div className="brand">
           <span className="beacon" aria-hidden="true" />
-          Still Here <span className="dim">· DSN night shift</span>
+          Still Here <span className="dim">· DSN</span>
         </div>
         <div className="head-right">
           <span className="tabular dim">{utc}</span>
@@ -173,6 +173,7 @@ function MachineDetail({ machine, onBack }: { machine: Machine; onBack: () => vo
   const resolvePing = useApp(s => s.resolvePing);
   const [lastPlan, setLastPlan] = useState<CallPlan | null>(null);
   const timer = useRef(0);
+  const resultRef = useRef<HTMLDivElement>(null);
   const reduced = useMemo(prefersReducedMotion, []);
 
   const radioPlan = useMemo(() => planCall(machine, 'radio', new Date(nowMs)), [machine, nowMs]);
@@ -188,6 +189,12 @@ function MachineDetail({ machine, onBack }: { machine: Machine; onBack: () => vo
   useEffect(() => {
     setLastPlan(null);
   }, [machine.id]);
+
+  // Bring the answer (and the story that follows) into view when a call returns.
+  const answered = active?.result ?? null;
+  useEffect(() => {
+    if (answered) resultRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  }, [answered, reduced]);
 
   const call = (channel: Channel) => {
     const plan = planCall(machine, channel, new Date());
@@ -286,7 +293,7 @@ function MachineDetail({ machine, onBack }: { machine: Machine; onBack: () => vo
 
       {active && lastPlan && <SignalMeter plan={lastPlan} startedAt={active.startedAt} result={active.result} reduced={reduced} />}
 
-      <div aria-live="polite">
+      <div aria-live="polite" ref={resultRef} className="result-anchor">
         {active?.result && lastPlan && (
           <p className={`result ${active.result}`}>
             {resultLine(machine, lastPlan)}

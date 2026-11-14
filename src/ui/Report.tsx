@@ -64,7 +64,7 @@ export function Report() {
           <span>answered</span>
         </div>
         <div>
-          <strong className="tabular">{Math.round(years)}</strong>
+          <strong className="tabular">{years < 10 ? years.toFixed(1) : Math.round(years)}</strong>
           <span>years of work between them</span>
         </div>
       </div>
