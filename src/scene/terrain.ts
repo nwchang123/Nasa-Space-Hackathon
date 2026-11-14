@@ -81,9 +81,12 @@ function polygonEdge(x: number, z: number, size: number, seed: number): number {
 
 /** Detail texture size, px. One tile is a few metres, so a pixel is about a centimetre. */
 const DETAIL_PX = 512;
-/** Sand ripples per tile (the ground's ripple wavelength is 1.7 m). */
-const RIPPLES_PER_TILE = 3;
+/** Sand ripples per tile (the ground's ripple wavelength is 1.7 m on average); four per tile, so the
+ *  pattern repeats only every 6.8 m. */
+const RIPPLES_PER_TILE = 4;
 const RIPPLE_WAVELENGTH_M = 1.7;
+/** Small ripples riding on the big ones (Mars has both scales), cycles per tile across and along. */
+const SMALL_RIPPLES: readonly [number, number] = [46, 5];
 
 /** Value noise on a lattice that wraps every `period` cells, so the tile repeats seamlessly. */
 function tileNoise(x: number, y: number, period: number, seed: number): number {
@@ -137,7 +140,9 @@ function groundDetail(p: SitePreset): Detail {
   const A = new Float32Array(N * N); // albedo multiplier, 0..1
   const at = (r: number, c: number) => ((r + N) % N) * N + ((c + N) % N);
 
-  // Ripples (crests along the tile's u axis), fine grain and low mottling.
+  // Ripples (crests along the tile's u axis), fine grain and low mottling. Real ripple fields are
+  // regular but not ruled: crests wander, their spacing varies by about a fifth, a crest fades
+  // out and the next one takes over, and smaller ripples ride on the big ones.
   const rippleAmp = Math.min(0.1, Math.max(0.03, p.ripples));
   for (let r = 0; r < N; r++) {
     for (let c = 0; c < N; c++) {
@@ -145,11 +150,16 @@ function groundDetail(p: SitePreset): Detail {
       let h = 0.0025 * (tileFbm(s * 96, t * 96, 96, p.seed + 5, 2) - 0.5);
       let a = 0.9 + 0.08 * tileFbm(s * 6, t * 6, 6, p.seed + 9, 3) + 0.05 * (tileNoise(s * 220, t * 220, 220, p.seed + 13) - 0.5);
       if (rippled) {
-        const phase = 2 * Math.PI * (RIPPLES_PER_TILE * t + 0.45 * tileFbm(s * 3, t * 3, 3, p.seed + 3, 3));
-        // Slightly asymmetric profile; coarser, lighter grains collect on the crests.
+        const warp = 1.1 * (tileFbm(s * 3, t * 3, 3, p.seed + 3, 3) - 0.5) + 0.22 * (tileFbm(s * 8, t * 8, 8, p.seed + 4, 2) - 0.5);
+        const phase = 2 * Math.PI * (RIPPLES_PER_TILE * t + warp);
+        // Asymmetric profile (a gentle windward side, a steeper lee); coarser, lighter grains
+        // collect on the crests. Crest height comes and goes along the crest.
         const wave = Math.sin(phase) + 0.22 * Math.sin(2 * phase);
-        h += rippleAmp * wave;
-        a += 0.05 * Math.max(0, wave);
+        const crest = 0.3 + 0.7 * smoothstep(0.3, 0.65, tileFbm(s * 4, t * 4, 4, p.seed + 6, 2));
+        h += rippleAmp * crest * wave;
+        a += 0.05 * crest * Math.max(0, wave);
+        const small = 2 * Math.PI * (SMALL_RIPPLES[0] * t + SMALL_RIPPLES[1] * s + 0.6 * tileFbm(s * 6, t * 6, 6, p.seed + 8, 2));
+        h += 0.004 * Math.sin(small);
       }
       H[r * N + c] = h;
       A[r * N + c] = a;
@@ -311,7 +321,6 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     { x: 0, z: 0, r: p.clear },
     { x: lay.ingenuity[0], z: lay.ingenuity[2], r: 1.1 },
   ];
-  const across = horizonDir(p.rippleAzDeg + 90, 0);
   const hills = p.hills.map(h => {
     const d = horizonDir(h.azDeg, 0);
     return { x: d[0] * h.dist, z: d[2] * h.dist, r2: h.radius * h.radius, h: h.height };
@@ -323,14 +332,13 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     return f;
   };
 
+  // No ripples in the mesh: its vertices are 1.875 m apart (GROUND_SIZE / GROUND_SEGMENTS), too
+  // coarse for 1.7 m ripples, which used to alias into false, ruler-straight stripes about 5 m
+  // apart. The ripples live in the detail normal map (groundDetail), which can carry them.
   const heightAt = (x: number, z: number) => {
     const f = flatness(x, z);
     let h = p.relief * 2 * (fbm(x / 12, z / 12, p.seed) - 0.5);
     h += p.relief * 0.7 * (fbm(x / 3, z / 3, p.seed + 7) - 0.5);
-    if (p.ripples > 0) {
-      const u = x * across[0] + z * across[2];
-      h += p.ripples * Math.sin(u * ((2 * Math.PI) / 1.7) + 4 * fbm(x / 7, z / 7, p.seed + 3)) * (0.5 + 0.5 * fbm(x / 9, z / 9, p.seed + 5));
-    }
     if (p.polygons > 0) h -= 0.06 * (1 - smoothstep(0.05, 0.4, polygonEdge(x, z, p.polygons, p.seed)));
     // Flatten after adding the hills: a big hill's foot reaches the clearing (Jezero's rim added
     // ~0.2 m there) and would bury anything lying flat on the ground, like the parachute.
@@ -351,10 +359,9 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     pos.setY(i, heightAt(x, z));
     c.copy(base).lerp(dark, smoothstep(0.38, 0.78, fbm(x / 9, z / 9, p.seed + 11)));
     if (p.polygons > 0) c.lerp(dark, 0.55 * (1 - smoothstep(0.05, 0.45, polygonEdge(x, z, p.polygons, p.seed))));
-    if (p.ripples > 0) {
-      const u = x * across[0] + z * across[2];
-      c.lerp(light, 0.3 * Math.max(0, Math.sin(u * ((2 * Math.PI) / 1.7) + 4 * fbm(x / 7, z / 7, p.seed + 3))));
-    }
+    // Rippled sand: broad, irregular patches of paler crest sand (the crests themselves are in the
+    // detail maps), never stripes the vertex grid cannot draw.
+    if (p.ripples > 0) c.lerp(light, 0.22 * smoothstep(0.45, 0.8, fbm(x / 6, z / 6, p.seed + 3)));
     c.multiplyScalar(0.94 + 0.12 * hash(i, 3, p.seed));
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;

@@ -1197,6 +1197,17 @@ button:disabled {
     letter-spacing: 0.03em;
   }
 }
+/* Below 1280 px the one-row bar cannot hold nine names side by side: only the stop we are at (or
+   flying to) keeps its name, the others show their number, and their name while hovered. */
+@media (max-width: 1279px) {
+  .hud-route li:not(.here):not(.next) .stop-label {
+    display: none;
+  }
+  .hud-route li:not(.here):not(.next):hover .stop-label,
+  .hud-route li:not(.here):not(.next) .hop:focus-visible .stop-label {
+    display: inline;
+  }
+}
 
 /* The ?fps meter (drei <Stats>, inline-styled at top left) sits below the route bar instead. */
 .fps-meter {

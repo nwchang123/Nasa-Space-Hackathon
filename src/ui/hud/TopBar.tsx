@@ -116,8 +116,11 @@ function RouteStrip() {
                 }}
               >
                 <span className="dot" aria-hidden="true" />
+                {/* On narrower windows only the stop we are at (or flying to) keeps its name; the
+                    others show their number, and their name on hover or focus. */}
                 <span className="stop-name" aria-hidden="true">
-                  {i + 1} · {home ? 'Home' : m.shortName}
+                  {i + 1}
+                  <span className="stop-label"> · {home ? 'Home' : m.shortName}</span>
                 </span>
                 <span className="sr-only">
                   Stop {i + 1}, {m.name}, {state === 'done' ? 'visited' : state === 'here' ? 'here now' : state === 'next' ? 'flying there' : 'ahead'}
