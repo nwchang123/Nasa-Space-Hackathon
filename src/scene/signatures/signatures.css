@@ -1,0 +1,168 @@
+/* Scene labels and panels for the signature actions (src/scene/signatures). */
+
+.sig-tag-wrap {
+  pointer-events: none;
+}
+
+.sig-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, calc(-100% + 3px));
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.sig-tag-label {
+  padding: 4px 8px 5px;
+  border: 1px solid rgba(242, 169, 59, 0.5);
+  background: rgba(5, 7, 10, 0.74);
+  color: var(--bone, #e9e4d8);
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  text-transform: uppercase;
+  white-space: nowrap;
+  backdrop-filter: blur(3px);
+}
+
+.sig-tag-label small {
+  display: block;
+  color: var(--bone-dim, #a9a397);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.sig-tag-line {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(rgba(242, 169, 59, 0.85), rgba(242, 169, 59, 0.15));
+}
+
+.sig-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber, #f2a93b);
+  box-shadow: 0 0 8px var(--amber, #f2a93b);
+}
+
+.sig-tag-white .sig-tag-label {
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #fff;
+}
+.sig-tag-white .sig-tag-line {
+  background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.15));
+}
+.sig-tag-white .sig-tag-dot {
+  background: #fff;
+  box-shadow: 0 0 10px #fff;
+}
+
+.sig-tag-faint .sig-tag-label {
+  border-color: rgba(143, 179, 201, 0.4);
+  color: var(--bone-dim, #a9a397);
+}
+.sig-tag-faint .sig-tag-line {
+  background: linear-gradient(rgba(143, 179, 201, 0.6), rgba(143, 179, 201, 0.1));
+}
+.sig-tag-faint .sig-tag-dot {
+  background: var(--ghost, #8fb3c9);
+  box-shadow: none;
+}
+
+/* A checklist next to Ingenuity (the daily routine). */
+.sig-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sig-list li {
+  opacity: 0.32;
+  transition: opacity 0.4s ease;
+}
+.sig-list li.done {
+  opacity: 1;
+}
+.sig-list li.done::before {
+  content: '✓ ';
+  color: var(--green, #7dff9a);
+}
+.sig-list li:not(.done)::before {
+  content: '· ';
+}
+
+/* Viking 1's first picture, re-created: a framed print scanned in strip by strip. */
+.sig-photo {
+  width: min(560px, 40vw);
+  padding: 10px 10px 8px;
+  border: 1px solid rgba(233, 228, 216, 0.35);
+  background: rgba(5, 7, 10, 0.86);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  font-family: var(--mono, monospace);
+  color: var(--bone-dim, #a9a397);
+  pointer-events: auto;
+  transition: opacity 0.5s ease;
+}
+.sig-photo canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #0b0b0b;
+  image-rendering: auto;
+}
+.sig-photo-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  margin: 0 0 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone, #e9e4d8);
+}
+.sig-photo-head button {
+  border: 0;
+  background: none;
+  color: var(--bone-dim, #a9a397);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.sig-photo-head button:hover {
+  color: var(--amber, #f2a93b);
+}
+.sig-photo-foot {
+  margin: 7px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+.sig-photo-frame {
+  position: relative;
+  overflow: hidden;
+}
+.sig-photo-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(242, 169, 59, 0.85);
+  box-shadow: 0 0 10px rgba(242, 169, 59, 0.7);
+  transition: opacity 0.4s ease;
+}
+.sig-photo {
+  transform: translateX(-50%);
+}
+
+/* The re-created photo sits above the 3D hotspots (drei sets z-index inline on this wrapper). */
+.sig-photo-wrap {
+  z-index: 50 !important;
+}

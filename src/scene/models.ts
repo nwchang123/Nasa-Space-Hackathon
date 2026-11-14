@@ -548,16 +548,38 @@ function roundPanelLander(kind: 'phoenix' | 'insight'): Group {
     k.add('dark', box(0.12, 0.1, 0.12), [-0.5, 1.13, 1.78]);
     k.between('grey', [0.35, 1.06, -0.3], [0.35, 1.22, -0.3], 0.03);
   } else {
-    // The camera mast, the weather mast, and the digging arm reaching to the ground.
+    // The camera mast and the weather mast. The digging arm is built apart (below) so it can move.
     k.between('white', [0.35, 1.06, 0.3], [0.35, 1.95, 0.3], 0.03);
     k.add('grey', box(0.2, 0.16, 0.16), [0.35, 2.03, 0.3]);
     k.between('grey', [0.55, 1.06, -0.4], [0.55, 1.95, -0.4], 0.012, 5);
-    k.between('white', [-0.3, 1.06, 0.6], [-0.4, 1.5, 1.3], 0.04);
-    k.between('white', [-0.4, 1.5, 1.3], [-0.5, 0.15, 1.9], 0.035);
-    k.add('metal', box(0.12, 0.08, 0.16), [-0.5, 0.1, 1.95]);
     k.between('grey', [0, 1.06, -0.4], [0, 1.28, -0.4], 0.035);
   }
-  return k.build(kind);
+  const g = k.build(kind);
+  if (!insight) g.add(phoenixArm());
+  return g;
+}
+
+/** Where Phoenix's robotic arm meets the deck (its shoulder), lander-local. */
+export const PHOENIX_SHOULDER: Vec3 = [-0.3, 1.06, 0.6];
+
+/**
+ * Phoenix's robotic arm reaching to the ground, as its own group ("phoenix-arm") pivoting at the
+ * shoulder, so the scoop can be animated. "phoenix-scoop" marks the scoop's tip.
+ */
+function phoenixArm(): Group {
+  const [sx, sy, sz] = PHOENIX_SHOULDER;
+  const at = (p: Vec3): Vec3 => [p[0] - sx, p[1] - sy, p[2] - sz];
+  const arm = new Kit()
+    .between('white', at([-0.3, 1.06, 0.6]), at([-0.4, 1.5, 1.3]), 0.04)
+    .between('white', at([-0.4, 1.5, 1.3]), at([-0.5, 0.15, 1.9]), 0.035)
+    .add('metal', box(0.12, 0.08, 0.16), at([-0.5, 0.1, 1.95]))
+    .build('phoenix-arm');
+  arm.position.set(sx, sy, sz);
+  const tip = new Object3D();
+  tip.name = 'phoenix-scoop';
+  tip.position.set(...at([-0.5, 0.06, 1.95]));
+  arm.add(tip);
+  return arm;
 }
 
 /** Perseverance's backshell, upright and dented, with the 21.5 m parachute spread out behind it. */
@@ -610,6 +632,7 @@ function backshellAndChute(): Group {
   geom.setAttribute('color', new Float32BufferAttribute(colors, 3));
   geom.computeVertexNormals();
   const chute = new Mesh(geom, new MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0, side: DoubleSide }));
+  chute.name = 'parachute';
   chute.position.set(-1.5, 0, -8.2);
   chute.rotation.y = 0.12;
   chute.receiveShadow = true;
