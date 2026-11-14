@@ -30,7 +30,8 @@ function finish(tex: Texture): Texture {
   tex.colorSpace = SRGBColorSpace;
   tex.wrapS = RepeatWrapping;
   tex.minFilter = LinearMipmapLinearFilter;
-  tex.anisotropy = 8;
+  // Sharp at the grazing angles of the chase camera (three.js clamps to what the GPU supports).
+  tex.anisotropy = 16;
   tex.needsUpdate = true;
   return tex;
 }

@@ -70,7 +70,8 @@ const fragmentShader = /* glsl */ `
   varying vec3 vWorldNormal;
   varying vec3 vViewDir;
   void main() {
-    vec3 albedo = mix(placeholder, texture2D(map, vUv).rgb, hasMap * reveal);
+    // A small negative mip bias keeps the mosaic crisp instead of soft (no visible shimmer at this scale).
+    vec3 albedo = mix(placeholder, texture2D(map, vUv, -0.4).rgb, hasMap * reveal);
     float ndl = dot(normalize(vObjNormal), normalize(sunDir));
     // Soft terminator over a few degrees, lifted falloff so the surface stays readable near it.
     float day = smoothstep(-0.035, 0.06, ndl);
