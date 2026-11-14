@@ -1,147 +1,170 @@
-// Moves the camera to the framing for the current view / selected machine, then hands control
-// to OrbitControls as soon as the user drags (until the next view or selection change).
+// The camera: one continuous shot. Each frame it builds the ideal pose from the Director's shot
+// (a globe pose: title, chase, epilogue or flight log; a site pose: the diorama framing with a
+// slow drift) and blends the two about the site with the shot's blend, so a dive from orbit to a
+// machine and the climb back out are single eased moves. When the globe end itself changes (title
+// → flight log, epilogue → flight log) it eases from wherever the camera is. Everything is driven
+// by time, never by per-frame lerp factors. Near and far planes follow the zoom. In the flight
+// log OrbitControls take over as soon as the visitor drags.
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { Vector3, type PerspectiveCamera } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { moonSubEarth } from '../astro';
-import { MACHINE_BY_ID } from '../data/machines';
-import { latLonToVec3 } from '../geo';
-import { useApp, type AppState } from '../store';
-import { cameraGoal, clampPolar, DEEP_POS, MARKER_LIFT, MARS_POS, MARS_R, MOON_POS, MOON_R, type CameraGoal, type Vec3 } from './layout';
-import { deepLocal, groups } from './registry';
+import { useApp } from '../store';
+import type { MachineId } from '../types';
+import { EPILOGUE_HOLD_MS, type GlobeShot } from './choreo';
+import { blendPose, cameraGoal, chaseGoal, clampPolar, easeInOut, horizonDir, type Pose, type Vec3 } from './layout';
+import { CAMERA_PRIORITY, live } from './registry';
+import { SITE_PRESETS, siteLayout } from './sites';
+import { useReducedMotion } from './useReducedMotion';
 
-const OVERVIEW_DIR: Vec3 = clampPolar([0, 0.1, 1]);
-const GLOBE_DIR: Vec3 = clampPolar([0, 0.16, 1]);
-const DEEP_DIR: Vec3 = clampPolar([0, 1, 0.8]);
-const DEEP_HALF = 7.9;
+const TITLE_DIR: Vec3 = clampPolar([0, 0.22, 1]);
+const REPORT_DIR: Vec3 = clampPolar([0.12, 0.3, 1]);
+/** When the globe end of the shot changes, the camera eases over this long, ms. */
+const TRANSITION_MS = 1600;
+const Y: Vec3 = [0, 1, 0];
 
-const tmp = new Vector3();
-const tmpCenter = new Vector3();
-const tmpEarth = new Vector3();
-const sideA = new Vector3();
-const sideB = new Vector3();
-const UP = new Vector3(0, 1, 0);
-/** How long after the return the side view holds before easing back, ms. */
-const LASER_HOLD_MS = 2200;
+const tv = new Vector3();
+const v3 = (v: Vector3): Vec3 => [v.x, v.y, v.z];
 
-/** True while a laser call to the selected Moon site is in flight (or just returned). */
-function laserCinematic(s: AppState): boolean {
-  const p = s.ping;
-  if (!p || p.channel !== 'laser' || p.id !== s.selectedId || s.view !== 'moon') return false;
-  return Date.now() - p.startedAt < p.waitMs + LASER_HOLD_MS;
+function orbitPose(dir: Vec3, aspect: number, fov: number, framing: { anchorX?: number; anchorY?: number; fillWidth?: number; radius?: number }): Pose {
+  const g = cameraGoal({ center: [0, 0, 0], dir, radius: framing.radius ?? 1, aspect, fovDeg: fov, ...framing });
+  return { position: g.position, target: g.target, up: Y };
 }
 
-function goalFor(s: AppState, aspect: number, fov: number): CameraGoal {
-  const view = s.phase === 'title' || s.phase === 'timelapse' ? 'overview' : s.view;
-  const selected = s.selectedId ? MACHINE_BY_ID[s.selectedId] : undefined;
-
-  if (view === 'moon' || view === 'mars') {
-    const radius = view === 'moon' ? MOON_R : MARS_R;
-    const g = groups[view];
-    if (g) g.getWorldPosition(tmpCenter);
-    else tmpCenter.set(...(view === 'moon' ? MOON_POS : MARS_POS));
-    let dir: Vec3 = GLOBE_DIR;
-    if (selected && selected.world === view && selected.lat !== undefined && selected.lon !== undefined && g) {
-      const [x, y, z] = latLonToVec3(selected.lat, selected.lon, radius * MARKER_LIFT);
-      tmp.set(x, y, z);
-      g.localToWorld(tmp);
-      tmp.sub(tmpCenter);
-      dir = clampPolar([tmp.x, tmp.y, tmp.z]);
-    }
-    let frameRadius = radius;
-    if (view === 'moon' && g && s.ping && laserCinematic(s)) {
-      // The beam arrives from Earth, almost along the default view. Rise ~50° above the site
-      // (a sideways swing would put Mars between the camera and the Moon) so the beam, which
-      // comes in near the lunar equator plane, is seen at a steep angle.
-      const se = moonSubEarth(new Date(s.ping.startedAt));
-      tmpEarth.set(...latLonToVec3(se.lat, se.lon)).transformDirection(g.matrixWorld);
-      sideA.set(dir[0], 0, dir[2]);
-      if (sideA.lengthSq() < 1e-6) sideA.set(tmpEarth.x, 0, tmpEarth.z);
-      sideA.normalize().multiplyScalar(Math.cos(0.9));
-      sideB.copy(UP).multiplyScalar(Math.sin(0.9));
-      sideA.add(sideB);
-      dir = clampPolar([sideA.x, sideA.y, sideA.z]);
-      frameRadius = radius * 1.35;
-    }
-    return cameraGoal({ center: [tmpCenter.x, tmpCenter.y, tmpCenter.z], dir, radius: frameRadius, aspect, fovDeg: fov });
-  }
-
-  if (view === 'deep') {
-    const g = groups.deep;
-    if (g) g.getWorldPosition(tmpCenter);
-    else tmpCenter.set(...DEEP_POS);
-    // Lean the framing a quarter of the way toward a selected deep-space machine.
-    if (selected && selected.world === 'deep' && g) {
-      const local = deepLocal.get(selected.id);
-      if (local) {
-        tmp.copy(local);
-        g.localToWorld(tmp);
-        tmpCenter.lerp(tmp, 0.25);
-      }
-    }
-    return cameraGoal({ center: [tmpCenter.x, tmpCenter.y, tmpCenter.z], dir: DEEP_DIR, halfWidth: DEEP_HALF, halfHeight: DEEP_HALF * 0.8, aspect, fovDeg: fov });
-  }
-
-  // Overview: both globes side by side. The title text sits on the left, so the title frames the
-  // globes on the right; the time-lapse text sits along the bottom, so it frames them centred and high.
-  const framing =
-    s.phase === 'title'
-      ? { anchorX: 0.72, anchorY: 0.47, fillWidth: 0.57 }
-      : s.phase === 'timelapse'
-        ? { anchorX: 0.56, anchorY: 0.38, fillWidth: 0.72 }
-        : {};
-  return cameraGoal({ center: [0, 0, 0], dir: OVERVIEW_DIR, halfWidth: 3.55, halfHeight: 1.15, aspect, fovDeg: fov, ...framing });
+/** The diorama framing (subject ~34 % from the left on wide screens, top 45 % on tall ones), in world space. */
+function sitePose(id: MachineId, aspect: number, fov: number, now: number, reduced: boolean, pullBack: number): Pose {
+  const p = SITE_PRESETS[id];
+  const lay = siteLayout(p);
+  // A slow drift around the subject, ±12° over about two minutes, so the scene stays alive.
+  const drift = reduced ? 0 : 12 * Math.sin((now / 1000) * 0.05);
+  const g = cameraGoal({
+    center: lay.frameCenter,
+    dir: horizonDir(p.cameraAz + drift, p.cameraElev),
+    halfWidth: lay.halfWidth * pullBack,
+    halfHeight: lay.halfHeight * pullBack,
+    aspect,
+    fovDeg: fov,
+    anchorX: 0.34,
+    fillWidth: 0.6,
+  });
+  const m = live.site.matrix;
+  return {
+    position: v3(tv.set(...g.position).applyMatrix4(m)),
+    target: v3(tv.set(...g.target).applyMatrix4(m)),
+    up: v3(live.site.up),
+  };
 }
 
 export function CameraRig() {
   const camera = useThree(s => s.camera) as PerspectiveCamera;
   const controls = useThree(s => s.controls) as OrbitControlsImpl | null;
-  const active = useRef(true);
-  const lastKey = useRef('');
-  const goalPos = useRef(new Vector3());
-  const goalTarget = useRef(new Vector3());
-  const first = useRef(true);
+  const reduced = useReducedMotion();
+  const lastChase = useRef<Pose | null>(null);
+  const lastGlobe = useRef<GlobeShot | null>(null);
+  const epilogueDir = useRef<Vec3>(TITLE_DIR);
+  const trans = useRef<{ from: Pose; at: number } | null>(null);
+  const current = useRef<Pose | null>(null);
+  const userTook = useRef(false);
+  const phaseKey = useRef('');
 
   useEffect(() => {
     if (!controls) return;
-    const stop = () => {
-      active.current = false;
+    const take = () => {
+      userTook.current = true;
     };
-    controls.addEventListener('start', stop);
-    return () => controls.removeEventListener('start', stop);
+    controls.addEventListener('start', take);
+    return () => controls.removeEventListener('start', take);
   }, [controls]);
 
-  useFrame((state, delta) => {
+  useFrame(state => {
     const s = useApp.getState();
-    const key = `${s.phase === 'title' || s.phase === 'timelapse' ? s.phase : s.view}|${s.selectedId ?? ''}|${laserCinematic(s) ? 'laser' : ''}`;
-    if (key !== lastKey.current) {
-      lastKey.current = key;
-      active.current = true;
-    }
-    if (!active.current) return;
-
+    const now = Date.now();
+    const shot = live.shot;
     const aspect = state.size.width / Math.max(1, state.size.height);
-    const goal = goalFor(s, aspect, camera.fov);
-    goalPos.current.set(...goal.position);
-    goalTarget.current.set(...goal.target);
+    const fov = camera.fov;
 
-    if (first.current) {
-      // Start a little farther out so the opening view drifts in.
-      first.current = false;
-      camera.position.copy(goalPos.current).multiplyScalar(1.35);
-      if (controls) controls.target.copy(goalTarget.current);
+    if (s.phase !== phaseKey.current) {
+      phaseKey.current = s.phase;
+      userTook.current = false;
     }
 
-    const k = 1 - Math.exp(-delta * 2.4);
-    camera.position.lerp(goalPos.current, k);
+    // ---- the globe end of the shot
+    if (shot.globeShot !== lastGlobe.current) {
+      if (shot.globeShot === 'epilogue') {
+        const h = live.rest.pos;
+        epilogueDir.current = clampPolar([h.x, h.y + 0.35 * h.length(), h.z]);
+      }
+      if (lastGlobe.current !== null && current.current && !reduced) trans.current = { from: current.current, at: now };
+      lastGlobe.current = shot.globeShot;
+    }
+    let globe: Pose;
+    switch (shot.globeShot) {
+      case 'chase': {
+        if (live.arc.valid) {
+          const a = live.arc;
+          const g = chaseGoal({ pos: v3(a.pos), up: v3(a.up), forward: v3(a.forward), alt: a.alt, aspect, fovDeg: fov });
+          lastChase.current = { position: g.position, target: g.target, up: g.up };
+        }
+        globe = lastChase.current ?? orbitPose(TITLE_DIR, aspect, fov, {});
+        break;
+      }
+      case 'title':
+        // The title text sits on the left: Mars on the right.
+        globe = orbitPose(TITLE_DIR, aspect, fov, { anchorX: 0.7, anchorY: 0.5, fillWidth: 0.5 });
+        break;
+      case 'epilogue':
+        globe = orbitPose(epilogueDir.current, aspect, fov, { radius: 1.1 });
+        break;
+      case 'report':
+        globe = orbitPose(REPORT_DIR, aspect, fov, { radius: 1.05 });
+        break;
+    }
+
+    // ---- the site end, blended in about the site
+    let ideal = globe;
+    if (shot.siteId && shot.blend > 0 && live.site.valid) {
+      const epilogueT = s.phase === 'flight' && s.flight.stage === 'epilogue' ? now - s.flight.stageStartedAt : 0;
+      const pullBack = 1 + 0.6 * easeInOut(epilogueT / EPILOGUE_HOLD_MS);
+      const site = sitePose(shot.siteId, aspect, fov, now, reduced, pullBack);
+      ideal = blendPose(globe, site, shot.blend, v3(live.site.point));
+    }
+
+    // ---- ease from wherever the camera was when the globe end changed
+    let pose = ideal;
+    const t = trans.current;
+    if (t) {
+      const k = (now - t.at) / TRANSITION_MS;
+      if (k >= 1) trans.current = null;
+      else pose = blendPose(t.from, ideal, easeInOut(k), ideal.target);
+    }
+
+    // ---- hand over to the visitor in the flight log
+    const settled = s.phase === 'report' && shot.blend === 0 && !trans.current;
     if (controls) {
-      controls.target.lerp(goalTarget.current, k);
-    } else {
-      camera.lookAt(goalTarget.current);
+      controls.enabled = settled;
+      controls.enablePan = false;
     }
-  });
+    if (settled && userTook.current && controls) {
+      current.current = { position: v3(camera.position), target: v3(controls.target), up: Y };
+    } else {
+      camera.position.set(...pose.position);
+      camera.up.set(...pose.up);
+      camera.lookAt(...pose.target);
+      if (controls) controls.target.set(...pose.target);
+      current.current = pose;
+    }
+
+    // Near and far follow the zoom, from orbit (~4 units) down to a machine (~0.003).
+    const cur = current.current;
+    const dist = Math.hypot(cur.position[0] - cur.target[0], cur.position[1] - cur.target[1], cur.position[2] - cur.target[2]);
+    const near = Math.min(0.05, Math.max(1e-5, dist * 0.02));
+    if (Math.abs(camera.near - near) > near * 0.01 || camera.far !== 80) {
+      camera.near = near;
+      camera.far = 80;
+      camera.updateProjectionMatrix();
+    }
+  }, CAMERA_PRIORITY);
 
   return null;
 }

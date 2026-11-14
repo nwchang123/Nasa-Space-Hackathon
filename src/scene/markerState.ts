@@ -1,6 +1,7 @@
-// Pure marker styling rules, shared by globe and deep-space markers (unit-tested).
+// Pure marker styling rules for the Flight 73 globe (unit-tested).
 
-import type { CallResult, Phase } from '../store';
+import type { FlightState, Phase } from '../store';
+import { MACHINE_IDS, type MachineId } from '../types';
 
 export const PALETTE = {
   amber: '#f2a93b',
@@ -10,96 +11,54 @@ export const PALETTE = {
   dim: '#2a3440',
 } as const;
 
-export type RingStyle = 'none' | 'pulse' | 'check' | 'echo';
+/** Where a stop stands on the flight: still ahead, being flown to (or stood at), or already visited. */
+export type MarkerStatus = 'upcoming' | 'destination' | 'visited';
+
+export function markerStatus(id: MachineId, phase: Phase, flight: FlightState, visited: Partial<Record<MachineId, true>>): MarkerStatus {
+  if (phase === 'title') return 'upcoming';
+  if (phase === 'flight' && (flight.stage === 'flying' || flight.stage === 'site') && MACHINE_IDS.indexOf(id) === flight.leg) {
+    return 'destination';
+  }
+  return visited[id] ? 'visited' : 'upcoming';
+}
+
+/** Hover labels work everywhere except behind the title text. */
+export function markersInteractive(phase: Phase): boolean {
+  return phase !== 'title';
+}
+
+export type RingStyle = 'none' | 'pulse';
 
 export interface MarkerInput {
-  phase: Phase;
-  /** Fractional year during the time-lapse, else null. */
-  timelapseYear: number | null;
-  arrivedYear: number;
-  lastContactYear: number;
-  selected: boolean;
+  status: MarkerStatus;
   hovered: boolean;
-  called?: CallResult;
-  /** Seconds, for breathing / pulsing. */
+  interactive: boolean;
+  /** Seconds, for breathing. */
   t: number;
   reduced: boolean;
 }
 
 export interface MarkerVisual {
-  visible: boolean;
   /** Hex colour of core, halo and ring. */
   color: string;
-  /** Brightness 0..~2.5 (values above 1 = flare). */
+  /** Brightness 0..~2 (above 1 = flare). */
   intensity: number;
   /** Multiplier on the halo size. */
   haloScale: number;
   ring: RingStyle;
-  /** Pointer interaction allowed. */
-  interactive: boolean;
-}
-
-/** Years over which the arrival flare decays during the time-lapse. */
-export const FLARE_YEARS = 0.9;
-/** Years over which a machine fades from amber to ghost after its last signal. */
-export const FADE_YEARS = 1.6;
-
-function mixHex(a: string, b: string, t: number): string {
-  const pa = parseInt(a.slice(1), 16);
-  const pb = parseInt(b.slice(1), 16);
-  const k = Math.min(1, Math.max(0, t));
-  const ch = (shift: number) => {
-    const ca = (pa >> shift) & 255;
-    const cb = (pb >> shift) & 255;
-    return Math.round(ca + (cb - ca) * k);
-  };
-  return '#' + ((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0');
 }
 
 export function markerVisual(input: MarkerInput): MarkerVisual {
-  const { timelapseYear: y, arrivedYear, lastContactYear, phase } = input;
-
-  if (y !== null) {
-    if (y < arrivedYear) return { visible: false, color: PALETTE.amber, intensity: 0, haloScale: 1, ring: 'none', interactive: false };
-    const sinceArrival = y - arrivedYear;
-    if (y < lastContactYear) {
-      const flare = sinceArrival < FLARE_YEARS ? 1 - sinceArrival / FLARE_YEARS : 0;
-      return {
-        visible: true,
-        color: PALETTE.amber,
-        intensity: 0.95 + 1.5 * flare,
-        haloScale: 1 + 1.6 * flare,
-        ring: 'none',
-        interactive: false,
-      };
-    }
-    // Fell silent: a short arrival flare may still be decaying (Surveyor 3 lasted two weeks).
-    const flare = sinceArrival < FLARE_YEARS ? 1 - sinceArrival / FLARE_YEARS : 0;
-    const fade = Math.min(1, (y - lastContactYear) / FADE_YEARS);
-    return {
-      visible: true,
-      color: mixHex(PALETTE.amber, PALETTE.ghost, fade),
-      intensity: Math.max(0.95 - 0.6 * fade, 0.35) + 1.2 * flare,
-      haloScale: 1 + 1.2 * flare,
-      ring: 'none',
-      interactive: false,
-    };
+  const hover = input.hovered && input.interactive;
+  let v: MarkerVisual;
+  if (input.status === 'destination') {
+    v = { color: PALETTE.amber, intensity: 1.2, haloScale: 1.4, ring: 'pulse' };
+  } else if (input.status === 'visited') {
+    v = { color: PALETTE.bone, intensity: 0.45, haloScale: 0.85, ring: 'none' };
+  } else {
+    const breathe = input.reduced ? 0 : 0.08 * Math.sin(input.t * 0.8);
+    v = { color: PALETTE.ghost, intensity: 0.5 + breathe, haloScale: 1, ring: 'none' };
   }
-
-  const interactive = phase === 'rollcall' || phase === 'report';
-  const breathe = input.reduced ? 0 : 0.12 * Math.sin(input.t * 0.8);
-
-  if (input.called === 'echo') {
-    return { visible: true, color: PALETTE.signal, intensity: 1.05, haloScale: 1.25, ring: input.selected ? 'pulse' : 'echo', interactive };
-  }
-  if (input.selected) {
-    return { visible: true, color: PALETTE.amber, intensity: 1.15, haloScale: 1.35, ring: 'pulse', interactive };
-  }
-  if (input.hovered && interactive) {
-    return { visible: true, color: input.called === 'silent' ? PALETTE.bone : PALETTE.ghost, intensity: 1.1, haloScale: 1.3, ring: input.called === 'silent' ? 'check' : 'none', interactive };
-  }
-  if (input.called === 'silent') {
-    return { visible: true, color: PALETTE.bone, intensity: 0.5, haloScale: 0.9, ring: 'check', interactive };
-  }
-  return { visible: true, color: PALETTE.ghost, intensity: 0.58 + breathe, haloScale: 1, ring: 'none', interactive };
+  if (hover) v = { ...v, intensity: v.intensity + 0.45, haloScale: v.haloScale * 1.25 };
+  return v;
 }

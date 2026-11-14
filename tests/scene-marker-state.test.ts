@@ -1,62 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { markerVisual, PALETTE, type MarkerInput } from '../src/scene/markerState';
-import { cameraGoal, timelapseSunOffsetDeg } from '../src/scene/layout';
-import { paintMars, paintMoon } from '../src/scene/proceduralMaps';
+import { markerStatus, markersInteractive, markerVisual, PALETTE, type MarkerInput } from '../src/scene/markerState';
+import { cameraGoal } from '../src/scene/layout';
+import { paintMars } from '../src/scene/proceduralMaps';
+import type { FlightState } from '../src/store';
 
-const base: MarkerInput = {
-  phase: 'rollcall',
-  timelapseYear: null,
-  arrivedYear: 2004.07,
-  lastContactYear: 2018.44,
-  selected: false,
-  hovered: false,
-  t: 0,
-  reduced: true,
-};
+const base: MarkerInput = { status: 'upcoming', hovered: false, interactive: true, t: 0, reduced: true };
+const flight = (stage: FlightState['stage'], leg: number): FlightState => ({ leg, stage, from: 'ingenuity', stageStartedAt: 0, flyMs: 4000 });
 
-describe('marker states during the time-lapse', () => {
-  it('is hidden before arrival', () => {
-    expect(markerVisual({ ...base, phase: 'timelapse', timelapseYear: 2000 }).visible).toBe(false);
+describe('marker status on Flight 73', () => {
+  it('everything is still ahead on the title screen', () => {
+    expect(markerStatus('viking-1', 'title', flight('prologue', -1), {})).toBe('upcoming');
   });
-  it('flares amber on arrival, then holds steady amber', () => {
-    const flare = markerVisual({ ...base, phase: 'timelapse', timelapseYear: 2004.1 });
-    const steady = markerVisual({ ...base, phase: 'timelapse', timelapseYear: 2010 });
-    expect(flare.color).toBe(PALETTE.amber);
-    expect(flare.intensity).toBeGreaterThan(steady.intensity);
-    expect(steady.color).toBe(PALETTE.amber);
+  it('the stop being flown to, or stood at, is the destination', () => {
+    expect(markerStatus('viking-2', 'flight', flight('flying', 1), { 'viking-1': true })).toBe('destination');
+    expect(markerStatus('viking-2', 'flight', flight('site', 1), { 'viking-1': true, 'viking-2': true })).toBe('destination');
   });
-  it('fades to ghost blue after the last signal', () => {
-    const v = markerVisual({ ...base, phase: 'timelapse', timelapseYear: 2025 });
-    expect(v.color).toBe(PALETTE.ghost);
-    expect(v.interactive).toBe(false);
+  it('visited stops stay visited, the rest are upcoming', () => {
+    expect(markerStatus('viking-1', 'flight', flight('flying', 1), { 'viking-1': true })).toBe('visited');
+    expect(markerStatus('spirit', 'flight', flight('flying', 1), { 'viking-1': true })).toBe('upcoming');
+    expect(markerStatus('spirit', 'report', flight('epilogue', 9), { spirit: true })).toBe('visited');
   });
-  it('handles a two-week mission (arrival flare still visible after silence)', () => {
-    const v = markerVisual({ ...base, phase: 'timelapse', arrivedYear: 1967.3, lastContactYear: 1967.34, timelapseYear: 1967.4 });
-    expect(v.visible).toBe(true);
-    expect(v.intensity).toBeGreaterThan(1);
+  it('hover labels are off behind the title text', () => {
+    expect(markersInteractive('title')).toBe(false);
+    expect(markersInteractive('flight')).toBe(true);
+    expect(markersInteractive('report')).toBe(true);
   });
 });
 
-describe('marker states during the roll call', () => {
-  it('idles ghost blue', () => {
-    expect(markerVisual(base).color).toBe(PALETTE.ghost);
+describe('marker looks', () => {
+  it('upcoming is a dim ghost blue', () => {
+    const v = markerVisual(base);
+    expect(v.color).toBe(PALETTE.ghost);
+    expect(v.intensity).toBeLessThan(0.7);
   });
-  it('selected is amber with a pulse ring', () => {
-    const v = markerVisual({ ...base, selected: true });
+  it('the destination is amber with a pulse ring', () => {
+    const v = markerVisual({ ...base, status: 'destination' });
     expect(v.color).toBe(PALETTE.amber);
     expect(v.ring).toBe('pulse');
   });
-  it('silent call is bone with a check ring', () => {
-    const v = markerVisual({ ...base, called: 'silent' });
+  it('visited is bone and dim', () => {
+    const v = markerVisual({ ...base, status: 'visited' });
     expect(v.color).toBe(PALETTE.bone);
-    expect(v.ring).toBe('check');
+    expect(v.intensity).toBeLessThan(markerVisual({ ...base, status: 'destination' }).intensity);
   });
-  it('echo is signal green and stays green when selected', () => {
-    expect(markerVisual({ ...base, called: 'echo' }).color).toBe(PALETTE.signal);
-    expect(markerVisual({ ...base, called: 'echo', selected: true }).color).toBe(PALETTE.signal);
-  });
-  it('is not interactive on the title screen', () => {
-    expect(markerVisual({ ...base, phase: 'title' }).interactive).toBe(false);
+  it('hover brightens only when hover is allowed', () => {
+    expect(markerVisual({ ...base, hovered: true }).intensity).toBeGreaterThan(markerVisual(base).intensity);
+    expect(markerVisual({ ...base, hovered: true, interactive: false }).intensity).toBe(markerVisual(base).intensity);
   });
 });
 
@@ -68,16 +57,13 @@ describe('camera framing', () => {
     expect(tall.target[1]).toBeLessThan(0); // target below subject → subject appears high
     expect(Math.hypot(...tall.position)).toBeGreaterThan(Math.hypot(...wide.position));
   });
-});
-
-describe('time-lapse lighting sweep', () => {
-  it('lands exactly on the real lighting at the present', () => {
-    expect(timelapseSunOffsetDeg(2026.87, 2026.87)).toBe(0);
-    expect(Math.abs(timelapseSunOffsetDeg(1966, 2026.87))).toBeGreaterThan(0);
+  it('anchorX 0.7 puts the title globe on the right', () => {
+    const g = cameraGoal({ center: [0, 0, 0], dir: [0, 0, 1], radius: 1, aspect: 1.8, fovDeg: 40, anchorX: 0.7 });
+    expect(g.target[0]).toBeLessThan(0);
   });
 });
 
-describe('illustrative maps put features where they really are', () => {
+describe('the painted fallback map puts features where they really are', () => {
   const W = 720;
   const H = 360;
   const at = (px: Uint8ClampedArray, lat: number, lon: number) => {
@@ -86,14 +72,9 @@ describe('illustrative maps put features where they really are', () => {
     const k = (j * W + i) * 4;
     return (px[k] + px[k + 1] + px[k + 2]) / 3;
   };
-  it('Moon: Mare Tranquillitatis is darker than the southern highlands', () => {
-    const moon = paintMoon(W, H);
-    expect(moon.length).toBe(W * H * 4);
-    expect(at(moon, 8.5, 31.4)).toBeLessThan(at(moon, -30, 20) - 30);
-    expect(at(moon, 32.8, -15.6)).toBeLessThan(at(moon, -30, 20) - 30); // Imbrium
-  });
-  it('Mars: Hellas is brighter than Syrtis Major; the north cap is white', () => {
+  it('Hellas is brighter than Syrtis Major; the north cap is white', () => {
     const mars = paintMars(W, H);
+    expect(mars.length).toBe(W * H * 4);
     expect(at(mars, -42.4, 70.5)).toBeGreaterThan(at(mars, 8.4, 69.5) + 30);
     expect(at(mars, 88, 0)).toBeGreaterThan(200);
   });

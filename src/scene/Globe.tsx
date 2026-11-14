@@ -1,55 +1,34 @@
-// A globe (Moon or Mars) lit by the real Sun direction for "now", with its machines.
+// Mars, lit by the real Sun for "now", with the nine stops and the route. The Director turns it
+// (only while nothing is anchored to it); it hides once the camera stands inside a site diorama.
 
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import type { Group } from 'three';
-import { marsSubSolar, moonSubSolar } from '../astro';
+import { Quaternion, type Group } from 'three';
 import { MACHINES } from '../data/machines';
-import { dateToYear, latLonToVec3 } from '../geo';
-import { useApp } from '../store';
-import { createGlobeMaterial, type GlobeLook } from './globeMaterial';
-import { GlobePing } from './GlobePing';
-import { MARKER_LIFT, timelapseSunOffsetDeg, type Vec3 } from './layout';
+import { latLonToVec3 } from '../geo';
+import { createGlobeMaterial, MARS_LOOK } from './globeMaterial';
+import { GLOBE_R, MARKER_LIFT } from './layout';
 import { Marker } from './Marker';
-import { groups } from './registry';
+import { groups, live } from './registry';
+import { RouteLines } from './RouteLines';
 import { useSurfaceMap } from './surfaceMaps';
-import { useReducedMotion } from './useReducedMotion';
 
-export interface GlobeProps {
-  world: 'moon' | 'mars';
-  radius: number;
-  position: Vec3;
-  /** Base yaw so the chosen hemisphere faces the overview camera. */
-  yaw: number;
-  look: GlobeLook;
-}
+const inv = new Quaternion();
 
-function wrapPi(a: number): number {
-  const t = (((a + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  return t - Math.PI;
-}
-
-export function Globe({ world, radius, position, yaw, look }: GlobeProps) {
+export function Globe() {
   const group = useRef<Group>(null);
-  const material = useMemo(() => createGlobeMaterial(look), [look]);
-  const map = useSurfaceMap(world);
-  const reduced = useReducedMotion();
-  const spin = useRef(0);
-  const lightKey = useRef('');
-
-  const machines = useMemo(
-    () => MACHINES.filter(m => m.world === world && m.lat !== undefined && m.lon !== undefined),
-    [world],
-  );
+  const material = useMemo(() => createGlobeMaterial(MARS_LOOK), []);
+  // NASA's Viking colour mosaic (src/scene/maps/mars.webp) when present; the painted map otherwise.
+  const map = useSurfaceMap('mars');
 
   useEffect(() => () => material.dispose(), [material]);
 
   useEffect(() => {
-    groups[world] = group.current;
+    groups.globe = group.current;
     return () => {
-      groups[world] = null;
+      groups.globe = null;
     };
-  }, [world]);
+  }, []);
 
   useEffect(() => {
     material.uniforms.map.value = map;
@@ -59,43 +38,27 @@ export function Globe({ world, radius, position, yaw, look }: GlobeProps) {
   useFrame((_, delta) => {
     const g = group.current;
     if (!g) return;
-    const s = useApp.getState();
+    // Out of sight once the camera stands inside a site (the ground and sky cover it).
+    g.visible = live.shot.blend < 0.985;
 
-    // Fade the surface map in once it is ready.
     const reveal = material.uniforms.reveal;
     if (material.uniforms.hasMap.value > 0 && reveal.value < 1) reveal.value = Math.min(1, reveal.value + delta * 1.4);
 
-    // Idle spin on the title screen only; otherwise ease back to the base orientation.
-    if (s.phase === 'title' && !reduced) spin.current += delta * 0.045;
-    else if (spin.current !== 0) {
-      spin.current = wrapPi(spin.current) * Math.exp(-delta * 2.2);
-      if (Math.abs(spin.current) < 1e-4) spin.current = 0;
-    }
-    g.rotation.y = yaw + spin.current;
-
-    // Sun direction in body-fixed coordinates: real "now", or a slow sweep during the time-lapse.
-    const key = `${s.nowMs}|${s.timelapseYear ?? ''}`;
-    if (key !== lightKey.current) {
-      lightKey.current = key;
-      const date = new Date(s.nowMs);
-      const sub = world === 'moon' ? moonSubSolar(date) : marsSubSolar(date);
-      const offset = s.timelapseYear !== null ? timelapseSunOffsetDeg(s.timelapseYear, dateToYear(date)) : 0;
-      const [x, y, z] = latLonToVec3(sub.lat, sub.lon + offset);
-      material.uniforms.sunDir.value.set(x, y, z);
-    }
+    // The shader wants the Sun in body-fixed coordinates: turn the world direction back.
+    material.uniforms.sunDir.value.copy(live.sun).applyQuaternion(inv.copy(g.quaternion).invert());
   });
 
   return (
-    <group ref={group} position={position}>
+    <group ref={group}>
       <mesh material={material}>
-        <sphereGeometry args={[radius, 160, 80]} />
+        <sphereGeometry args={[GLOBE_R, 160, 80]} />
       </mesh>
-      {machines.map(m => {
-        const n = latLonToVec3(m.lat!, m.lon!);
-        const p = latLonToVec3(m.lat!, m.lon!, radius * MARKER_LIFT);
+      {MACHINES.map(m => {
+        const n = latLonToVec3(m.lat, m.lon);
+        const p = latLonToVec3(m.lat, m.lon, GLOBE_R * MARKER_LIFT);
         return <Marker key={m.id} machine={m} position={p} normal={n} tag={m.approxPosition ? 'approx. position' : undefined} />;
       })}
-      <GlobePing world={world} radius={radius} />
+      <RouteLines />
     </group>
   );
 }

@@ -1,24 +1,24 @@
-// One machine on the map: glowing core + halo + state ring, an invisible hit sphere for the
-// pointer, and a small HTML label for the hovered / selected machine.
+// One stop on the globe: glowing core + halo + pulse ring, an invisible hit sphere for the
+// pointer, and a small HTML label while hovered. Fades out on the far side of the planet.
 
 import { Html } from '@react-three/drei';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { AdditiveBlending, Color, Vector3, type Group, type Mesh, type MeshBasicMaterial, type Sprite, type SpriteMaterial } from 'three';
-import { yearFraction } from '../geo';
 import { useApp } from '../store';
 import type { Machine } from '../types';
-import { markerVisual } from './markerState';
+import { markerStatus, markersInteractive, markerVisual } from './markerState';
+import { live } from './registry';
 import { glowTexture, ringTexture } from './sprites';
 import { useReducedMotion } from './useReducedMotion';
 
 export interface MarkerProps {
   machine: Machine;
-  /** Position in the parent group's local space. */
+  /** Position in the globe's local space. */
   position: [number, number, number];
-  /** Outward surface normal in the parent's local space (globes); null in deep space. */
-  normal: [number, number, number] | null;
-  /** Small qualifier shown in the label, e.g. 'estimated'. */
+  /** Outward surface normal in the globe's local space. */
+  normal: [number, number, number];
+  /** Small qualifier shown in the label, e.g. 'approx. position'. */
   tag?: string;
 }
 
@@ -41,8 +41,7 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
   const hit = useRef<Mesh>(null);
   const label = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
-  const showLabel = useApp(s => s.hoverId === id || s.selectedId === id);
-  const years = useMemo(() => ({ arrived: yearFraction(machine.arrived), last: yearFraction(machine.lastContact) }), [machine]);
+  const showLabel = useApp(s => s.hoverId === id);
   const lastColor = useRef('');
 
   useFrame(state => {
@@ -50,14 +49,12 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
     if (!g || !core.current || !halo.current || !ring.current || !hit.current) return;
     const s = useApp.getState();
     const t = state.clock.elapsedTime;
+    const blend = live.shot.blend;
+    const interactive = markersInteractive(s.phase) && blend < 0.2 && live.black < 0.5;
     const v = markerVisual({
-      phase: s.phase,
-      timelapseYear: s.timelapseYear,
-      arrivedYear: years.arrived,
-      lastContactYear: years.last,
-      selected: s.selectedId === id,
+      status: markerStatus(id, s.phase, s.flight, s.visited),
       hovered: s.hoverId === id,
-      called: s.called[id],
+      interactive,
       t,
       reduced,
     });
@@ -66,12 +63,13 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
     const cam = state.camera.position;
     const dist = cam.distanceTo(tmpPos);
     let facing = 1;
-    if (normal && g.parent) {
+    if (g.parent) {
       tmpN.set(normal[0], normal[1], normal[2]).transformDirection(g.parent.matrixWorld);
       tmpV.copy(cam).sub(tmpPos).normalize();
       facing = smooth(0.02, 0.2, tmpN.dot(tmpV));
     }
-    const vis = v.visible ? facing : 0;
+    // Markers float above the surface; they fade away as the camera dives into a site.
+    facing *= 1 - smooth(0.25, 0.6, blend);
 
     const coreMat = core.current.material as MeshBasicMaterial;
     const haloMat = halo.current.material as SpriteMaterial;
@@ -81,16 +79,18 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
       coreMat.color.set(v.color);
       ringMat.color.set(v.color);
     }
-    tmpC.set(v.color).multiplyScalar(Math.min(2.6, v.intensity) * 0.7);
+    tmpC.set(v.color).multiplyScalar(Math.min(2.4, v.intensity) * 0.7);
     haloMat.color.copy(tmpC);
 
-    core.current.visible = vis > 0.01;
-    coreMat.opacity = vis * Math.min(1, 0.55 + 0.45 * v.intensity);
-    core.current.scale.setScalar(dist * 0.0052);
+    // Constant size on screen, a little smaller when the camera is down close in the chase view.
+    const size = dist * (dist < 0.8 ? 0.75 : 1);
+    core.current.visible = facing > 0.01;
+    coreMat.opacity = facing * Math.min(1, 0.55 + 0.45 * v.intensity);
+    core.current.scale.setScalar(size * 0.0052);
 
-    halo.current.visible = vis > 0.01;
-    haloMat.opacity = vis;
-    halo.current.scale.setScalar(dist * 0.032 * v.haloScale);
+    halo.current.visible = facing > 0.01;
+    haloMat.opacity = facing;
+    halo.current.scale.setScalar(size * 0.032 * v.haloScale);
 
     let ringScale = 0;
     let ringOpacity = 0;
@@ -103,57 +103,45 @@ export function Marker({ machine, position, normal, tag }: MarkerProps) {
         ringScale = 0.026 + 0.07 * ph;
         ringOpacity = 0.95 * (1 - ph);
       }
-    } else if (v.ring === 'check') {
-      ringScale = 0.036;
-      ringOpacity = 0.4;
-    } else if (v.ring === 'echo') {
-      ringScale = 0.046;
-      ringOpacity = 0.75;
     }
-    ring.current.visible = ringOpacity * vis > 0.01;
-    ringMat.opacity = ringOpacity * vis;
-    ring.current.scale.setScalar(dist * ringScale);
+    ring.current.visible = ringOpacity * facing > 0.01;
+    ringMat.opacity = ringOpacity * facing;
+    ring.current.scale.setScalar(size * ringScale);
 
-    hit.current.scale.setScalar(Math.max(dist * 0.026, 0.03));
-    const active = v.interactive && vis > 0.35;
+    hit.current.scale.setScalar(Math.max(dist * 0.026, 0.012));
+    const active = interactive && facing > 0.35;
     hit.current.userData.active = active;
     if (!active && s.hoverId === id) {
       s.hover(null);
       document.body.style.cursor = '';
     }
 
-    if (label.current) label.current.style.opacity = String(vis);
+    if (label.current) label.current.style.opacity = String(facing);
   });
 
   const onOver = (e: ThreeEvent<PointerEvent>) => {
     if (!hit.current?.userData.active) return;
     e.stopPropagation();
     useApp.getState().hover(id);
-    document.body.style.cursor = 'pointer';
   };
   const onOut = () => {
     if (useApp.getState().hoverId === id) useApp.getState().hover(null);
     document.body.style.cursor = '';
-  };
-  const onClick = (e: ThreeEvent<MouseEvent>) => {
-    if (!hit.current?.userData.active) return;
-    e.stopPropagation();
-    useApp.getState().select(id);
   };
 
   return (
     <group ref={group} position={position}>
       <mesh ref={core} renderOrder={12}>
         <sphereGeometry args={[1, 12, 8]} />
-        <meshBasicMaterial transparent depthTest={false} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial transparent depthTest={false} depthWrite={false} toneMapped={false} fog={false} />
       </mesh>
       <sprite ref={halo} renderOrder={11}>
-        <spriteMaterial map={glowTexture()} transparent depthTest={false} depthWrite={false} blending={AdditiveBlending} toneMapped={false} />
+        <spriteMaterial map={glowTexture()} transparent depthTest={false} depthWrite={false} blending={AdditiveBlending} toneMapped={false} fog={false} />
       </sprite>
       <sprite ref={ring} renderOrder={13}>
-        <spriteMaterial map={ringTexture()} transparent depthTest={false} depthWrite={false} toneMapped={false} />
+        <spriteMaterial map={ringTexture()} transparent depthTest={false} depthWrite={false} toneMapped={false} fog={false} />
       </sprite>
-      <mesh ref={hit} onPointerOver={onOver} onPointerOut={onOut} onClick={onClick}>
+      <mesh ref={hit} onPointerOver={onOver} onPointerOut={onOut}>
         <sphereGeometry args={[1, 8, 6]} />
         <meshBasicMaterial visible={false} />
       </mesh>

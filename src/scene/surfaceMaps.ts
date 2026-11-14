@@ -1,12 +1,12 @@
-// Surface map loading. A NASA mosaic dropped into src/scene/maps/ (moon.jpg / mars.jpg, or
-// .png / .webp) is bundled and used automatically; otherwise the illustrative procedural map
-// is painted in a worker. Resolved at build time, so a missing file never causes a 404.
+// Surface map loading. A NASA mosaic dropped into src/scene/maps/ (mars.jpg, or .png / .webp)
+// is bundled and used automatically; otherwise the illustrative procedural map is painted in a
+// worker. Resolved at build time, so a missing file never causes a 404.
 
 import { useEffect, useState } from 'react';
 import { CanvasTexture, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, TextureLoader, type Texture } from 'three';
-import { paintMars, paintMoon } from './proceduralMaps';
+import { paintMars } from './proceduralMaps';
 
-export type Body = 'moon' | 'mars';
+export type Body = 'mars';
 
 const MAP_W = 2048;
 const MAP_H = 1024;
@@ -49,7 +49,7 @@ function paintInWorker(body: Body): Promise<Texture> {
     const fallback = () => {
       // No worker support: paint on the main thread after the first frame.
       setTimeout(() => {
-        const data = body === 'moon' ? paintMoon(MAP_W, MAP_H) : paintMars(MAP_W, MAP_H);
+        const data = paintMars(MAP_W, MAP_H);
         resolve(pixelsToTexture(data, MAP_W, MAP_H));
       }, 50);
     };

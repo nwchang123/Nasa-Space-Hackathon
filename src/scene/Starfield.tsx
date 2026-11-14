@@ -1,9 +1,9 @@
-// Sparse, faint starfield on a sphere that follows the camera (so both the globes and the
-// deep-space schematic sit in front of it). Twinkle is off with prefers-reduced-motion.
+// Sparse, faint starfield on a sphere that follows the camera, just inside the far plane (so the
+// globe and the site dioramas always sit in front of it). Twinkle is off with prefers-reduced-motion.
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
-import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, Points, ShaderMaterial } from 'three';
+import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, Points, ShaderMaterial, type PerspectiveCamera } from 'three';
 import { useReducedMotion } from './useReducedMotion';
 
 const COUNT = 2600;
@@ -103,7 +103,11 @@ export function Starfield() {
   );
 
   useFrame((state, delta) => {
-    if (ref.current) ref.current.position.copy(state.camera.position);
+    if (ref.current) {
+      ref.current.position.copy(state.camera.position);
+      // Stay just inside the far plane, which the camera rig moves with the zoom.
+      ref.current.scale.setScalar(((state.camera as PerspectiveCamera).far * 0.85) / RADIUS);
+    }
     material.uniforms.uTime.value += delta;
     material.uniforms.uTwinkle.value = reduced ? 0 : 1;
     material.uniforms.uPixelRatio.value = dpr;

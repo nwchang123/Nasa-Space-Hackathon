@@ -1,8 +1,8 @@
-// Paints the illustrative surface maps off the main thread (~0.3 s each at 2048×1024).
-import { paintMars, paintMoon } from './proceduralMaps';
+// Paints the illustrative Mars map off the main thread (~0.3 s at 2048×1024).
+import { paintMars } from './proceduralMaps';
 
 interface MapRequest {
-  body: 'moon' | 'mars';
+  body: 'mars';
   width: number;
   height: number;
 }
@@ -14,6 +14,6 @@ const scope = self as unknown as {
 
 scope.onmessage = e => {
   const { body, width, height } = e.data;
-  const data = body === 'moon' ? paintMoon(width, height) : paintMars(width, height);
+  const data = paintMars(width, height);
   scope.postMessage({ body, width, height, data }, [data.buffer]);
 };
