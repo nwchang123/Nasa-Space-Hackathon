@@ -48,7 +48,7 @@ export const MACHINES: Machine[] = [
     actualLife: 'About 3½ years',
     story: {
       why: 'My twin landed first, so I was sent somewhere different. Photos showed rough ground at my planned site. Controllers moved me north to Utopia Planitia, nearer the polar ice, where life seemed likelier.',
-      found: 'I landed on 3 September 1976, tilted 8.5 degrees on a rocky plain. My biology tests on three soil samples matched my twin’s: puzzling, not proof. Scientists suspected that sunlight-made chemicals in the soil were mimicking life.',
+      found: 'I landed on 3 September 1976, tilted 8.5 degrees on a rocky plain. My biology tests on three soil samples gave the same puzzling results as my twin’s. Scientists suspected that sunlight-made chemicals in the soil were mimicking life.',
       lastDay: 'My orbiter went first, shut down in July 1978 after a series of leaks. I kept sending data from the ground until 12 April 1980. Then I fell silent.',
       stillHere: 'In 2001 I was renamed the Gerald Soffen Memorial Station, after Viking’s project scientist. Our two orbiters sent back 52,663 images and mapped about 97 percent of Mars. My twin and I added 4,500 photos from the ground.',
     },
@@ -99,7 +99,7 @@ export const MACHINES: Machine[] = [
     actualLife: '6 years, 2 months, 19 days',
     story: {
       why: 'My twin and I were sent to opposite sides of Mars to read its rocks for signs of past water. I landed in Gusev crater, which may once have held a lake. My airbags bounced 28 times before I rolled to a stop.',
-      found: 'In 2006 a front wheel stopped turning, so I drove backwards, dragging it. In 2007 that dead wheel scraped up nearly pure silica. Deposits like that form in hot springs or steam vents, so ancient Mars was much wetter.',
+      found: 'In 2006 a front wheel stopped turning, so I drove backwards, dragging it. In 2007 that dead wheel scraped up nearly pure silica. Deposits like that form in hot springs or steam vents.',
       lastDay: 'On 1 May 2009 my wheels broke through a crust into soft soil at a place called Troy. Engineers tried for months to free me, then made me a stationary science station. My last signal came on 22 March 2010, as winter cold set in.',
       stillHere: 'NASA sent more than 1,300 commands before ending the search on 25 May 2011. I am still at Troy, where I could not tilt my panels toward the winter Sun. I worked more than 25 times longer than planned.',
     },
@@ -247,7 +247,7 @@ export const MACHINES: Machine[] = [
       why: 'I rode to Mars tucked under the belly of the Perseverance rover. The air there is less than one percent as thick as Earth’s. Nobody knew if a helicopter could fly in it, so I was sent to try.',
       found: 'On 19 April 2021 I lifted off: the first powered, controlled flight on another planet. I was meant to fly five times. I flew 72, scouting routes and science targets for the rover from above.',
       lastDay: 'On 18 January 2024 I made a hard landing that broke my rotor blades. I could never fly again. My team gathered for one last downlink on 16 April 2024.',
-      stillHere: 'I stay at Valinor Hills as a stationary testbed. In December 2024 I was still sending weather data to Perseverance about once a week. Even my crash is useful: what it taught should help future Mars helicopters.',
+      stillHere: 'I stay at Valinor Hills as a stationary testbed. In December 2024 I was still sending weather data to Perseverance about once a week. NASA’s investigation of my crash, the first aircraft accident investigation on another world, should help future Mars helicopters.',
     },
     facts: ['72 flights, 5 planned', '17.0 km flown', '24 m highest altitude', '1.8 kg'],
     sources: [

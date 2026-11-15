@@ -200,7 +200,7 @@ Short source keys:
 |---|---|---|
 | viking-1 | Viking 1 landed 1976, almost 45 years before Ingenuity (20 Jul 1976 → 18 Feb 2021 = 44.6 y) | V1, ING / derived, tested |
 | viking-1 | Stops are visited in the order they landed | `MACHINE_IDS`, tested |
-| viking-1 | "Everyone on this flight landed after you. You showed it could be done." First truly successful Mars landing | V1, tested |
+| viking-1 | "Everyone on this flight landed after you." First truly successful Mars landing | V1, tested |
 | viking-2 | Shortest way to Viking 2 runs almost over the north pole (route reaches 88° N) | `route.ts` interpolate, tested |
 | viking-2 | Both Viking landers worked at once from 1976 to 1980 | V1, V2, tested |
 | viking-2 | Viking 2 moved north toward the polar ice; almost 32 years later (Sep 1976 → May 2008) Phoenix landed farther north and dug ice up | V2, PHX15 / derived, tested |

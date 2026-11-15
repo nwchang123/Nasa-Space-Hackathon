@@ -39,13 +39,38 @@
 .tour-switch.on {
   color: var(--amber);
 }
-.tour-resume {
+/* Taken over: still on, but at rest until resumed. */
+.tour-switch.on.paused {
+  color: color-mix(in srgb, var(--amber) 60%, var(--bone-dim));
+}
+.tour-switch:hover {
+  color: var(--bone);
+}
+.tour-knob {
+  transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.tour-knob-mark {
+  fill: var(--ink);
+}
+.tour-knob-mark-line {
+  stroke: var(--ink);
+}
+.hud-tools .icon-btn.tour-resume {
   color: var(--amber);
-  border-color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
   animation: fade-in 0.3s ease both;
 }
-.tour-resume:hover {
+.hud-tools .icon-btn.tour-resume:hover {
   color: var(--bone);
+  border-color: var(--amber);
+}
+.tour-resume .hud-glyph {
+  width: 12px;
+  height: 12px;
+}
+.tour-resume-left {
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 /* ---- the section being read: a hairline under its tab that runs out as it goes */
@@ -201,7 +226,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .title-screen.title-leaving,
-  .tour-resume,
+  .hud-tools .icon-btn.tour-resume,
   .tour-invite.on,
   .tour-listen-wave i,
   .thr-hold.tour-nudge {
@@ -213,5 +238,8 @@
   .tour-tick {
     animation: none;
     transform: none;
+  }
+  .tour-knob {
+    transition: none;
   }
 }

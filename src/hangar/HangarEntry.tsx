@@ -2,6 +2,7 @@
 // small module loads with the app; the hangar itself (Hangar.tsx) is fetched only when opened.
 
 import { useApp } from '../store';
+import { HangarGlyph } from '../ui/hud/icons';
 import './entry.css';
 
 export function HangarButton({ place }: { place: 'title' | 'top' }) {
@@ -24,8 +25,14 @@ export function HangarButton({ place }: { place: 'title' | 'top' }) {
     );
   }
   return (
-    <button type="button" className="icon-btn hangar-entry-top" onClick={openHangar} title="AR hangar: the nine machines on your own table">
-      AR hangar
+    <button
+      type="button"
+      className="icon-btn glyph-btn hangar-entry-top hud-tip"
+      onClick={openHangar}
+      aria-label="AR hangar"
+      data-tip="AR hangar · the nine machines on your table"
+    >
+      <HangarGlyph />
     </button>
   );
 }

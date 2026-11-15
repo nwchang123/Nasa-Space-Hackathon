@@ -52,7 +52,7 @@ export const LEG_SCRIPTS: Record<MachineId, LegScript> = {
       'In 1976 it became the first spacecraft to land safely on Mars and keep working.',
       'Click a numbered point on the lander, and I will fly over and scan it.',
     ],
-    inheritance: 'Everyone on this flight landed after you. You showed it could be done.',
+    inheritance: 'Everyone on this flight landed after you.',
   },
   'viking-2': {
     enRoute: [

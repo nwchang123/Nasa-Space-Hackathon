@@ -47,6 +47,7 @@ import {
 } from '../tour';
 import { prefersReducedMotion } from '../useClock';
 import { speak, speechMs, type Speech } from '../voice';
+import { PlayGlyph, TourSwitchGlyph } from './icons';
 
 /** A planned leg's flight time: stretched for Ingenuity's lines while the auto tour is on. */
 export function plannedFlyMs(leg: number): number {
@@ -381,21 +382,28 @@ export function TourToggle() {
       {on && paused && (
         <button
           type="button"
-          className="icon-btn tour-resume"
+          className="icon-btn glyph-btn tour-resume hud-tip"
           onClick={resumeTour}
-          title="Pick the tour up where you took over. It also picks up by itself after a while untouched."
+          aria-label={resumeLeft !== null ? `Resume auto tour, resuming in ${resumeLeft} seconds` : 'Resume auto tour'}
+          data-tip={resumeLeft !== null ? `Resuming in ${resumeLeft} s` : 'Resume auto tour'}
         >
-          {resumeLeft !== null ? <span className="tabular">Resuming in {resumeLeft} s</span> : 'Resume auto tour'} <span aria-hidden="true">▶</span>
+          <PlayGlyph />
+          {resumeLeft !== null && (
+            <span className="tabular tour-resume-left" aria-hidden="true">
+              {resumeLeft}
+            </span>
+          )}
         </button>
       )}
       <button
         type="button"
-        className={`icon-btn tour-switch${on ? ' on' : ''}`}
+        className={`icon-btn glyph-btn tour-switch hud-tip${on ? ' on' : ''}${paused ? ' paused' : ''}`}
+        aria-label="Auto tour"
         aria-pressed={on}
         onClick={() => setAutoTour(!on)}
-        title={on ? 'Ingenuity moves the visit along by itself. Switch off to go at your own pace.' : 'Let Ingenuity move the visit along by itself'}
+        data-tip={on ? (paused ? 'Auto tour paused · switch off' : 'Auto tour on · switch off') : 'Auto tour off · switch on'}
       >
-        Auto tour {on ? (paused ? 'paused' : 'on') : 'off'}
+        <TourSwitchGlyph on={on} paused={paused} />
       </button>
     </div>
   );

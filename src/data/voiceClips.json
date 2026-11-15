@@ -182,20 +182,14 @@
   "kind": "inheritance",
   "voice": "ingenuity",
   "file": "audio/ingenuity/viking-1-inheritance.wav",
-  "text": "Everyone on this flight landed after you. You showed it could be done.",
-  "duration": 3.966,
+  "text": "Everyone on this flight landed after you.",
+  "duration": 2.444,
   "spans": [
    [
     0,
     41,
     0.12,
     2.194
-   ],
-   [
-    42,
-    70,
-    2.494,
-    3.716
    ]
   ]
  },
@@ -2818,8 +2812,8 @@
   "kind": "story",
   "voice": "ingenuity",
   "file": "audio/ingenuity/story-ingenuity-stillHere.wav",
-  "text": "I stay at Valinor Hills as a stationary testbed.\nIn December 2024 I was still sending weather data to Perseverance about once a week.\nEven my crash is useful: what it taught should help future Mars helicopters.",
-  "duration": 14.45,
+  "text": "I stay at Valinor Hills as a stationary testbed.\nIn December 2024 I was still sending weather data to Perseverance about once a week.\nNASA’s investigation of my crash, the first aircraft accident investigation on another world, should help future Mars helicopters.",
+  "duration": 17.969,
   "spans": [
    [
     0,
@@ -2835,15 +2829,21 @@
    ],
    [
     134,
-    158,
+    167,
     9.626,
-    11.043
+    11.386
    ],
    [
-    158,
-    210,
-    11.126,
-    14.2
+    167,
+    227,
+    11.487,
+    15.413
+   ],
+   [
+    227,
+    264,
+    15.654,
+    17.719
    ]
   ]
  },
@@ -3046,8 +3046,8 @@
   "kind": "story",
   "voice": "narrator",
   "file": "audio/narrator/story-viking-2-found.wav",
-  "text": "I landed on 3 September 1976, tilted 8.5 degrees on a rocky plain.\nMy biology tests on three soil samples matched my twin’s: puzzling, not proof.\nScientists suspected that sunlight-made chemicals in the soil were mimicking life.",
-  "duration": 18.93,
+  "text": "I landed on 3 September 1976, tilted 8.5 degrees on a rocky plain.\nMy biology tests on three soil samples gave the same puzzling results as my twin’s.\nScientists suspected that sunlight-made chemicals in the soil were mimicking life.",
+  "duration": 19.51,
   "spans": [
    [
     0,
@@ -3063,27 +3063,15 @@
    ],
    [
     67,
-    124,
+    150,
     7.84,
-    11.38
+    13.91
    ],
    [
-    124,
-    134,
-    12.11,
-    12.57
-   ],
-   [
-    134,
-    145,
-    12.73,
-    13.33
-   ],
-   [
-    146,
-    228,
-    13.81,
-    18.68
+    151,
+    233,
+    14.39,
+    19.26
    ]
   ]
  },
@@ -3342,8 +3330,8 @@
   "kind": "story",
   "voice": "narrator",
   "file": "audio/narrator/story-spirit-found.wav",
-  "text": "In 2006 a front wheel stopped turning, so I drove backwards, dragging it.\nIn 2007 that dead wheel scraped up nearly pure silica.\nDeposits like that form in hot springs or steam vents, so ancient Mars was much wetter.",
-  "duration": 16.99,
+  "text": "In 2006 a front wheel stopped turning, so I drove backwards, dragging it.\nIn 2007 that dead wheel scraped up nearly pure silica.\nDeposits like that form in hot springs or steam vents.",
+  "duration": 14.47,
   "spans": [
    [
     0,
@@ -3367,13 +3355,7 @@
     129,
     183,
     10.75,
-    14.26
-   ],
-   [
-    183,
-    216,
-    14.72,
-    16.74
+    14.22
    ]
   ]
  },

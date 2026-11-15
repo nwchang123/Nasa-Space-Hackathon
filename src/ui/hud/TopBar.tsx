@@ -1,7 +1,8 @@
 // The top HUD bar, one slim row: the beacon and "Flight 73", the nine stops spread across the middle
 // (pick any to fly straight there), then the distance flown, the UTC clock, the flight camera and
 // the sound, the AR hangar (on the ground only), and the auto tour's switch (with "Resume" while the
-// visitor has taken over). Where we are is shown by the amber stop (and
+// visitor has taken over). The controls are glyphs (icons.tsx), each named by aria-label and by
+// a tooltip on hover or focus. Where we are is shown by the amber stop (and
 // spelled out by the dock and site card), so the status line is for screen readers only.
 
 import { useMemo, useState } from 'react';
@@ -14,6 +15,7 @@ import { formatKm } from '../callPlan';
 import { isMuted, setMuted } from '../sound';
 import { prefersReducedMotion, useUtcClock } from '../useClock';
 import { TourToggle } from './AutoTour';
+import { ChaseGlyph, NavcamGlyph, RouteGlyph, SoundGlyph } from './icons';
 
 export function TopBar() {
   const flight = useApp(s => s.flight);
@@ -34,30 +36,35 @@ export function TopBar() {
       <div className="hud-tools">
         {/* While flying, the dock's odometer has the distance (and the camera toggle needs the room). */}
         {flight.stage !== 'flying' && (
-          <span className="tabular dim hud-km" title={`${formatKm(flownKm)} flown of the ${formatKm(TOTAL_KM)} route`}>
-            {formatKm(flownKm)} flown
+          <span className="tabular dim hud-km hud-tip" data-tip={`${formatKm(flownKm)} flown of the ${formatKm(TOTAL_KM)} route`}>
+            <RouteGlyph />
+            {formatKm(flownKm)}
+            <span className="sr-only"> flown</span>
           </span>
         )}
         <span className="tabular dim">{utc}</span>
+        <span className="hud-sep" aria-hidden="true" />
         {flight.stage === 'flying' && (
           <div className="cam-toggle" role="group" aria-label="Flight camera">
             <button
               type="button"
-              className="icon-btn"
+              className="icon-btn glyph-btn hud-tip"
               aria-label="Orbit chase cam"
+              data-tip="Chase cam"
               aria-pressed={camMode === 'chase'}
               onClick={() => setCamMode('chase')}
             >
-              Chase
+              <ChaseGlyph />
             </button>
             <button
               type="button"
-              className="icon-btn"
+              className="icon-btn glyph-btn hud-tip"
               aria-label="Navcam black and white view"
+              data-tip="Navcam · black and white"
               aria-pressed={camMode === 'navcam'}
               onClick={() => setCamMode('navcam')}
             >
-              Navcam
+              <NavcamGlyph />
             </button>
           </div>
         )}
@@ -66,14 +73,16 @@ export function TopBar() {
         <TourToggle />
         <button
           type="button"
-          className="icon-btn"
+          className={`icon-btn glyph-btn hud-tip${muted ? ' muted' : ''}`}
+          aria-label="Sound"
+          data-tip={muted ? 'Sound off' : 'Sound on'}
           onClick={() => {
             setMuted(!muted);
             setMutedState(!muted);
           }}
-          aria-pressed={muted}
+          aria-pressed={!muted}
         >
-          {muted ? 'Sound off' : 'Sound on'}
+          <SoundGlyph muted={muted} />
         </button>
       </div>
     </header>

@@ -1546,6 +1546,78 @@ button:disabled {
 .hud-tools .tabular {
   letter-spacing: 0.1em;
 }
+/* The controls are glyphs (ui/hud/icons.tsx): square hit areas, dim until hovered, amber while on. */
+.hud-tools .glyph-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  line-height: 1;
+}
+.hud-glyph {
+  display: block;
+  flex: none;
+}
+.hud-tools .glyph-btn.muted {
+  color: var(--ghost);
+}
+.hud-tools .glyph-btn.muted:hover {
+  color: var(--bone);
+}
+.hud-km {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-km .hud-glyph {
+  width: 14px;
+  height: 14px;
+}
+/* A hairline between the readouts and the controls. */
+.hud-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line-soft);
+}
+/* The bar's tooltip: the control's name, below it on hover or keyboard focus. Right-aligned, since
+   the controls sit at the bar's right edge. */
+.hud-tip {
+  position: relative;
+}
+.hud-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  padding: 5px 8px;
+  font-size: 9px;
+  font-weight: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bone);
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.hud-tip:hover::after,
+.hud-tip:focus-visible::after {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.25s;
+}
+.hud-tip:focus-visible::after {
+  transition-delay: 0s;
+}
 .cam-toggle {
   display: flex;
 }
