@@ -587,11 +587,11 @@ function drive(loop: Loop, v: number, p = 1) {
 /**
  * The continuous beds' full levels, before the master gain. Kept under the voice and the cues.
  * Rendered through the master chain: the rotors only need to say the helicopter is flying (about
- * 14 dB under Ingenuity's voice at cruise, a few dB under the ambient pad), and the wind is a faint
+ * 20 dB under Ingenuity's voice at cruise, 10 dB under the ambient pad), and the wind is a faint
  * texture under the pad (about 10 dB under it at a site, 14 dB under the voice at the height of
  * Opportunity's storm).
  */
-const ROTOR_BED = 0.016;
+const ROTOR_BED = 0.009;
 const WIND_BED = 0.018;
 const WIND_WHISTLE = 0.1;
 
@@ -613,7 +613,7 @@ export function setRotorLoop(speed: number, pitch = 1) {
     const level = a.createGain();
     level.gain.value = 0;
     level.connect(out());
-    // Buzzy drone at the blade-pass rate.
+    // Buzzy drone at the blade-pass rate (kept below the chopping air: it is the loudest part).
     const saw = a.createOscillator();
     saw.type = 'sawtooth';
     saw.frequency.value = 40;
@@ -621,7 +621,7 @@ export function setRotorLoop(speed: number, pitch = 1) {
     sawLp.type = 'lowpass';
     sawLp.frequency.value = 520;
     const sawG = a.createGain();
-    sawG.gain.value = 0.32;
+    sawG.gain.value = 0.2;
     saw.connect(sawLp).connect(sawG).connect(level);
     // Chopping air: band-passed noise, amplitude-modulated at the blade-pass rate.
     const src = a.createBufferSource();
