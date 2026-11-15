@@ -4,7 +4,8 @@
 // rig (ingenuityFromGltf) and the EDL parachute (buildParachute), with the procedural silhouettes
 // if a GLB fails. No DOM needed: unit tests build every model from the shipped files.
 
-import { Box3, Group, MeshStandardMaterial, type Material, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
+import { Box3, Group, type Material, type Object3D } from 'three';
+import { applyMissionFinish, cloneLitMaterials } from '../scene/missionFinish';
 import {
   buildIngenuity,
   buildParachute,
@@ -31,42 +32,9 @@ export interface PreparedModel {
   dispose(): void;
 }
 
-/**
- * A lit copy of a material, always a MeshStandardMaterial: USDZ (AR Quick Look) only carries
- * standard materials, and unlit (baked) GLB materials would glow in the sandbox's night light.
- */
-function litCopy(mat: Material): MeshStandardMaterial {
-  if ((mat as MeshStandardMaterial).isMeshStandardMaterial) return (mat as MeshStandardMaterial).clone();
-  const src = mat as MeshBasicMaterial;
-  const lit = new MeshStandardMaterial({
-    map: src.map ?? null,
-    transparent: mat.transparent,
-    opacity: mat.opacity,
-    alphaTest: mat.alphaTest,
-    side: mat.side,
-    vertexColors: mat.vertexColors,
-    roughness: 0.8,
-    metalness: 0.1,
-  });
-  if (src.color) lit.color.copy(src.color);
-  lit.name = mat.name;
-  return lit;
-}
-
-/** Give every mesh under `root` (except `skip`) its own lit material, and let it cast shadows. */
+/** Instance-owned lit materials also export through USDZ (AR Quick Look). */
 function ownMaterials(root: Object3D, skip: ReadonlySet<Object3D>, owned: Material[]) {
-  root.traverse(o => {
-    const m = o as Mesh;
-    if (!m.isMesh || skip.has(m)) return;
-    m.castShadow = true;
-    m.receiveShadow = true;
-    const copy = (x: Material) => {
-      const c = litCopy(x);
-      owned.push(c);
-      return c;
-    };
-    m.material = Array.isArray(m.material) ? m.material.map(copy) : copy(m.material);
-  });
+  owned.push(...cloneLitMaterials(root,skip));
 }
 
 /** The site pose's tilt, without the sink: here the machine stands on a table, not in sand. */
@@ -102,6 +70,7 @@ export function prepareModel(id: MachineId, scene: Object3D | null): PreparedMod
     body = silhouette;
   }
 
+  if(id==='spirit'||id==='opportunity'||id==='ingenuity')applyMissionFinish(body,id);
   const posed = new Group();
   posed.name = 'posed';
   posed.rotation.set(...hangarTilt(id));

@@ -33,6 +33,7 @@ import { applySky, createSkyMaterial } from './skyMaterial';
 import { SITE_PRESETS, siteLayout, skyLook, type SkyLook } from './sites';
 import { buildGround } from './terrain';
 import { SITE_FADE, SITE_SKY_RADIUS_M } from './siteTransition';
+import { GroundContacts } from './GroundContacts';
 
 /** Haze over the site, m. */
 const FOG_NEAR_M = 25;
@@ -69,6 +70,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
   const dome = useRef<Mesh>(null);
   const machine = useRef<Group>(null);
   const machineFade = useRef({ k: -1 });
+  const contactFade = useRef(0);
   // When the machine's model came in (it fades in over MODEL_IN_MS if that was late, not pops).
   const modelAt = useRef(0);
   const onModelReady = useCallback(() => {
@@ -101,6 +103,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
         fog.far = FOG_OFF[1];
       }
       live.siteLook = null;
+      if (live.surface.site === stop) { live.surface.site = null; live.surface.heightAt = null; }
     },
     [ground, skyMat, domeGeom, fragment, scene],
   );
@@ -114,6 +117,8 @@ export function Diorama({ stop }: { stop: MachineId }) {
     if (!active) return;
     g.matrix.copy(live.site.matrix);
     g.matrixWorldNeedsUpdate = true;
+    live.surface.site = stop;
+    live.surface.heightAt = ground.heightAt;
 
     // The site's sky: the real Sun right now, or the hour picked on the sun scrubber (same
     // season). Recomputed only when the time or the hour changes; effects are applied every frame.
@@ -146,6 +151,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
     skyMat.uniforms.opacity.value = look.domeOpacity * domeFade;
     if (dome.current) dome.current.visible = domeFade > 0.001;
     const modelIn = modelAt.current ? smoothstep(0, MODEL_IN_MS, performance.now() - modelAt.current) : 1;
+    contactFade.current = Math.min(groundFade, fade(SITE_FADE.machine) * modelIn);
     if (machine.current) fadeMachine(machine.current, fade(SITE_FADE.machine) * modelIn, machineFade.current);
 
     const fog = scene.fog as Fog | null;
@@ -189,6 +195,7 @@ export function Diorama({ stop }: { stop: MachineId }) {
             <Hotspots stop={stop} />
           </group>
         )}
+        <GroundContacts stop={stop} ground={ground} machine={machine} fade={contactFade} />
       </group>
       <SiteOrbitInput stop={stop} />
       <SiteFlight stop={stop} ground={ground} />

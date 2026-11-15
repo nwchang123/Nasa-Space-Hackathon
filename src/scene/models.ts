@@ -7,24 +7,18 @@ import {
   Box3,
   BoxGeometry,
   BufferGeometry,
-  CanvasTexture,
   CircleGeometry,
   Color,
   CylinderGeometry,
   DoubleSide,
   Euler,
-  Float32BufferAttribute,
   Group,
-  LineBasicMaterial,
-  LineSegments,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   Quaternion,
-  RingGeometry,
   SphereGeometry,
-  SRGBColorSpace,
   Vector3,
   Object3D,
   type Material,
@@ -34,6 +28,10 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { MODEL_NOTES } from '../data/modelNotes';
 import type { MachineId } from '../types';
 import { realSizeScale, type RealSize, type Vec3 } from './layout';
+import { INGENUITY_SINK_M, registerGroundContacts, SITE_SINK_M, VIKING_2_LANDING } from './grounding';
+import { buildParachute } from './parachute';
+
+export { buildParachute };
 
 // ---------------------------------------------------------------- model registry
 
@@ -53,14 +51,15 @@ export interface ModelEntry {
   pose?: { sink: number; tilt: Vec3 };
 }
 
-const VIKING: ModelEntry = { url: modelUrl('viking-lander.glb'), size: { height: 2.0 }, illustrative: false };
+const GROUND_POSE = { sink: SITE_SINK_M, tilt: [0, 0, 0] as Vec3 };
+const VIKING: ModelEntry = { url: modelUrl('viking-lander.glb'), size: { height: 2.0 }, illustrative: false, pose: GROUND_POSE };
 
 export const MODEL_REGISTRY: Record<MachineId, ModelEntry> = {
   'viking-1': VIKING,
   // Viking 2 came to rest tilted 8.5° (docs/FACT_CHECK.md, viking-2); the direction of the tilt is
-  // illustrative. Lifted a little so the low footpad stays on the ground.
-  'viking-2': { ...VIKING, pose: { sink: -0.2, tilt: [0.06, 0, 0.136] } },
-  'pathfinder-sojourner': { url: modelUrl('pathfinder.glb'), illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'] },
+  // illustrative. The high pads stand on the matching local soil banks in the site preset.
+  'viking-2': { ...VIKING, pose: { sink: VIKING_2_LANDING.sink, tilt: VIKING_2_LANDING.tilt } },
+  'pathfinder-sojourner': { url: modelUrl('pathfinder.glb'), illustrative: true, note: MODEL_NOTES['pathfinder-sojourner'], pose: GROUND_POSE },
   spirit: {
     url: modelUrl('mer.glb'),
     illustrative: true,
@@ -68,16 +67,18 @@ export const MODEL_REGISTRY: Record<MachineId, ModelEntry> = {
     // Stuck at Troy from 2009: wheels dug into soft sand, the deck tilted.
     pose: { sink: 0.09, tilt: [0.07, 0, -0.1] },
   },
-  opportunity: { url: modelUrl('mer.glb'), illustrative: true, note: MODEL_NOTES.opportunity },
-  phoenix: { url: modelUrl('phoenix.glb'), illustrative: true, note: MODEL_NOTES.phoenix },
+  opportunity: { url: modelUrl('mer.glb'), illustrative: true, note: MODEL_NOTES.opportunity, pose: GROUND_POSE },
+  phoenix: { url: modelUrl('phoenix.glb'), illustrative: true, note: MODEL_NOTES.phoenix, pose: GROUND_POSE },
   insight: {
     url: modelUrl('insight.glb'),
     size: { span: 6.0 },
     illustrative: true,
     note: MODEL_NOTES.insight,
+    pose: GROUND_POSE,
   },
-  'mars2020-edl': { url: modelUrl('backshell.glb'), illustrative: true, note: MODEL_NOTES['mars2020-edl'] },
-  ingenuity: { url: modelUrl('ingenuity.glb'), size: { span: 1.2 }, illustrative: false, note: MODEL_NOTES.ingenuity },
+  'mars2020-edl': { url: modelUrl('backshell.glb'), illustrative: true, note: MODEL_NOTES['mars2020-edl'], pose: GROUND_POSE },
+  ingenuity: { url: modelUrl('ingenuity.glb'), size: { span: 1.2 }, illustrative: false, note: MODEL_NOTES.ingenuity,
+    pose: { sink: INGENUITY_SINK_M, tilt: [0, 0, 0] } },
 };
 
 /** Wrap a loaded model so it stands on the ground (y = 0) at its real size. Shares geometry. */
@@ -86,9 +87,13 @@ export function normalizeModel(model: Object3D, size?: RealSize): Group {
   const box = new Box3().setFromObject(model);
   const dims = box.getSize(new Vector3());
   const k = size ? realSizeScale({ x: dims.x, y: dims.y, z: dims.z }, size) : 1;
+  // A transformed mesh AABB can extend below every actual vertex (Ingenuity: ~2.3 cm).
+  // Keep the established framing/scale, but use real vertices as the physical ground datum.
+  const exactFloor = new Box3().setFromObject(model, true).min.y;
+  const floor = Math.abs(exactFloor - box.min.y) > 1e-5 ? exactFloor : box.min.y;
   const inner = new Group();
   inner.add(model);
-  inner.position.y = -box.min.y;
+  inner.position.y = -floor;
   const outer = new Group();
   outer.add(inner);
   outer.scale.setScalar(k);
@@ -291,6 +296,7 @@ export function buildIngenuity(broken: boolean): IngenuityRig {
     return g;
   });
   const blur = blurDiscs(root, rotorY);
+  registerGroundContacts(root);
 
   return {
     root,
@@ -346,6 +352,7 @@ export function ingenuityFromGltf(scene: Object3D, broken: boolean): IngenuityRi
     number,
   ];
   const blur = blurDiscs(root, heights);
+  registerGroundContacts(root);
 
   return {
     root,
@@ -605,108 +612,6 @@ function backshellAndChute(includeParachute = true): Group {
   const g = k.build('backshell');
 
   if (includeParachute) g.add(buildParachute());
-  return g;
-}
-
-let goreMap: CanvasTexture | null = null;
-
-/**
- * The canopy's gore pattern as a texture on the ring's own UVs (RingGeometry maps the flat ring
- * across the unit square), with the same rule as the vertex colours: 80 gores, bands every 2.1 m.
- * Each pixel takes the colour at its own point, so the gore edges stay crisp; mipmaps keep them
- * clean from afar. Built once and shared.
- */
-function goreTexture(outer: number, orange: Color, white: Color): CanvasTexture | null {
-  if (goreMap) return goreMap;
-  // No DOM (unit tests): the canopy keeps its vertex colours.
-  if (typeof document === 'undefined') return null;
-  const N = 1024;
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = N;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-  const img = ctx.createImageData(N, N);
-  const rgb = (c: Color) => [(c.getHex() >> 16) & 255, (c.getHex() >> 8) & 255, c.getHex() & 255];
-  const [o, w] = [rgb(orange), rgb(white)];
-  for (let r = 0; r < N; r++) {
-    // Canvas row 0 is the top of the texture (v = 1).
-    const yRing = (2 * (1 - (r + 0.5) / N) - 1) * outer;
-    for (let c = 0; c < N; c++) {
-      const x = (2 * ((c + 0.5) / N) - 1) * outer;
-      const z = -yRing; // the ring is turned flat with rotateX(-90°): its +Y becomes -Z
-      const th = Math.atan2(z, x);
-      const gore = Math.floor(((th + Math.PI) / (Math.PI * 2)) * 80);
-      const band = Math.min(3, Math.floor(Math.hypot(x, z) / 2.1));
-      const px = (gore * 7 + band * 3) % 5 < 2 ? o : w;
-      const i = (r * N + c) * 4;
-      img.data[i] = px[0];
-      img.data[i + 1] = px[1];
-      img.data[i + 2] = px[2];
-      img.data[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-  goreMap = new CanvasTexture(canvas);
-  goreMap.colorSpace = SRGBColorSpace;
-  goreMap.anisotropy = 8;
-  return goreMap;
-}
-
-/** Stable canopy and lines, mounted outside the GLB's Suspense boundary so decode never loses
- * its shared vertex buffers when the detailed backshell replaces the loading silhouette. */
-export function buildParachute(): Group {
-  const g = new Group();
-  g.name = 'parachute-rig';
-
-  // The canopy: gores of orange and white, folded and dusty. Real diameter 21.5 m; here it lies
-  // partly bunched up, about 16 m across.
-  const chuteR = 8;
-  const geom = new RingGeometry(0.5, chuteR, 96, 22).rotateX(-Math.PI / 2);
-  const p = geom.getAttribute('position');
-  const colors = new Float32Array(p.count * 3);
-  const orange = new Color('#c9562d').lerp(DUST, 0.3);
-  const white = new Color('#e6dfd2').lerp(DUST, 0.3);
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i);
-    const rad = Math.hypot(x, z);
-    const th = Math.atan2(z, x);
-    const rim = rad * (1 + 0.07 * Math.sin(th * 5 + 1.3) + 0.04 * Math.sin(th * 11));
-    const fold = 0.07 * Math.abs(Math.sin(th * 14 + rad * 0.55)) + 0.3 * Math.exp(-((x - 2) ** 2 + (z - 1) ** 2) / 5);
-    const nx = (rim / Math.max(rad, 1e-6)) * x;
-    const nz = (rim / Math.max(rad, 1e-6)) * z * 0.72;
-    p.setXYZ(i, nx, 0.03 + fold * (1 - 0.6 * (rad / chuteR)), nz);
-    const gore = Math.floor(((th + Math.PI) / (Math.PI * 2)) * 80);
-    const band = Math.min(3, Math.floor(rad / 2.1));
-    const c = (gore * 7 + band * 3) % 5 < 2 ? orange : white;
-    colors[i * 3] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
-  }
-  geom.setAttribute('color', new Float32BufferAttribute(colors, 3));
-  geom.computeVertexNormals();
-  // The gores are drawn from a texture, not the vertex colours: 80 gores on a 96-segment ring cannot
-  // be coloured per vertex without their edges smearing into zigzags. The geometry (and its colour
-  // attribute) stays exactly as it was, for the decode overlay and the story anchors.
-  const gores = goreTexture(chuteR, orange, white);
-  const chute = new Mesh(
-    geom,
-    new MeshStandardMaterial({ map: gores, vertexColors: gores === null, roughness: 0.92, metalness: 0, side: DoubleSide }),
-  );
-  chute.name = 'parachute';
-  chute.position.set(-1.5, 0, -8.2);
-  chute.rotation.y = 0.12;
-  chute.receiveShadow = true;
-  g.add(chute);
-
-  // Suspension lines from the backshell to the near edge of the canopy.
-  const lines: number[] = [];
-  for (let i = 0; i < 14; i++) {
-    const a = -Math.PI / 2 + (i / 13 - 0.5) * 1.6;
-    lines.push(-0.1 + 0.4 * Math.cos(a * 3), 1.45, -0.1, -1.5 + chuteR * 0.9 * Math.cos(a), 0.05, -8.2 + chuteR * 0.65 * Math.sin(a) + 1.2);
-  }
-  const lg = new BufferGeometry();
-  lg.setAttribute('position', new Float32BufferAttribute(lines, 3));
-  g.add(new LineSegments(lg, new LineBasicMaterial({ color: '#d8cfbd', transparent: true, opacity: 0.45 })));
   return g;
 }
 

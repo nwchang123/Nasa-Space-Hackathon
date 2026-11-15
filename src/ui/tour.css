@@ -1,0 +1,217 @@
+/* The opening and the auto tour's marks (App.tsx, Hud.tsx, Dock.tsx, AutoTour.tsx): the title
+   fading out on "Begin Flight 73", the HUD held back during the opening descent, the auto tour's
+   switch, the hairline under the section being read, the invitation, the countdowns. Kept to the
+   console's own language: dark glass, 1px lines, amber for what is live, no glow. */
+
+/* ---- "Begin Flight 73": the title's words and buttons leave first, while the view turns */
+
+.title-screen.title-leaving {
+  pointer-events: none;
+  animation: title-leave 0.35s ease forwards;
+}
+@keyframes title-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ---- the opening descent: the landing shot alone, then the HUD fades in */
+
+.hud {
+  transition: opacity 0.6s ease;
+}
+.hud.hud-descending {
+  opacity: 0;
+}
+.hud.hud-descending,
+.hud.hud-descending * {
+  pointer-events: none !important;
+}
+
+/* ---- the auto tour's switch in the top bar */
+
+.tour-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tour-switch.on {
+  color: var(--amber);
+}
+.tour-resume {
+  color: var(--amber);
+  border-color: var(--amber);
+  animation: fade-in 0.3s ease both;
+}
+.tour-resume:hover {
+  color: var(--bone);
+}
+
+/* ---- the section being read: a hairline under its tab that runs out as it goes */
+
+.tour-tick {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -2px;
+  height: 1px;
+  background: var(--amber);
+  transform-origin: left center;
+  animation: tour-tick linear both;
+  pointer-events: none;
+}
+@keyframes tour-tick {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---- the countdown to the next move */
+
+.tour-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 2px 4px;
+  white-space: nowrap;
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.tour-count .text-btn {
+  margin: 0;
+  font-size: 9.5px;
+}
+
+/* ---- the stop's action, offered: a thin amber frame round its controls */
+
+.tour-invite {
+  border: 1px solid transparent;
+  border-radius: 2px;
+  transition: border-color 0.4s ease;
+}
+.tour-invite.on {
+  margin: -5px -6px 0;
+  padding: 4px 5px 5px;
+  border-color: rgba(242, 169, 59, 0.55);
+  animation: tour-frame 2.4s ease-in-out infinite;
+}
+@keyframes tour-frame {
+  50% {
+    border-color: rgba(242, 169, 59, 0.2);
+  }
+}
+.tour-invite-note {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 8px;
+  white-space: nowrap;
+  margin: 5px 0 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.tour-invite-note .text-btn {
+  margin: 0;
+  font-size: 9.5px;
+}
+/* The wait before the tour moves on by itself, as a hairline that runs out under "Your turn". */
+.tour-invite-tick {
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  opacity: 0.55;
+}
+
+/* ---- the prologue: the rotor test waits while Ingenuity says who it is */
+
+.tour-listen {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+.tour-listen-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.tour-listen .text-btn {
+  margin: 0;
+}
+.tour-listen-wave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+.tour-listen-wave i {
+  width: 2px;
+  height: 100%;
+  background: var(--amber);
+  transform-origin: bottom;
+  animation: tour-wave 0.9s ease-in-out infinite;
+}
+.tour-listen-wave i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.tour-listen-wave i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes tour-wave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* The rotor test has waited a while: the hold button asks again (an outline that breathes). */
+.thr-hold.tour-nudge {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+  animation: tour-nudge 1.6s ease-in-out infinite;
+}
+@keyframes tour-nudge {
+  50% {
+    outline-offset: 6px;
+    outline-color: rgba(242, 169, 59, 0.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-screen.title-leaving,
+  .tour-resume,
+  .tour-invite.on,
+  .tour-listen-wave i,
+  .thr-hold.tour-nudge {
+    animation: none;
+  }
+  .title-screen.title-leaving {
+    opacity: 0;
+  }
+  .tour-tick {
+    animation: none;
+    transform: none;
+  }
+}

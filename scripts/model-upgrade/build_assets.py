@@ -13,6 +13,7 @@ import sys
 import numpy as np
 from pathlib import Path
 from mathutils import Vector, Matrix
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 ROOT = Path(__file__).resolve().parents[2]
 WORK = ROOT / 'assets-raw/model-upgrade'
@@ -257,6 +258,9 @@ def finish(label, root, anchors):
             o.matrix_basis = Matrix.Identity(4)
             o.data.update()
     bpy.context.view_layer.update()
+    from global_finishes import refine_scene
+    refine_scene(label, root)
+    descendants = [root, *root.children_recursive]
     records = {'bounds': bounds(descendants), 'anchors': anchors, 'nodes': {}}
     for o in descendants:
         if o.type == 'EMPTY' or 'wheel' in o.name or 'mast' in o.name:

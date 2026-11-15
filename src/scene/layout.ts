@@ -258,6 +258,20 @@ export function clampPolar(dir: Vec3, maxY = 0.82): Vec3 {
 export const TITLE_DIR: Vec3 = clampPolar([0, 0.22, 1]);
 export const REPORT_DIR: Vec3 = clampPolar([0.12, 0.3, 1]);
 
+/** The title camera's elevation above Mars's equator, radians (TITLE_DIR's: atan2(0.22, 1) ≈ 0.2165). */
+export const TITLE_EL = Math.atan2(TITLE_DIR[1], Math.hypot(TITLE_DIR[0], TITLE_DIR[2]));
+/** How far the visitor may pitch the title view toward either pole, radians (±70°: the caps in full view). */
+export const TITLE_EL_MAX = 1.22;
+
+/**
+ * Title camera direction for an elevation `el` (radians; the visitor drags it to see the poles):
+ * straight out along +Z tilted up by el, kept off the poles. titleDirAt(TITLE_EL) is TITLE_DIR.
+ */
+export function titleDirAt(el: number): Vec3 {
+  const e = Math.min(TITLE_EL_MAX, Math.max(-TITLE_EL_MAX, el));
+  return clampPolar([0, Math.sin(e), Math.cos(e)], Math.sin(TITLE_EL_MAX));
+}
+
 /**
  * Globe yaw (rotation about +Y, the spin axis) that puts the real Sun `offsetDeg` to one side of
  * the camera, so a globe shot shows mostly day side with the terminator in view. The lighting

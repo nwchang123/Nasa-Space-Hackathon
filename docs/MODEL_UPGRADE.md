@@ -1,120 +1,92 @@
-# Blender model upgrade — 14 November 2026
+# Blender model upgrades
 
-The working project is `C:\Users\HP\Downloads\NASA\still-here`. The initially open `D:\sol-by-sol-release` folder contains a different application and was not modified.
+The later runtime ground-contact and shadow repair is documented separately in [GROUNDING.md](GROUNDING.md). It keeps the seven GLB bytes unchanged and supersedes the earlier site-only vertical placements and hotspot heights described below.
 
-## Delivered assets
+The working project is `C:\Users\HP\Downloads\NASA\still-here`. `D:\sol-by-sol-release` is a different application and was not modified.
 
-| Asset | Shipped bytes | Triangles | Source / method |
-| --- | ---: | ---: | --- |
-| `public/models/mer.glb` | 1,073,196 | 32,562 | NASA detailed Spirit/Opportunity `.blend`, normalized to 1.5 m height, +Z front, six grounded wheels; restored packed colour/normal textures and adjusted PBR finishes |
-| `public/models/pathfinder.glb` | 1,448,448 | 77,866 | Blender Python reconstruction: four tetrahedral faces unfolded, creased/seamed airbags, IMP mast, instrument boxes, rear ramp and separate Sojourner with six wheels, rocker-bogie links, hubs, grousers and rear APXS |
-| `public/models/phoenix.glb` | 2,267,996 | 114,500 | Imported the existing NASA `public/models/insight.glb` after meshopt decoding; retained the shared platform/legs/arrays and rebuilt Phoenix's deck instruments, meteorological mast, lidar, SSI and arm |
-| `public/models/backshell.glb` | 725,524 | 40,752 | Blender cone-shell reconstruction with impact deformation, torn thermal coating, laminate wall, interior ribs, attachment hardware and fragments |
+## Current delivery — global finish and rendering refinement, 15 November 2026
 
-Exact SHA-256 hashes, node counts, primitive counts and every embedded image's measured dimensions are in [model-assets.json](model-assets.json). All four files are below 3 MB, use `EXT_meshopt_compression`, and contain only embedded WebP images at 1024 px or smaller. New geometry was not simplified during compression. NASA source credits and the boundaries of the illustrative reconstructions are in [CREDITS.md](../CREDITS.md).
+| GLB | Before bytes | Delivered bytes | Before → after triangles | Before → after draw primitives |
+| --- | ---: | ---: | ---: | ---: |
+| MER (Spirit / Opportunity) | 1,073,196 | 1,047,076 | 32,562 → 32,562 | 55 → 26 |
+| Pathfinder / Sojourner | 1,448,448 | 1,399,016 | 77,866 → 77,866 | 15 → 15 |
+| Phoenix | 2,267,996 | 1,750,120 | 114,500 → 59,999 | 13 → 13 |
+| Backshell | 725,524 | 684,344 | 40,752 → 40,752 | 7 → 7 |
+| InSight | 2,522,260 | 1,901,632 | 140,481 → 60,997 | 16 → 16 |
+| Ingenuity | 403,504 | 394,580 | 9,124 → 9,124 | 35 → 35 |
+| Viking 1 / 2 | 3,659,572 | 2,029,952 | 99,526 → 99,526 | 12 → 12 |
+| **Total, seven unique files** | **12,100,500** | **9,206,720** | | **153 → 124** |
 
-The MER archive is the official [NASA Spirit and Opportunity package](https://science.nasa.gov/3d-resources/mars-exploration-rover-spirit-and-opportunity/) listed in ASSETS.md. The extracted source `.blend` is 12,243,528 bytes, SHA-256 `1f1e2b246aca461d6d1d2b5f9ac9dff7fd225d242fc000131277457815e160c2`. Its original geometry handedness is retained. The new geometric right-front wheel (-X, +Z) is explicitly named, regardless of the source's legacy left/right labels.
+Every file is smaller; the total falls **23.91%**. The two rover stops still share one MER file, and the two Viking stops share one lander file. Draw primitives count the unique GLB mesh batches, not shadows, the terrain, procedural effects or the final whole-frame draw calls. Measured whole-frame results are recorded separately below. Exact delivered SHA-256 hashes, material flags and image dimensions are in [model-assets.json](model-assets.json). Initial source/export statistics and pinned input hashes are in [global-baseline.json](../scripts/model-upgrade/global-baseline.json).
+
+All delivered materials have a normal map and a packed metallic/roughness map. Images are embedded WebP, colour at up to 1024 px and data maps at 256–512 px. Normal maps use WebP quality 94; colour and metallic/roughness use quality 82. Missing tangent attributes are generated with MikkTSpace on those primitives only, followed by bitwise welding. There are no external texture requests or Draco dependencies. Closed hardware uses back-face culling, with foil/fabric, thin panel surfaces and the open backshell coating/laminate retained as appropriate. Viking's shared paint material also covers its thin antenna dish and remains two-sided.
+
+### Local Mars environment reflections
+
+`src/scene/MarsEnvironment.tsx` renders a small local sky/ground gradient and broad sun lobe into a **64 px cube-face PMREM**. Its palette comes from the same `skyLook`, ambient sky/ground and site-local Sun as the diorama. There is no downloaded HDR image. `scene.environment` points at one stable CubeUV output texture; two source PMREMs blend into it over **1.25 s**, so a material's environment texture does not swap abruptly.
+
+A palette/Sun change must exceed 0.025, the preceding blend must finish, and at least **1500 ms** must pass before another bake. An idle scene performs neither repeated PMREM bakes nor repeated blend passes. At most three owned PMREM/output targets are kept; old targets and generator resources are disposed. The scene environment intensity approaches **0.55 by day / 0.22 by night**. Instance-owned lit model materials use `envMapIntensity = 0.65`. Existing direct lights, including the 0.5 night fill, remain in place. This adds subdued metal reflections while retaining night contrast.
+
+Both the main stage and AR Hangar's separate Canvas mount this component. Hangar's day/night selection drives its environment in the sandbox and WebXR scene. USDZ export carries standard PBR materials; OS Quick Look supplies its own lighting and does not export custom WebGL shader effects.
+
+### Geometry and surface treatments
+
+- **InSight:** starts from the pinned, decoded pre-refinement NASA conversion. Blender collapses only the dense static `deck`/support mesh, then restores its local bounding envelope. Total triangles are 60,997, with the **6.0 m** ground-normalized span, arm and instrument nodes preserved. The 11 original material families (14 exported slots including vertex-colour variants) receive normal/MR maps. Silver foil has metallic response and mild folds; the arrays and upward-facing deck receive a heavier, patchy orange-brown dust layer. **SEIS stays on the source deck**. The existing ground-wave centre, hotspots and story geometry are unchanged; this remains a presentation model, not an as-deployed reconstruction.
+- **Phoenix:** only dense static inherited platform/support meshes are simplified, to 59,999 total triangles. The entire arm descendant branch is excluded. Cool finishes and light dust remain distinct from InSight's heavier dust.
+- **MER:** static body/suspension pieces are grouped into six material batches in Blender. All six wheel nodes, the mast branch, seven arm nodes and `mer-right-front-contact` remain independent. New MR maps fill missing hardware slots. Runtime material clones give Spirit a pale silica scuff near the right-front wheel and Opportunity red-brown dust concentrated on upward-facing solar panels. Cached loader materials are never changed.
+- **Viking:** retains all **99,526 original directed triangles**, their exact float32 positions and winding, original orientation and three-node `viking_car → polySurfa1 / polySurfa2` hierarchy. No position quantization, decode-transform nodes, join, displacement or simplification occurs. The nine material slots and **27 WebP images** remain. Small accessory colour maps (`blinn2SG`, `blinn6SG`, `blinn9SG`, `blinn10SG`, `blinn12SG`) become 512²; the four principal colours remain 1024²; all normal/MR maps remain 512². Ivory thermal paint receives slightly more legible panel-seam colour detail. Normal/tangent quantization is 12-bit and UVs 16-bit; positions remain lossless FLOAT32. [viking-materials.json](viking-materials.json) records the bake, images and hashes; [viking-contract.json](../scripts/model-upgrade/viking-contract.json) remains the immutable NASA reference.
+- **Pathfinder / backshell:** their pinned compressed geometry and articulated frames are retained; missing normal/MR maps are supplied to the remaining hardware. The backshell wall, thermal tears and debris are unchanged. The parachute remains the original procedural Three.js mesh.
+- **Ingenuity:** source positions, indices, rotor nodes and the broken-rotor rig are retained. Missing PBR data maps are added. Only `variant === 'real'` receives instance-owned mild landing dust/wear in the runtime; the golden holographic companion follows its original material path. Hangar uses the same real-body finish.
+
+Paint, seams, dust, scuffs, foil relief, wear, resting/damage conditions and metal assignments are **illustrative artistic adjustments**, not measured present-day conditions, NASA-authored textures or engineering CAD. Credits and reconstruction sources are in [CREDITS.md](../CREDITS.md).
+
+## Preserved animation and hotspot contracts
+
+- **Spirit:** `wheel-{right|left}-{front|middle|rear}` and `mer-right-front-contact` remain. `rightFrontFoot` still resolves the actual jammed wheel through the site's sink/tilt. The silica strip follows terrain with its existing 0.012 m offset and 0.7 m reverse displacement.
+- **Pathfinder:** `sojourner` retains unit scale and its parked position `[-2.6, 0, 0.5]`. Ramp centreline: `[0.39, 0.135, 0.629]` to `[1.256, 0.045, 1.121]`, direction `[0.866, 0, 0.5]`. Rover local +X is forward. The existing reverse APXS stop reaches the actual Barnacle Bill triangle surface; all eleven ramp samples remain tested.
+- **Phoenix:** `phoenix-arm` retains shoulder `[-0.3, 1.06, 0.6]` and identity rest rotation; `phoenix-scoop` retains local `TIP = [-0.2, -1, 1.35]`. Its trench rotation and all hotspot surface-distance tests remain unchanged.
+- **Viking:** immutable directed-triangle hashes, 2 m normalized height, original three-node graph, UV/tangent and 27-image requirements pass. The foot camera anchor remains within 5 mm of the unsplit NASA source estimate. Viking 1's scan camera and Viking 2's frost shader are unchanged.
+- **EDL:** all **2231** canopy positions, colours and indices retain their exact [contract hashes](../scripts/model-upgrade/contracts.json); the decode overlay still shares the original position/index buffers. The ring decode, suspension lines and signature code are unchanged.
+- **Ingenuity / Hangar:** rotor hierarchy, broken blade, table grounding, relative size layout and USDZ regression tests continue to pass. No station hotspot coordinates or camera distances changed in this refinement.
 
 ## Rebuild locally
 
-Tools used: Blender 5.3.0 at `D:\SteamLibrary\steamapps\common\Blender\blender.exe`, Node 24.11.1, `@gltf-transform/cli@4.5.1`, and Python 3.13 with Pillow for the delivery manifest. Blender supplies its own Python and NumPy. No cloud 3D generator or image-generation service is used.
+Tools used: Blender **5.3.0** at `D:\SteamLibrary\steamapps\common\Blender\blender.exe`, Node **24.11.1**, pinned **@gltf-transform/cli@4.5.1**, and system Python **3.13 + Pillow** for the delivery manifest. Blender supplies Python/NumPy. No cloud 3D or texture generation service is used.
 
 From the project root in PowerShell:
 
 ```powershell
-.\scripts\model-upgrade\rebuild.ps1
-# A different Blender installation can be passed explicitly:
-.\scripts\model-upgrade\rebuild.ps1 -Blender 'C:\path\to\blender.exe'
+.\scripts\model-upgrade\rebuild_global.ps1
+# Optional explicit installation:
+.\scripts\model-upgrade\rebuild_global.ps1 -Blender 'C:\path\to\blender.exe'
+# Viking alone, with the same current compression policy:
+.\scripts\model-upgrade\rebuild_viking.ps1
 ```
 
-The entry point downloads the credited MER ZIP only when missing, decodes the current InSight GLB, then runs:
+`rebuild_global.ps1` runs background Blender scripts, packs and validates all seven GLBs, then copies the verified files into `public/models/` and writes the manifest. It requires the existing local editable `.blend` sources under `assets-raw/model-upgrade/`, pinned pre-refinement exports under `assets-raw/global-refine/originals/`, the decoded `assets-raw/global-refine/insight-source.glb`, and raw NASA Viking source. These ignored local sources are intentionally separate from the web build. Pinned retained-input and InSight-source hashes prevent accidentally rebuilding from already-lossy/refined delivery files. Originals are never overwritten. Generated packed sources and intermediates go to `assets-raw/global-refine/`; Viking's packed source remains under `assets-raw/viking-material-upgrade/`.
+
+`build_assets.py` remains the original NASA MER normalization / Pathfinder / Phoenix / backshell construction script. Its finalization now calls `global_finishes.refine_scene`, so newly generated static pieces receive the same batching, LOD eligibility and data-map rules. `rebuild.ps1` is the earlier four-model reconstruction entry point; use `rebuild_global.ps1` for the current seven-file delivery and compression policy.
+
+To repack existing Blender exports without re-baking:
 
 ```powershell
-& 'D:\SteamLibrary\steamapps\common\Blender\blender.exe' -b --disable-autoexec --python-exit-code 1 --python scripts/model-upgrade/build_assets.py -- all
+npx -y --package=@gltf-transform/cli@4.5.1 node scripts/model-upgrade/pack_global.mjs
+npx -y --package=@gltf-transform/cli@4.5.1 node scripts/model-upgrade/validate_global.mjs
+# The rebuild entry point performs publication after validation.
+python scripts/model-upgrade/asset_report.py
+npm test
+npm run build
 ```
 
-It writes editable packed `mer.blend`, `pathfinder.blend`, `phoenix.blend` and `backshell.blend`, intermediate GLBs and measured anchors under ignored `assets-raw/model-upgrade/`. Original files from before this session are preserved under `assets-raw/model-upgrade/originals/`. This folder is intentionally not part of the web build.
-
-Materials use deterministic Python/NumPy UV sampling for foil creases, fabric weave, paint and silicon. Phoenix's white, silver and silicon have a cooler palette with a light procedural dust deposit. Colour, roughness and tangent normal maps are written as packed images. These are procedural surface bakes, not photogrammetry or a high-to-low Cycles bake. Static mesh transforms are baked into vertices before export so the runtime bounding box does not lift the arm or ramp. Tangents are completed with glTF-Transform's MikkTSpace generator. Each asset is then compressed with:
-
-```powershell
-npx -y @gltf-transform/cli@4.5.1 tangents assets-raw/model-upgrade/phoenix-raw.glb assets-raw/model-upgrade/phoenix-tangents.glb --overwrite true
-npx -y @gltf-transform/cli@4.5.1 optimize assets-raw/model-upgrade/phoenix-tangents.glb public/models/phoenix.glb --compress meshopt --texture-compress webp --texture-size 1024 --flatten false --join false --instance false --palette false --simplify false --prune false
-npx -y @gltf-transform/cli@4.5.1 validate public/models/phoenix.glb
-```
-
-The no-flatten/no-join/no-instance settings preserve the articulated node hierarchy, metre-frame pivots and empty contact markers. Branches that share a static finish are joined in Blender before compression. Final files load through the existing bundled meshopt decoder; no Draco CDN is introduced. Native metre assets do not receive a second bounding-box scale from MODEL_REGISTRY.
-
-## Animation contracts
-
-- **Spirit:** six independent `wheel-{right|left}-{front|middle|rear}` nodes. `mer-right-front-contact` is read by `rightFrontFoot` through the existing sink/tilt pose. The silica strip follows ground height with its existing 0.012 m anti-z-fighting offset. Loading a GLB mid-action rebuilds the contact position.
-- **Pathfinder:** `sojourner` retains unit scale and its original parked pose `[-2.6, 0, 0.5]`. The animation drives its local +X forward. Ramp centreline endpoints remain `[0.39, 0.135, 0.629]` and `[1.256, 0.045, 1.121]`, direction `[0.866, 0, 0.5]`. A perimeter-rail opening clears the egress path. The APXS is at axle level; the final reverse stop is calibrated from 2.68 to 2.56 m along the path so the actual new contact ring reaches the site's actual Barnacle Bill mesh. Ramp descent, forward swerve and reverse stages are retained.
-- **Phoenix:** `phoenix-arm` has identity rest rotation and origin `PHOENIX_SHOULDER = [-0.3, 1.06, 0.6]`. Its `phoenix-scoop` marker is `TIP = [-0.2, -1, 1.35]` relative to the shoulder. InSight's `SEIS`, `arm_01`, `cable_02` groups and upper deck-only hardware are removed before adding Phoenix instruments. The original InSight asset is unchanged.
-- **EDL:** only the shell/debris are in `backshell.glb`. The canopy and suspension lines are built outside the GLB's Suspense boundary and survive model loading. All 2,231 original canopy positions, colours and triangle indices match the pre-upgrade SHA-256 baselines in `scripts/model-upgrade/contracts.json`. The shader overlay still shares the canopy's exact position/index buffers.
-- **Hotspots:** all twenty [01]–[04] anchors for the five affected stations are measured against the final surfaces; Spirit's include its site tilt/sink. Phoenix's framing and the radio antenna points are adjusted to the new hardware. The runtime's existing story, orbit, free-flight, scout camera and signature mechanisms remain in place. Sojourner/Phoenix references rebind when a loaded model replaces the fallback.
+Packing uses glTF-Transform meshopt high compression for rebuilt static assets, preserves existing quantization frames on Pathfinder/backshell/Ingenuity, and uses a separate position-lossless meshopt writer for Viking. Attribute/texture-only pruning removes unused buffers, and texture deduplication never merges articulated nodes.
 
 ## Verification
 
-```powershell
-npm test
-npm run build
-python scripts/model-upgrade/asset_report.py
-```
+- **363 tests in 20 files pass**; `npm run build` passes TypeScript and Vite without errors.
+- All **seven GLBs validate with 0 errors and 0 warnings**, including explicit tangent space for every normal-mapped primitive.
+- Existing binary regressions decode the real meshopt buffers and retain all animation, contact, canopy and hotspot checks. New regressions cover fleet size, static triangle limits, MER node/batch retention, complete data maps, culling exceptions, reflection update throttling and per-instance shader/material isolation.
+- Headless **1280×800** before/after captures cover nine stops: Viking 1 day/night/scan, Viking 2 frost, Pathfinder rollout/rock contact, Spirit drag, Opportunity storm, Phoenix trench, InSight day/night/quake, Backshell decode, Ingenuity endpoint, and AR Hangar's nine-model row day/night. Browser console/page errors: **0**. Existing Three.js Clock and PCFSoftShadowMap deprecation warnings remain.
+- Seven additional Hangar close-ups check InSight day/night, both MER finishes, Phoenix, Viking and the real Ingenuity. An idle 180-frame interval adds **0 bakes**; eight rapid day/night toggles add **1 bake** during the input burst, then settle cleanly. The renderer's texture count stays at **129** throughout these idle/toggle checks.
+- On matched settled wide views, Spirit and Opportunity frame calls fall **103 → 74**. The Hangar row falls **219 → 166** (24.2%), including its stage/grid/UI-associated scene objects. InSight's sampled visible triangles fall **177,165 → 97,681**, Phoenix **317,160 → 262,659**. These frame counts are view-dependent and exclude the occasional PMREM bake/blend pass.
 
-The suite includes the shipped compressed binary geometry, metre pivots, six MER wheel nodes, ramp clearance at eleven positions, APXS-to-actual-rock contact, Phoenix scoop rotation into the trench, all twenty hotspot-to-surface distances, texture/size/extension constraints and exact canopy hashes. The complete suite contains 290 tests in 15 files.
-
-For browser QA, start the development server, open the app with a Playwright CLI session, take a fresh snapshot, and run `scripts/model-upgrade/browser-qa.js` through `run-code --filename`. Both headed visual inspection and a headless pass are used; the latter avoids Windows occlusion throttling. The script waits for real animation frames and uses the actual route buttons, hour sliders, bearing control, signature sliders, keyboard-activated hotspot buttons and Reset wide view. It records a complete revolution, slider poses and local companion flight for Pathfinder, Spirit, Opportunity, Phoenix and EDL. Screenshots are saved locally under ignored `output/playwright/model-upgrade/`. Save and assert the in-browser report after the run with:
-
-```powershell
-npx -y @playwright/cli -s=model-verify eval '() => JSON.stringify(window.__modelUpgradeReport)' --raw | python scripts/model-upgrade/save_browser_report.py
-```
-
-The project does not gain any production debug hook; the temporary report exists only in the QA browser page.
-
-Final results after calibration (14 November 2026, Asia/Kuala_Lumpur):
-
-- `npm test`: **290 passed, 15 test files**. `npm run build`: TypeScript and Vite build passed.
-- glTF-Transform validation: **zero errors and zero warnings for all four final GLBs**. The bundled meshopt geometry is also actually decoded by the binary regression fixtures.
-- Browser QA: **all five stations passed, no page errors or QA issues**. Each completed **405°** of orbit using the bearing control, its signature slider sequence, and a hotspot close-up with Ingenuity taking flight. Screenshots include the composed view, reverse view, signature result and companion close-up for each station.
-- Pathfinder: APXS-to-nearest-rock-vertex distance **0.01465 m** at the final stop; the tighter triangle-surface contact regression passes at less than **0.012 m**. All eleven ramp clearance samples pass.
-- Spirit: reverse displacement **0.7 m**; the complete silica strip remains at **0.012 m above the flat terrain**, aligned with the jammed wheel.
-- Phoenix: measured shoulder `[-0.3000000, 1.0599580, 0.6000000]` after compression/grounding (within 0.05 mm of the specified shoulder). The scoop enters the ground during the digging motion, then raises while the four-sol ice sequence completes. The original `insight.glb` retains SHA-256 `b61af4d29e1ac87f9e114f0ba43ba63d9ed16daeb9cf499781852fbefb27f477`.
-- EDL: **2,231 canopy vertices**, unchanged position/colour/index hashes, a shared position buffer in the decode overlay, and **all four rings decoded** at the final slider value.
-
-Local evidence: [runtime report](../output/playwright/model-upgrade/report.json), [Pathfinder action](../output/playwright/model-upgrade/pathfinder-sojourner-signature.png), [Spirit action](../output/playwright/model-upgrade/spirit-signature.png), [Opportunity storm](../output/playwright/model-upgrade/opportunity-signature.png), [Phoenix action](../output/playwright/model-upgrade/phoenix-signature.png), [backshell and canopy](../output/playwright/model-upgrade/mars2020-edl-wide.png), and [EDL decode](../output/playwright/model-upgrade/mars2020-edl-signature.png). These QA files are local, ignored build artifacts, so those links are intended for the working checkout. The two browser console warnings are pre-existing Three.js deprecations (Clock and PCFSoftShadowMap).
-
-The reconstructions, material wear and resting/damage conditions remain illustrative; this upgrade is not a claim of measured NASA engineering CAD accuracy.
-
-## Viking material refresh — 15 November 2026
-
-`public/models/viking-lander.glb` is re-exported from the local NASA/Michael D. Carbajal source `assets-raw/viking-lander.glb`. The earlier shipped file had been simplified to 68,432 triangles. This refresh uses all **99,526 original NASA triangles** (65,500 in `polySurfa1`, 34,026 in `polySurfa2`), with exact float32 triangle positions and winding, the original orientation, and the three-node `viking_car → polySurfa1 / polySurfa2` hierarchy. Geometry is not joined, flattened, remeshed, displaced or simplified. The packed editable source is `assets-raw/viking-material-upgrade/viking-materials.blend`.
-
-The source had no UVs. Blender adds UV islands, then uses deterministic NumPy surface sampling and the packed-image pipeline from `build_assets.py` to bake these finishes:
-
-| Source material | Illustrative finish |
-| --- | --- |
-| `blinn4SG`, `blinn11SG` | Aged ivory thermal paint, fine grains and shallow panel-seam normal detail |
-| `blinn8SG`, `initialShadingGr` | Brushed aluminium and satin titanium, with varying roughness and metallic coverage |
-| `blinn6SG`, `blinn9SG` | Carbon/charcoal instrument shrouds |
-| `blinn2SG`, `blinn10SG` | Muted copper-gold foil and harness details |
-| `blinn12SG` | Oxidised copper cable braid |
-
-The white source materials also cover some feet and outer supports. Their lower, outward surfaces receive a metal finish through the baked maps, while keeping their original material slots and nodes. Orange-red dust is baked from upward-facing normals and normalized height above the ground, with patchiness and a stronger deposit on lower surfaces. Paint, microrelief, wear, metal assignments and dust are **illustrative artistic adjustments**, not measured present-day Viking surface conditions or NASA-authored textures. Normal maps provide surface detail; vertex positions remain unchanged.
-
-The delivered asset is **3,659,572 bytes**, with 27 embedded WebP images: nine 1024² colour maps, nine 512² tangent normal maps and nine 512² packed roughness/metallic maps. Tangents are completed with glTF-Transform 4.5.1. The CLI resizes the data maps, compresses colour with WebP quality 88, and uses near-lossless WebP quality 90 for the data maps. Normal/tangent attributes use 12-bit precision and UVs 16-bit precision. Positions remain lossless FLOAT32. The final glTF-Transform meshopt writer compresses these buffers without position quantization, retaining the exact original three-node graph rather than adding decode-transform nodes. Attribute-only pruning removes unused buffers. Hashes, material mappings, texture dimensions and bake parameters are in [viking-materials.json](viking-materials.json); the immutable NASA geometry reference is [viking-contract.json](../scripts/model-upgrade/viking-contract.json).
-
-Rebuild from the project root:
-
-```powershell
-.\scripts\model-upgrade\rebuild_viking.ps1
-# Optional explicit Blender path:
-.\scripts\model-upgrade\rebuild_viking.ps1 -Blender 'D:\SteamLibrary\steamapps\common\Blender\blender.exe'
-```
-
-This runs the background Blender bake, glTF-Transform CLI tangent/resize/WebP steps, the node-preserving meshopt writer and glTF validation before copying the result to `public/models/viking-lander.glb`. It uses the same local Blender 5.3.0 and pinned glTF-Transform CLI 4.5.1 as the previous assets. The raw NASA source is never overwritten.
-
-`Lights.tsx` reduces the camera-side night fill from **0.85 to 0.5**, retaining the raking night key and the lander's dark-side volume. The runtime Viking model registry, Viking 1 scan-camera offsets and Viking 2 frost shader are unchanged. UV seam splits change the sampling weights of `rightFrontFoot` slightly: its new position is within **3.69 mm** of the unsimplified NASA source estimate, with the original normalized bounding box and 2 m height preserved.
-
-Verification: **296 tests in 16 files pass**, `npm run build` passes, and glTF validation reports **0 errors and 0 warnings**. New asset regressions independently decode the shipped meshopt geometry and check exact directed triangle hashes, node structure, original orientation, foot-camera alignment, all nine PBR material slots, embedded WebP dimensions, UVs and tangents. Other station GLBs and the Viking signature source retain their pre-refresh hashes.
-
-The 1280×800 browser comparison covers Viking 1 at 12:00 and 02:00, first-photo scan completion and clearing, and Viking 2 with frost off/on in daylight and at night. All nine source materials load their colour, normal and roughness/metallic maps. The scan retains its 728×280 render and responds to the slider; its grayscale exposure naturally responds to the darker metal footpad. The frost shader still chains the ground-edge shader. Browser console errors: **0**. Local comparison screenshots and runtime reports are under ignored `output/playwright/viking-materials/`; open [the comparison page](../output/playwright/viking-materials/index.html).
+The local comparison page and measured runtime reports are under ignored [output/playwright/global-refine/](../output/playwright/global-refine/index.html). The browser uses actual GPU/WebGL rendering and real animation frames; QA-only page variables do not ship in the app. Desktop Hangar is checked; a phone's camera/WebXR session requires a physical device and is not claimed by this headless check.

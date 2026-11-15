@@ -14,6 +14,7 @@ import { live } from '../../scene/registry';
 import { useApp } from '../../store';
 import { MACHINE_IDS, type MachineId } from '../../types';
 import { NavcamOverlay } from '../NavcamOverlay';
+import { AutoTour } from './AutoTour';
 import { BearingBar } from './BearingBar';
 import { Dock, FaultBanner } from './Dock';
 import { FocusControls } from './FocusControls';
@@ -31,10 +32,15 @@ export function Hud() {
   // for the picture: never a new stop's text while the camera is still climbing out of the last one.
   const stageCard = stage === 'site' ? MACHINE_IDS[leg] : stage === 'prologue' ? HOME : null;
   const cardId = useSceneReached(stageCard);
+  // The opening descent after "Begin Flight 73" is a clean shot: no dock, card or hints until the
+  // camera has all but landed at home, then the HUD fades in (the bearing ruler stays in the console).
+  const landedHome = useSceneReached(stage === 'prologue' ? HOME : null, OPENING_HUD_BLEND);
+  const descending = stage === 'prologue' && landedHome !== HOME;
   // Scout photos pinned at the bottom right: the console keeps clear of their column.
   const roll = useApp(s => s.flight.stage === 'site' && s.snapshots.length > 0);
   return (
-    <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}${roll ? ' with-roll' : ''}`}>
+    <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}${roll ? ' with-roll' : ''}${descending ? ' hud-descending' : ''}`}>
+      <AutoTour />
       <NavcamOverlay />
       <ScoutCam />
       <GuideBubble />
@@ -60,7 +66,7 @@ const CARD_BLEND = 0.6;
  * and as soon as `id` changes. Polled each animation frame from the scene's live shot; it
  * re-renders only when the answer changes, and stays true for that stop once reached.
  */
-function useSceneReached(id: MachineId | null): MachineId | null {
+function useSceneReached(id: MachineId | null, blend = CARD_BLEND): MachineId | null {
   const [reached, setReached] = useState<MachineId | null>(null);
   useEffect(() => {
     setReached(null);
@@ -68,7 +74,7 @@ function useSceneReached(id: MachineId | null): MachineId | null {
     let raf = 0;
     const loop = () => {
       const shot = live.shot;
-      if (shot.siteId === id && shot.blend >= CARD_BLEND) {
+      if (shot.siteId === id && shot.blend >= blend) {
         setReached(id);
         return;
       }
@@ -76,9 +82,12 @@ function useSceneReached(id: MachineId | null): MachineId | null {
     };
     loop();
     return () => cancelAnimationFrame(raf);
-  }, [id]);
+  }, [id, blend]);
   return reached === id ? id : null;
 }
+
+/** The opening descent shows the landing alone: the HUD fades in once the camera is this far down (shot blend). */
+const OPENING_HUD_BLEND = 0.9;
 
 /** Hold Space to boost while flying. */
 function useBoostKeys() {

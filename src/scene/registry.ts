@@ -3,7 +3,7 @@
 
 import { Box3, Matrix4, Quaternion, Vector3, type Group, type Object3D } from 'three';
 import type { Shot } from './choreo';
-import { HOME_YAW } from './layout';
+import { HOME_YAW, TITLE_EL } from './layout';
 import type { SkyLook } from './sites';
 
 /** useFrame priorities: the Director runs first, then the camera, then OrbitControls (−1), then the rest (0). */
@@ -22,6 +22,10 @@ export const live = {
   yaw: HOME_YAW,
   /** Sky and light at the diorama in use, for the real "now" (written by the Diorama). */
   siteLook: null as SkyLook | null,
+  /** The active terrain's rendered triangle surface, for real landings and contact shadows. */
+  surface: { site: null as string | null, heightAt: null as ((x: number, z: number) => number) | null },
+  /** The visible physical Ingenuity rig (never the golden phantom), in world space. */
+  landedIngenuity: null as Object3D | null,
   /** Unit vector toward the Sun in world space (the real Sun for "now"). */
   sun: new Vector3(1, 0, 0),
   /** The diorama in use: diorama-local metres → world (includes SITE_SCALE). */
@@ -94,4 +98,12 @@ export const live = {
   scoutTarget: null as string | null,
   /** Ingenuity's position this frame, world space (written by Ingenuity; the searchlight reads it). */
   flyerWorld: new Vector3(),
+  /**
+   * The visitor turning Mars on the title screen (src/scene/TitleGlobeInput.tsx): drags turn
+   * live.yaw and pitch the camera's elevation `el` (radians, TITLE_EL by default; the CameraRig
+   * frames Mars from there). `spun`: Mars stays where the visitor left it (the Director stops
+   * settling it onto the lit view). vy / velEl: angular velocity, rad/s, for the coast after a
+   * flick. `reset`: easing back to the title's own view (double-click), cleared once there.
+   */
+  titleDrag: { spun: false, vy: 0, el: TITLE_EL, velEl: 0, reset: false },
 };

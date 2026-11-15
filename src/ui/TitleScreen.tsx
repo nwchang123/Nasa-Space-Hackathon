@@ -43,7 +43,8 @@ const Reticle = memo(function Reticle() {
   );
 });
 
-export function TitleScreen() {
+/** `leaving`: "Begin Flight 73" was pressed; the title fades out (App keeps it up a moment). */
+export function TitleScreen({ leaving = false }: { leaving?: boolean }) {
   const startFlight = useApp(s => s.startFlight);
   const screen = useRef<HTMLElement>(null);
   // Ticks every second, which also keeps the light time and Jezero's solar clock current.
@@ -78,7 +79,13 @@ export function TitleScreen() {
   }, []);
 
   return (
-    <section ref={screen} className="title-screen" aria-labelledby="title-heading">
+    <section
+      ref={screen}
+      className={`title-screen${leaving ? ' title-leaving' : ''}`}
+      aria-labelledby="title-heading"
+      aria-hidden={leaving || undefined}
+      inert={leaving || undefined}
+    >
       <div className="title-frame" aria-hidden="true" />
       <div className="title-marks" aria-hidden="true">
         <span className="tf-mark tf-tl" />
@@ -94,7 +101,8 @@ export function TitleScreen() {
 
       <header className="title-bar title-bar-top reveal" style={{ animationDelay: '0.1s' }}>
         <span className="tb-loc">
-          <span aria-hidden="true">[ </span>Jezero <span aria-hidden="true">·</span> {homeCoords}
+          <span aria-hidden="true">[ </span>
+          {homeSite}, Jezero <span aria-hidden="true">·</span> {homeCoords}
           <span aria-hidden="true"> ]</span>
         </span>
         <span
@@ -108,20 +116,16 @@ export function TitleScreen() {
 
       {/* margin-top: auto keeps the brief low; on short viewports the layer scrolls instead of clipping. */}
       <div className="title-brief">
+        {/* No eyebrow over the title: the place is in the top bar, Flight 73 in the lede and the button. */}
         <div className="title-rail">
-          <p className="title-eyebrow reveal" style={{ animationDelay: '0.25s' }}>
-            <span aria-hidden="true">[ </span>Flight 73 <span aria-hidden="true">// </span>
-            {homeSite}
-            <span aria-hidden="true"> ]</span>
-          </p>
-          <h1 id="title-heading" className="reveal" style={{ animationDelay: '0.45s' }}>
+          <h1 id="title-heading" className="reveal" style={{ animationDelay: '0.3s' }}>
             Still&nbsp;Here
           </h1>
-          <p className="lede reveal" style={{ animationDelay: '0.7s' }}>
+          <p className="lede reveal" style={{ animationDelay: '0.55s' }}>
             <span>Ingenuity flew 72 times on Mars.</span> <span>This is the flight it never got to make.</span>
           </p>
         </div>
-        <div className="title-actions reveal" style={{ animationDelay: '0.95s' }}>
+        <div className="title-actions reveal" style={{ animationDelay: '0.8s' }}>
           <button type="button" className="primary title-begin" onClick={startFlight}>
             Begin Flight 73
           </button>
@@ -138,6 +142,12 @@ export function TitleScreen() {
           <span aria-hidden="true"> ]</span>
         </p>
       </footer>
+
+      {/* Mars can be turned (src/scene/TitleGlobeInput.tsx): a quiet hint under it, gone after the first drag. */}
+      <p className="title-drag-hint" aria-hidden="true">
+        <span className="tdh-fine">[ Drag Mars to orbit · dbl-click reset ]</span>
+        <span className="tdh-touch">[ Swipe Mars to orbit · double-tap reset ]</span>
+      </p>
     </section>
   );
 }

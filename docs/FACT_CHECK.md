@@ -261,7 +261,7 @@ Short source keys:
 | Title header "Solar 12:20" (example): Mars local true solar time at Ingenuity's listed longitude (77.4° E), computed live with the Mars24 algorithm (Allison & McEwen 2000); the globe is lit to match, see CREDITS | CREDITS |
 | Title header "Light 21 min 55 s" (example): light time from Earth to Mars and back, now, computed live from JPL's approximate Keplerian elements (Standish), see CREDITS | CREDITS |
 | Title footer "53,307 km · 9 stops · 17.0 km real": the length of the imagined route; 9 stops = 8 sites + Ingenuity's home; 17.0 km is the total of Ingenuity's 72 real flights, as its tooltip says | `MACHINE_IDS`, ING |
-| Title eyebrow "Flight 73 // Valinor Hills": Valinor Hills is the site listed for Ingenuity (`machine.site`), where it rests after Flight 72 | `MACHINE_BY_ID.ingenuity`, INGB |
+| Title top bar "[ Valinor Hills, Jezero · 18.4°N 77.4°E ]": Valinor Hills is the site listed for Ingenuity (`machine.site`), where it rests after Flight 72 | `MACHINE_BY_ID.ingenuity`, INGB |
 | Epilogue stats "17.0 km / 72 real flights" | ING |
 | Site card relay note at stop 9 (Perseverance relayed messages): logged under "ingenuity" above, confirmed | INGB |
 | "Navcam B&W view" in flight: Ingenuity carries "one black-and-white 0.5 megapixel downward-facing navigation camera" (INGPK, key listed under "Signature actions" below; checked 14 Nov 2026; ING mentions the navigation camera but not its colour). The overlay deliberately shows no altitude: the flight arcs are exaggerated (up to 0.22 Mars radii), so a number would mislead. | INGPK, INGX |

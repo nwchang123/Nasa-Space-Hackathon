@@ -1,6 +1,7 @@
 // The top HUD bar, one slim row: the beacon and "Flight 73", the nine stops spread across the middle
 // (pick any to fly straight there), then the distance flown, the UTC clock, the flight camera and
-// the sound, and the AR hangar (on the ground only). Where we are is shown by the amber stop (and
+// the sound, the AR hangar (on the ground only), and the auto tour's switch (with "Resume" while the
+// visitor has taken over). Where we are is shown by the amber stop (and
 // spelled out by the dock and site card), so the status line is for screen readers only.
 
 import { useMemo, useState } from 'react';
@@ -12,6 +13,7 @@ import { MACHINE_IDS } from '../../types';
 import { formatKm } from '../callPlan';
 import { isMuted, setMuted } from '../sound';
 import { prefersReducedMotion, useUtcClock } from '../useClock';
+import { TourToggle } from './AutoTour';
 
 export function TopBar() {
   const flight = useApp(s => s.flight);
@@ -61,6 +63,7 @@ export function TopBar() {
         )}
         {/* While flying the camera toggle needs the room, and a leg is never left half flown. */}
         {flight.stage !== 'flying' && <HangarButton place="top" />}
+        <TourToggle />
         <button
           type="button"
           className="icon-btn"

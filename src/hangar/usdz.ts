@@ -96,7 +96,7 @@ export function exportCopy(root: Object3D, plan: ExportPlan): { scene: Group; di
       }
       mesh.material = one;
     }
-    if (mesh.name === 'parachute') return;
+    if (mesh.name === 'parachute' || mesh.name === 'parachute-lines') return;
     shown.add(mesh.geometry);
     const cellLocal = plan.cell / mesh.matrixWorld.getMaxScaleOnAxis();
     const twoSided = mat.side === DoubleSide && isThin(mesh.geometry);

@@ -1,23 +1,32 @@
-// Ingenuity as the guide at every stop: a radio feed docked at the HUD's top-left edge, just under
-// the route bar, so the diorama in the middle of the screen stays clear. On arrival (once the camera
-// has settled at the stop and Ingenuity has landed) it types out the stop's arrivalIntro, with radio
-// squelch and telegraph ticks, and Ingenuity reads it aloud (the voiceover, on unless the visitor
-// switched it off); the typing then keeps pace with the voice, pausing where it pauses.
-// When the visitor finishes the stop's signature action (the scan done, the frost on, the storm at
+// Ingenuity as the guide, all the way: a radio feed docked at the HUD's top-left edge, just under
+// the route bar, so the diorama in the middle of the screen stays clear. One feed per stage:
+// - at home before lift-off, once the opening dive has landed: who Ingenuity is and how Flight 72
+//   broke its blades (the dock holds the rotor test until this has been said), then, after the
+//   failed test, the turn to Flight 73;
+// - on each leg, from the take-off: Ingenuity's lines on the way;
+// - at each stop, once the camera has settled and Ingenuity has landed: the stop's arrivalIntro;
+// - home again: the closing lines.
+// Each message is typed out with radio squelch and telegraph ticks, and Ingenuity reads it aloud
+// (the voiceover, on unless the visitor switched it off): its recorded clip where there is one,
+// the browser's speech otherwise; the typing keeps pace with the voice, pausing where it pauses.
+// When the visitor finishes a stop's signature action (the scan done, the frost on, the storm at
 // full strength…) it answers with the stop's inheritance line and a telemetry chirp. While the
 // camera is close up on a part, its header says what Ingenuity is scanning. After a while it folds
 // into a one-line chip that replays the last message. It hides under the scout camera's viewfinder.
+// What it is saying, and when the visitor has heard it, is published in useFeed (src/ui/tour.ts).
 //
-// Rendered by the HUD (src/ui/hud/Hud.tsx), one feed per stop. Its height is published on the HUD
-// as --feed-h, so the site card below it in the same left column never grows into it.
+// Rendered by the HUD (src/ui/hud/Hud.tsx). Its height is published on the HUD as --feed-h, so the
+// site card below it in the same left column never grows into it.
 
-import { useEffect, useRef, useState } from 'react';
-import { LEG_SCRIPTS } from '../data/flight';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { EPILOGUE, LEG_SCRIPTS, PROLOGUE, PROLOGUE_TEST_AT } from '../data/flight';
 import { MACHINE_BY_ID } from '../data/machines';
 import { SIGNATURES, type SignatureDef } from '../data/signatures';
-import { currentStop, useApp } from '../store';
+import { HOME, hop } from '../flight/route';
+import { currentStop, useApp, type AppState, type Stage } from '../store';
 import type { MachineId } from '../types';
 import { isMuted, playChirp, playRadioClose, playRadioOpen, playTypeTick } from '../ui/sound';
+import { readingMs, useFeed } from '../ui/tour';
 import { isVoiceOn, onVoiceChange, preloadVoice, setVoice, speak, stopSpeaking, voiceSupported, type Speech } from '../ui/voice';
 import { live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
@@ -77,9 +86,22 @@ const BUTTON_REACT_MAX_MS = 10000;
 interface Msg {
   /** Changes on every (re)play, so the same text can be typed again. */
   id: number;
-  kind: 'intro' | 'react';
+  /** 'intro': the feed's opening message; 'imagine': the prologue's turn to Flight 73; 'react': a signature action's answer. */
+  kind: 'intro' | 'imagine' | 'react';
   tag: string;
   lines: string[];
+}
+
+/** One stage's feed. */
+interface Feed {
+  /** Also the React key: 'prologue', 'flying:<leg>:<from>:<start>', 'site:<stop>', 'epilogue'. */
+  key: string;
+  /** The stop standing at (site stage only): its signature actions and close-ups. */
+  stop: MachineId | null;
+  /** The opening message, said once the feed is fully up. */
+  intro: { tag: string; lines: string[] };
+  /** How much the feed shows now, 0..1, polled each animation frame. */
+  fade(): number;
 }
 
 /** What the close-up camera is on (store.focus), read defensively. */
@@ -90,10 +112,11 @@ interface FocusLike {
 const selectFocus = (s: object): FocusLike | null => (s as { focus?: FocusLike | null }).focus ?? null;
 const selectScout = (s: object): boolean => !!(s as { scoutCam?: boolean }).scoutCam;
 
-/** How much the feed shows: at this stop's site stage, once the dive has settled and the screen is clear. */
-function feedFade(stop: MachineId): number {
+/** How much a feed standing at `stop` shows: in `stage`, once the dive has settled there and the screen is clear. */
+function settledFade(stop: MachineId, stage: Stage): number {
   const s = useApp.getState();
-  if (s.phase !== 'flight' || s.flight.stage !== 'site' || currentStop(s.flight) !== stop) return 0;
+  if (s.phase !== 'flight' || s.flight.stage !== stage) return 0;
+  if (stage === 'site' && currentStop(s.flight) !== stop) return 0;
   if (selectScout(s)) return 0;
   const shot = live.shot;
   if (shot.siteId !== stop || !live.site.valid || !shot.ingenuity) return 0;
@@ -101,17 +124,68 @@ function feedFade(stop: MachineId): number {
   return settle * (1 - Math.min(1, live.black * 3));
 }
 
-/** Ingenuity's radio feed while standing at a stop; nothing anywhere else. */
-export function GuideBubble() {
-  const stop = useApp(s => (s.phase === 'flight' && s.flight.stage === 'site' ? currentStop(s.flight) : null));
-  return stop ? <RadioFeed key={stop} stop={stop} /> : null;
+/** In `stage` at all (the leg's feed shows from the take-off), clear of the black dip and the viewfinder. */
+function stageFade(stage: Stage): number {
+  const s = useApp.getState();
+  if (s.phase !== 'flight' || s.flight.stage !== stage || selectScout(s)) return 0;
+  return 1 - Math.min(1, live.black * 3);
 }
 
-function RadioFeed({ stop }: { stop: MachineId }) {
-  const script = LEG_SCRIPTS[stop];
-  const machine = MACHINE_BY_ID[stop];
+/** Home again: the closing lines come up this long after the epilogue began even if the view never settled at home, ms. */
+const EPILOGUE_FEED_LATE_MS = 4000;
+
+/** The current stage's feed key, or null outside the flight. */
+function feedKey(s: AppState): string | null {
+  if (s.phase !== 'flight') return null;
+  const f = s.flight;
+  if (f.stage === 'prologue' || f.stage === 'epilogue') return f.stage;
+  if (f.stage === 'flying') return `flying:${f.leg}:${f.from}:${f.stageStartedAt}`;
+  const stop = currentStop(f);
+  return stop ? `site:${stop}` : null;
+}
+
+function feedFor(key: string): Feed {
+  const [kind, a, b] = key.split(':');
+  if (kind === 'prologue') {
+    return { key, stop: null, intro: { tag: 'Valinor Hills · Flight 72', lines: PROLOGUE.slice(0, PROLOGUE_TEST_AT) }, fade: () => settledFade(HOME, 'prologue') };
+  }
+  if (kind === 'epilogue') {
+    // The view rises to the whole globe while the closing lines are still being said: once the
+    // feed is up it stays up. (If the view never settled at home, it comes up anyway.)
+    let up = false;
+    return {
+      key,
+      stop: null,
+      intro: { tag: 'Home again', lines: EPILOGUE },
+      fade: () => {
+        const s = useApp.getState();
+        const late = s.flight.stage === 'epilogue' && Date.now() - s.flight.stageStartedAt > EPILOGUE_FEED_LATE_MS;
+        if (!up && (settledFade(HOME, 'epilogue') > 0.95 || late)) up = true;
+        return up ? stageFade('epilogue') : settledFade(HOME, 'epilogue');
+      },
+    };
+  }
+  if (kind === 'flying') {
+    const h = hop(b as MachineId, Number(a));
+    const to = MACHINE_BY_ID[h.to];
+    // The scripted lines name the planned leg's geometry, so a direct hop gets a plain line instead.
+    const lines = h.onRoute ? LEG_SCRIPTS[h.to].enRoute : [`Off the planned route: straight from ${MACHINE_BY_ID[h.from].shortName} to ${to.shortName}.`];
+    return { key, stop: null, intro: { tag: `${h.onRoute ? `Leg ${Number(a) + 1}` : 'Direct hop'} · to ${to.shortName}`, lines }, fade: () => stageFade('flying') };
+  }
+  const stop = a as MachineId;
+  return { key, stop, intro: { tag: `Arrived · ${MACHINE_BY_ID[stop].shortName}`, lines: LEG_SCRIPTS[stop].arrivalIntro }, fade: () => settledFade(stop, 'site') };
+}
+
+/** Ingenuity's radio feed, one per stage of the flight; nothing outside it. */
+export function GuideBubble() {
+  const key = useApp(feedKey);
+  const feed = useMemo(() => (key ? feedFor(key) : null), [key]);
+  return feed ? <RadioFeed key={feed.key} feed={feed} /> : null;
+}
+
+function RadioFeed({ feed }: { feed: Feed }) {
+  const stop = feed.stop;
   const reduced = useReducedMotion();
-  const stage = useApp(s => s.flight.stage);
   const focus = useApp(selectFocus);
   const root = useRef<HTMLDivElement>(null);
   const [arrived, setArrived] = useState(false);
@@ -142,7 +216,7 @@ function RadioFeed({ stop }: { stop: MachineId }) {
     resize.observe(el);
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      const fade = feedFade(stop);
+      const fade = feed.fade();
       if (!landed && fade > 0.95) {
         landed = true;
         setArrived(true);
@@ -162,15 +236,47 @@ function RadioFeed({ stop }: { stop: MachineId }) {
       resize.disconnect();
       hud.style.removeProperty('--feed-h');
     };
-  }, [stop]);
+  }, [feed]);
 
-  // Arrival: the intro, once the camera has settled at the stop.
+  // The opening message, once the feed is fully up (at a stop: once the camera has settled there).
   useEffect(() => {
-    if (arrived) setMsg({ id: Date.now(), kind: 'intro', tag: `Arrived · ${machine.shortName}`, lines: script.arrivalIntro });
-  }, [arrived, script, machine]);
+    if (arrived) setMsg({ id: Date.now(), kind: 'intro', tag: feed.intro.tag, lines: feed.intro.lines });
+  }, [arrived, feed]);
+
+  // The prologue, after the failed rotor test: the turn to Flight 73.
+  const imagine = useApp(s => feed.key === 'prologue' && s.flight.stage === 'prologue' && s.prologue.step === 'imagine');
+  useEffect(() => {
+    if (imagine) setMsg({ id: Date.now(), kind: 'imagine', tag: 'Flight 73', lines: PROLOGUE.slice(PROLOGUE_TEST_AT) });
+  }, [imagine]);
+
+  // What the feed is saying, for the dock and the auto tour; and once it has been heard (the voice
+  // finished) or, without the voice, had its time to be read.
+  const speechRef = useRef<Speech | null>(null);
+  useEffect(() => {
+    useFeed.setState({ key: feed.key, kind: msg?.kind ?? null, id: msg?.id ?? 0, done: false });
+  }, [feed, msg]);
+  useEffect(() => () => useFeed.setState({ key: '', kind: null, id: 0, done: false }), []);
+  useEffect(() => {
+    if (!done || !msg) return;
+    const read = readingMs(text);
+    const t = window.setInterval(() => {
+      const sp = speechRef.current;
+      const said = sp ? sp.charsAt() : null;
+      const elapsed = Date.now() - msg.id - OPEN_MS;
+      // While the voice is still going, wait for it (within reason); without it, the reading time.
+      const heard = said !== null ? said >= text.length || elapsed > read * 2 + 4000 : elapsed >= read;
+      if (heard) {
+        window.clearInterval(t);
+        if (useFeed.getState().id === msg.id) useFeed.setState({ done: true });
+      }
+    }, 150);
+    return () => window.clearInterval(t);
+  }, [done, msg, text]);
 
   // Reactions to the stop's signature actions.
   useEffect(() => {
+    if (!stop) return;
+    const script = LEG_SCRIPTS[stop];
     const defs = SIGNATURES[stop] ?? [];
     if (defs.length === 0) return;
     const timers: number[] = [];
@@ -218,12 +324,12 @@ function RadioFeed({ stop }: { stop: MachineId }) {
       unsub();
       for (const t of timers) window.clearTimeout(t);
     };
-  }, [stop, script]);
+  }, [stop]);
 
-  // Load this stop's voice clips ahead of the arrival.
+  // Load the feed's voice clips (a stop's intro and inheritance) ahead of the arrival.
   useEffect(() => {
-    if (voice) preloadVoice([script.arrivalIntro, [script.inheritance]]);
-  }, [voice, script]);
+    if (voice) preloadVoice(stop ? [feed.intro.lines, [LEG_SCRIPTS[stop].inheritance]] : [feed.intro.lines]);
+  }, [voice, feed, stop]);
 
   // Type the message out, with radio sounds, and read it aloud if the voiceover is on. With the
   // voice, the typing follows the clip's own clock (each phrase typed while it is spoken); without
@@ -239,10 +345,12 @@ function RadioFeed({ stop }: { stop: MachineId }) {
     let timer = 0;
     let raf = 0;
     let speech: Speech | null = null;
+    speechRef.current = null;
     if (reduced) {
       setTyped(full.length);
       timer = window.setTimeout(() => {
         speech = speak(msg.lines);
+        speechRef.current = speech;
       }, OPEN_MS);
       return () => {
         window.clearTimeout(timer);
@@ -271,6 +379,7 @@ function RadioFeed({ stop }: { stop: MachineId }) {
       const n = speech?.charsAt() ?? null;
       if (n === null) {
         speech = null;
+        speechRef.current = null;
         timer = window.setTimeout(step, CHAR_MS);
         return;
       }
@@ -279,6 +388,7 @@ function RadioFeed({ stop }: { stop: MachineId }) {
     };
     timer = window.setTimeout(() => {
       speech = speak(msg.lines);
+      speechRef.current = speech;
       if (speech) follow();
       else step();
     }, OPEN_MS);
@@ -292,7 +402,7 @@ function RadioFeed({ stop }: { stop: MachineId }) {
   // A finished message folds into the chip after a while (not while the pointer is on it).
   useEffect(() => {
     if (!done || !open || !msg) return;
-    const ms = holdKey > 0 ? HOLD_AFTER_HOVER_MS : msg.kind === 'intro' ? HOLD_INTRO_MS : HOLD_REACT_MS;
+    const ms = holdKey > 0 ? HOLD_AFTER_HOVER_MS : msg.kind === 'react' ? HOLD_REACT_MS : HOLD_INTRO_MS;
     const t = window.setTimeout(() => {
       if (!hovered.current) setOpen(false);
     }, ms);
@@ -307,11 +417,9 @@ function RadioFeed({ stop }: { stop: MachineId }) {
     // Only on a new subject, not when a message finishes while one is in view.
   }, [focusKey]);
 
-  // Voiceover switch, kept in step with the voice module; silence when muted or leaving the stop.
+  // Voiceover switch, kept in step with the voice module; silence when muted or leaving the stage.
   useEffect(() => onVoiceChange(setVoiceState), []);
-  useEffect(() => {
-    if (stage !== 'site') stopSpeaking();
-  }, [stage]);
+  useEffect(() => () => stopSpeaking(), []);
   useEffect(() => {
     if (!voice) return;
     const t = window.setInterval(() => {
@@ -330,7 +438,7 @@ function RadioFeed({ stop }: { stop: MachineId }) {
     if (on) replay();
   };
 
-  const status = focusLabel(focus, stop);
+  const status = stop ? focusLabel(focus, stop) : null;
   const shownText = text.slice(0, typed);
   const shownLines = shownText.split('\n');
   const typing = !!msg && !done;

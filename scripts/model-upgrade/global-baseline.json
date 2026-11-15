@@ -1,0 +1,222 @@
+{
+  "backshell": {
+    "bytes": 725524,
+    "sha256": "443224f0bf673066289e6546852eda1539c9f17e68523b5c33d88c9684ebf313",
+    "nodes": 7,
+    "triangles": 40752,
+    "primitives": 7,
+    "materials": 5,
+    "images": 8,
+    "missingMR": [
+      "Satin titanium",
+      "Fractured heat protection substrate"
+    ],
+    "missingNormal": [
+      "Satin titanium",
+      "Fractured heat protection substrate"
+    ],
+    "doubleSided": [
+      "Satin titanium",
+      "Fractured heat protection substrate",
+      "Weathered backshell thermal coating",
+      "Exposed composite laminate",
+      "Thermal white"
+    ]
+  },
+  "ingenuity": {
+    "bytes": 403504,
+    "sha256": "1172d289f2e5702d75704758d51a98ca4da59f340eff7739b7fb4467c9484da5",
+    "nodes": 12,
+    "triangles": 9124,
+    "primitives": 35,
+    "materials": 6,
+    "images": 10,
+    "missingMR": [
+      "blades"
+    ],
+    "missingNormal": [
+      "binoculars",
+      "blades",
+      "chopper_sp",
+      "PaletteMaterial001"
+    ],
+    "doubleSided": [
+      "binoculars",
+      "blades",
+      "chopper_sp",
+      "PaletteMaterial001",
+      "PaletteMaterial002"
+    ]
+  },
+  "insight": {
+    "bytes": 2522260,
+    "sha256": "b61af4d29e1ac87f9e114f0ba43ba63d9ed16daeb9cf499781852fbefb27f477",
+    "nodes": 6,
+    "triangles": 140481,
+    "primitives": 16,
+    "materials": 11,
+    "images": 11,
+    "missingMR": [
+      "InSIGHT_tex_02",
+      "InSIGHT_tex_01",
+      "InSIGHT_AO_08",
+      "InSIGHT_AO_06",
+      "InSIGHT_AO_01",
+      "InSIGHT_AO_02",
+      "InSIGHT_foil_silver",
+      "InSIGHT_AO_05",
+      "InSIGHT_AO_04",
+      "InSIGHT_AO_03",
+      "InSIGHT_AO_07"
+    ],
+    "missingNormal": [
+      "InSIGHT_tex_02",
+      "InSIGHT_tex_01",
+      "InSIGHT_AO_08",
+      "InSIGHT_AO_06",
+      "InSIGHT_AO_01",
+      "InSIGHT_AO_02",
+      "InSIGHT_foil_silver",
+      "InSIGHT_AO_05",
+      "InSIGHT_AO_04",
+      "InSIGHT_AO_03",
+      "InSIGHT_AO_07"
+    ],
+    "doubleSided": [
+      "InSIGHT_tex_02",
+      "InSIGHT_tex_01",
+      "InSIGHT_AO_08",
+      "InSIGHT_AO_06",
+      "InSIGHT_AO_01",
+      "InSIGHT_AO_02",
+      "InSIGHT_foil_silver",
+      "InSIGHT_AO_05",
+      "InSIGHT_AO_04",
+      "InSIGHT_AO_03",
+      "InSIGHT_AO_07"
+    ]
+  },
+  "mer": {
+    "bytes": 1073196,
+    "sha256": "0bca9d97548f4a39c26adb34398e151980346d88c9ae6ee4d1f42f6ff3c81d06",
+    "nodes": 42,
+    "triangles": 32562,
+    "primitives": 55,
+    "materials": 9,
+    "images": 14,
+    "missingMR": [
+      "tex_arm",
+      "tex_body_n",
+      "tex_suspension_n",
+      "tex_panels_n",
+      "tex_instruments",
+      "tex_panels2_n",
+      "Satin titanium",
+      "tex_mast"
+    ],
+    "missingNormal": [
+      "tex_arm",
+      "tex_instruments",
+      "Satin titanium",
+      "tex_mast"
+    ],
+    "doubleSided": [
+      "tex_arm",
+      "tex_body_n",
+      "tex_suspension_n",
+      "tex_panels_n",
+      "tex_instruments",
+      "tex_panels2_n",
+      "Satin titanium",
+      "tex_mast",
+      "Silver MLI"
+    ]
+  },
+  "pathfinder": {
+    "bytes": 1448448,
+    "sha256": "394a1a7d036a3d0226014ce8e668845fc8185f8969d8db76992de89ba7ca9cae",
+    "nodes": 18,
+    "triangles": 77866,
+    "primitives": 15,
+    "materials": 9,
+    "images": 12,
+    "missingMR": [
+      "Airbag stitched seams",
+      "Satin titanium",
+      "Optical glass",
+      "Graphite hardware",
+      "Copper cable braid"
+    ],
+    "missingNormal": [
+      "Airbag stitched seams",
+      "Satin titanium",
+      "Optical glass",
+      "Graphite hardware",
+      "Copper cable braid"
+    ],
+    "doubleSided": [
+      "Airbag Vectran weave",
+      "Airbag stitched seams",
+      "Thermal white",
+      "Wrinkled gold MLI",
+      "Satin titanium",
+      "Optical glass",
+      "Graphite hardware",
+      "Dusty silicon cells",
+      "Copper cable braid"
+    ]
+  },
+  "phoenix": {
+    "bytes": 2267996,
+    "sha256": "c722be4162365aadceb8688d2d98ef72c6a77bd0585946adca92716779c3d5fb",
+    "nodes": 13,
+    "triangles": 114500,
+    "primitives": 13,
+    "materials": 7,
+    "images": 11,
+    "missingMR": [
+      "Satin titanium",
+      "Graphite hardware",
+      "Optical glass"
+    ],
+    "missingNormal": [
+      "Satin titanium",
+      "Graphite hardware",
+      "Optical glass"
+    ],
+    "doubleSided": [
+      "Satin titanium",
+      "Graphite hardware",
+      "Polar thermal white",
+      "Optical glass",
+      "Polar silver MLI",
+      "Polar silicon cells",
+      "Wrinkled gold MLI"
+    ]
+  },
+  "viking-lander": {
+    "bytes": 3659572,
+    "sha256": "a4e7b03122abb3c2ae0d57a36b7851ecc302618eebb126a4986b874a0f20d70c",
+    "nodes": 3,
+    "triangles": 99526,
+    "primitives": 12,
+    "materials": 9,
+    "images": 27,
+    "missingMR": [],
+    "missingNormal": [],
+    "doubleSided": [
+      "blinn4SG",
+      "blinn6SG",
+      "blinn2SG",
+      "blinn8SG",
+      "blinn11SG",
+      "initialShadingGr",
+      "blinn9SG",
+      "blinn10SG",
+      "blinn12SG"
+    ]
+  },
+  "_inputs": {
+    "insightSourceSha256": "d88851e31742b6aaf28ae257a623b0230f0b20b0bcbd576a2cb50f56082c7e66"
+  }
+}

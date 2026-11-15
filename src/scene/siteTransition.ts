@@ -3,10 +3,15 @@
 import { SITE_SCALE, smoothstep, type Vec3 } from './layout';
 
 export const SITE_SKY_RADIUS_M = 140;
+/**
+ * The dive's layers by shot blend (0 = over the globe, 1 = at the site). The haze and the fog come
+ * in a little ahead of the sky dome and the ground, so the moment the globe gives way to the
+ * diorama is already behind thin air.
+ */
 export const SITE_FADE = {
-  haze: [0.02, 0.24],
-  fog: [0.24, 0.8],
-  dome: [0.4, 0.72],
+  haze: [0.02, 0.2],
+  fog: [0.18, 0.72],
+  dome: [0.36, 0.7],
   ground: [0.58, 0.94],
   machine: [0.74, 0.96],
   edge: [0.82, 0.985],

@@ -5,9 +5,11 @@
 
 import { useGLTF } from '@react-three/drei';
 import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react';
-import { MeshStandardMaterial, type Material, type Mesh, type MeshBasicMaterial, type Object3D } from 'three';
+import type { Object3D } from 'three';
 import type { MachineId } from '../types';
 import { buildParachute, buildPlaceholder, disposeObject, MODEL_REGISTRY, normalizeModel, type ModelEntry } from './models';
+import { applyMissionFinish, cloneLitMaterials } from './missionFinish';
+import { registerGroundContacts } from './grounding';
 
 /**
  * Free GPU resources once `obj` has really left the scene. React StrictMode (dev) runs effect
@@ -26,7 +28,7 @@ function useDisposeWhenDetached(obj: Object3D, dispose: () => void) {
 }
 
 function Silhouette({ id }: { id: MachineId }) {
-  const obj = useMemo(() => buildPlaceholder(id, false), [id]);
+  const obj = useMemo(() => { const o = buildPlaceholder(id, false); registerGroundContacts(o); return o; }, [id]);
   const dispose = useMemo(() => () => disposeObject(obj), [obj]);
   useDisposeWhenDetached(obj, dispose);
   return <primitive object={obj} />;
@@ -39,44 +41,17 @@ function Parachute() {
   return <primitive object={obj} />;
 }
 
-function NasaModel({ entry, onReady }: { entry: ModelEntry & { url: string }; onReady?: () => void }) {
+function NasaModel({ id, entry, onReady }: { id: MachineId; entry: ModelEntry & { url: string }; onReady?: () => void }) {
   // meshopt (bundled decoder), no Draco: nothing is fetched from a CDN.
   const { scene } = useGLTF(entry.url, false, true);
   const { obj, owned } = useMemo(() => {
     const c = scene.clone(true);
-    const owned: Material[] = [];
-    c.traverse(o => {
-      const m = o as Mesh;
-      if (!m.isMesh) return;
-      m.castShadow = true;
-      m.receiveShadow = true;
-      // Unlit (baked) materials would glow at night: give them real shading under the site's sun.
-      const mat = m.material as MeshBasicMaterial;
-      if (mat && mat.isMeshBasicMaterial) {
-        const lit = new MeshStandardMaterial({
-          map: mat.map,
-          color: mat.color,
-          transparent: mat.transparent,
-          opacity: mat.opacity,
-          alphaTest: mat.alphaTest,
-          side: mat.side,
-          roughness: 0.8,
-          metalness: 0.1,
-        });
-        owned.push(lit);
-        m.material = lit;
-      } else if (m.material) {
-        // Our own copies of the rest, so the dive's fade-in (Diorama) never touches the shared cache.
-        const own = (x: Material) => {
-          const c = x.clone();
-          owned.push(c);
-          return c;
-        };
-        m.material = Array.isArray(m.material) ? m.material.map(own) : own(m.material);
-      }
-    });
-    return { obj: normalizeModel(c, entry.size), owned };
-  }, [scene, entry]);
+    const owned = cloneLitMaterials(c);
+    const obj = normalizeModel(c, entry.size);
+    if(id==='spirit'||id==='opportunity')applyMissionFinish(obj,id);
+    registerGroundContacts(obj);
+    return { obj, owned };
+  }, [scene, entry, id]);
   const dispose = useMemo(() => () => owned.forEach(m => m.dispose()), [owned]);
   useDisposeWhenDetached(obj, dispose);
   useEffect(() => onReady?.(), [obj, onReady]);
@@ -101,7 +76,7 @@ export function MachineModel({ id, onReady }: { id: MachineId; onReady?: () => v
   const body = entry.url ? (
     <KeepFallback fallback={silhouette}>
       <Suspense fallback={null}>
-        <NasaModel entry={entry as ModelEntry & { url: string }} onReady={onReady} />
+        <NasaModel id={id} entry={entry as ModelEntry & { url: string }} onReady={onReady} />
       </Suspense>
     </KeepFallback>
   ) : (

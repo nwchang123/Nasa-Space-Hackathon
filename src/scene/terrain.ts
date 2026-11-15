@@ -24,6 +24,7 @@ import {
 } from 'three';
 import { horizonDir, smoothstep } from './layout';
 import type { SiteLayout, SitePreset } from './sites';
+import { gridHeight, landingSupports, supportHeight } from './grounding';
 
 /** Side of the square of ground, m. The fog hides its edges. */
 export const GROUND_SIZE = 180;
@@ -356,6 +357,8 @@ export function rockGeometry(seed: number, detail: number, bare: Color, dust: Co
 }
 
 export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
+  const supports = landingSupports(p.landingBank, lay.machineYaw);
+  const segments = p.polygons > 0 ? GROUND_SEGMENTS * 3 : GROUND_SEGMENTS;
   const flatSpots = [
     { x: 0, z: 0, r: p.clear },
     { x: lay.ingenuity[0], z: lay.ingenuity[2], r: 1.1 },
@@ -367,7 +370,10 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
 
   const flatness = (x: number, z: number) => {
     let f = 1;
-    for (const s of flatSpots) f = Math.min(f, smoothstep(s.r, s.r + 4, Math.hypot(x - s.x, z - s.z)));
+    // Every triangle inside the advertised clearing must be flat, including its outer vertices.
+    // Otherwise heightAt=0 could still leave a coarse interpolated triangle above a footpad.
+    const margin = Math.SQRT2 * GROUND_SIZE / segments;
+    for (const s of flatSpots) f = Math.min(f, smoothstep(s.r + margin, s.r + margin + 4, Math.hypot(x - s.x, z - s.z)));
     return f;
   };
 
@@ -378,9 +384,8 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
   // (0.625 m) and each trough about a metre and a half wide, a clearly darker groove a dozen
   // centimetres deep: on the 1.875 m grid the half-metre troughs fell mostly between vertices, and
   // at half that tone the network was lost in the sand's own mottling.
-  const segments = p.polygons > 0 ? GROUND_SEGMENTS * 3 : GROUND_SEGMENTS;
   const trough = (x: number, z: number) => (p.polygons > 0 ? 1 - smoothstep(0.15, 0.9, polygonEdge(x, z, p.polygons, p.seed)) : 0);
-  const heightAt = (x: number, z: number) => {
+  const terrainHeight = (x: number, z: number) => {
     const f = flatness(x, z);
     let h = p.relief * 2 * (fbm(x / 12, z / 12, p.seed) - 0.5);
     h += p.relief * 0.7 * (fbm(x / 3, z / 3, p.seed + 7) - 0.5);
@@ -388,12 +393,17 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
     // Flatten after adding the hills: a big hill's foot reaches the clearing (Jezero's rim added
     // ~0.2 m there) and would bury anything lying flat on the ground, like the parachute.
     for (const hill of hills) h += hill.h * Math.exp(-((x - hill.x) ** 2 + (z - hill.z) ** 2) / hill.r2);
-    return h * f;
+    return h * f + supportHeight(supports, x, z);
   };
 
   // ---- the ground
-  const geom = new PlaneGeometry(GROUND_SIZE, GROUND_SIZE, segments, segments).rotateX(-Math.PI / 2);
+  const grid = Array.from({ length: segments + 1 }, (_, i) => -GROUND_SIZE / 2 + i * GROUND_SIZE / segments);
+  // Only Viking 2 needs fine terrain around its feet: keep the rest of the 180 m patch coarse.
+  const axis = supports.length ? [...new Set([...grid, ...Array.from({ length: 49 }, (_, i) => (i - 24) * 0.15)])].sort((a, b) => a - b) : grid;
+  const geom = new PlaneGeometry(GROUND_SIZE, GROUND_SIZE, axis.length - 1, axis.length - 1).rotateX(-Math.PI / 2);
   const pos = geom.getAttribute('position');
+  const uv = geom.getAttribute('uv');
+  const heights = new Float32Array(pos.count);
   const colors = new Float32Array(pos.count * 3);
   const base = new Color(p.ground);
   const dark = new Color(p.groundDark);
@@ -401,8 +411,10 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
   const troughTone = new Color(p.groundDark).multiplyScalar(0.8);
   const c = new Color();
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), z = pos.getZ(i);
-    pos.setY(i, heightAt(x, z));
+    const x = axis[i % axis.length], z = axis[Math.floor(i / axis.length)];
+    heights[i] = terrainHeight(x, z);
+    pos.setXYZ(i, x, heights[i], z);
+    uv.setXY(i, x / GROUND_SIZE + 0.5, 0.5 - z / GROUND_SIZE);
     c.copy(base).lerp(dark, smoothstep(0.38, 0.78, fbm(x / 9, z / 9, p.seed + 11)));
     if (p.polygons > 0) c.lerp(troughTone, 0.75 * trough(x, z));
     // Rippled sand: broad, irregular patches of paler crest sand (the crests themselves are in the
@@ -415,6 +427,7 @@ export function buildGround(p: SitePreset, lay: SiteLayout): Ground {
   }
   geom.setAttribute('color', new Float32BufferAttribute(colors, 3));
   geom.computeVertexNormals();
+  const heightAt = (x: number, z: number) => gridHeight(axis, axis, heights, x, z);
   // Transparent so the ground can fade in as the camera dives toward the site. The detail maps add
   // centimetre-scale grain, pebbles and ripples that the 1.9 m vertex grid cannot carry.
   const detail = groundDetail(p);

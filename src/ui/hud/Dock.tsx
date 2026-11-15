@@ -1,21 +1,70 @@
 // The bottom-centre stage dock: one thing at a time (the prologue's rotor test, the leg being
 // flown, one section of a machine's story behind four index tabs, the way home), with the main
 // action always at its right. It never scrolls. It stands in the HUD's bottom console, with the
-// 360° bearing ruler sitting on its top edge whenever that shows.
+// 360° bearing ruler sitting on its top edge whenever that shows. Ingenuity's own lines (who it is,
+// the legs, the way home) are spoken in its radio feed (src/scene/GuideBubble.tsx), not repeated
+// here; the dock waits for the self-introduction before it offers the rotor test. With the auto
+// tour on (AutoTour.tsx) it also shows the tour's marks: the section being read, the invitation to
+// try the stop's action, the countdown to the next move.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { EPILOGUE, LEG_SCRIPTS, PROLOGUE, PROLOGUE_TEST_AT, ROTOR_FAULT } from '../../data/flight';
+import { LEG_SCRIPTS, ROTOR_FAULT } from '../../data/flight';
 import { MACHINE_BY_ID } from '../../data/machines';
-import { LEGS, compass, flyDurationMs, hop } from '../../flight/route';
+import { LEGS, compass, hop } from '../../flight/route';
 import { BOOST_FACTOR, STORY_KEYS, stageElapsed, useApp, type StorySection } from '../../store';
 import { MACHINE_IDS } from '../../types';
 import { formatKm } from '../callPlan';
-import { testRotor } from '../../scene/choreo';
+import { OPENING_DESCENT_MS, testRotor } from '../../scene/choreo';
 import { playFault } from '../sound';
 import { RED_ZONE, useThrottle } from '../throttle';
+import { ARRIVAL_HOLD_MS, INVITE_WAIT_MS, useFeed, useTour } from '../tour';
 import { prefersReducedMotion } from '../useClock';
+import { stopSpeaking } from '../voice';
+import { flyOn, liftOff, pauseByHand, useCountdownLeft } from './AutoTour';
 import { SignatureControls } from './Signature';
 import './throttle.css';
+
+/** The prologue's self-introduction is given up on (the rotor test offered anyway) this long after Begin, ms. */
+const INTRO_GIVE_UP_MS = OPENING_DESCENT_MS + 45000;
+
+/**
+ * True once Ingenuity has said who it is at home (or the visitor skipped it, or it never came):
+ * the rotor test waits for it, so the red-zone button never steals the opening.
+ */
+function useIntroHeard(): [boolean, () => void] {
+  const step = useApp(s => s.prologue.step);
+  const startedAt = useApp(s => s.flight.stageStartedAt);
+  const heard = useFeed(f => f.key === 'prologue' && ((f.kind === 'intro' && f.done) || f.kind === 'imagine'));
+  const [skipped, setSkipped] = useState(false);
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setLate(true), Math.max(0, startedAt + INTRO_GIVE_UP_MS - Date.now()));
+    return () => window.clearTimeout(t);
+  }, [startedAt]);
+  const skip = () => {
+    stopSpeaking();
+    setSkipped(true);
+  };
+  return [heard || skipped || late || step !== 'ready', skip];
+}
+
+/** "Next stop in 3 s · Pause": the auto tour's countdown, with a way to stop it. */
+function TourCountdown({ what }: { what: string }) {
+  const left = useCountdownLeft();
+  if (left === null) return null;
+  return (
+    <p className="tour-count" aria-live="polite">
+      <span className="tabular">
+        {what} in {left} s
+      </span>
+      <span aria-hidden="true"> · </span>
+      {/* A deliberate pause: the tour then waits for Resume instead of picking up by itself. */}
+      <button type="button" className="text-btn tour-count-pause" onClick={pauseByHand}>
+        Pause
+      </button>
+    </p>
+  );
+}
 
 /** Ingenuity's 72 real flights covered 17.0 km in total (docs/FACT_CHECK.md, ingenuity). */
 const REAL_FLIGHT_KM = 17.0;
@@ -51,28 +100,19 @@ export function Dock() {
   );
 }
 
-function Lines({ lines, start = 0.2, step = 0.4, instant, big = false }: { lines: string[]; start?: number; step?: number; instant: boolean; big?: boolean }) {
-  return (
-    <div className={`voice${instant ? ' instant' : ''}${big ? ' big' : ''}`}>
-      {lines.map((line, i) => (
-        <p key={line} className="voice-line" style={{ animationDelay: instant ? '0s' : `${start + i * step}s` }}>
-          {line}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------- prologue
 
 function PrologueDock() {
   const prologue = useApp(s => s.prologue);
   const setPrologue = useApp(s => s.setPrologue);
-  const flyTo = useApp(s => s.flyTo);
   const reduced = useMemo(prefersReducedMotion, []);
   const throttle = useThrottle(s => s.throttle);
   const holding = useThrottle(s => s.holding);
   const setHolding = useThrottle(s => s.setHolding);
+  const nudge = useTour(s => s.nudge);
+  const [introHeard, skipIntro] = useIntroHeard();
+  const introRef = useRef(introHeard);
+  introRef.current = introHeard;
   const { step, at } = prologue;
 
   // After the fault, the turn to fiction. Timed from the step's start, so it survives a remount.
@@ -139,7 +179,7 @@ function PrologueDock() {
       return s.phase === 'flight' && s.flight.stage === 'prologue' && (s.prologue.step === 'ready' || s.prologue.step === 'spinning');
     };
     const down = (e: KeyboardEvent) => {
-      if (e.code !== 'Space' || isTyping(e.target) || !testing()) return;
+      if (e.code !== 'Space' || isTyping(e.target) || !testing() || !introRef.current) return;
       e.preventDefault();
       if (!e.repeat) useThrottle.getState().setHolding(true);
     };
@@ -160,8 +200,6 @@ function PrologueDock() {
     };
   }, [reduced]);
 
-  const before = PROLOGUE.slice(0, PROLOGUE_TEST_AT);
-  const after = PROLOGUE.slice(PROLOGUE_TEST_AT);
   const imagine = step === 'imagine';
   const fault = step === 'fault';
   const pct = Math.round(throttle * 100);
@@ -170,9 +208,29 @@ function PrologueDock() {
   let action;
   if (imagine) {
     action = (
-      <button type="button" className="primary dock-primary imagine reveal" onClick={() => flyTo(0, reduced ? 0 : flyDurationMs(LEGS[0].distanceKm))}>
-        Imagine Flight 73 · Lift off <span aria-hidden="true">→</span>
-      </button>
+      <>
+        <button type="button" className="primary dock-primary imagine reveal" onClick={liftOff}>
+          Imagine Flight 73 · Lift off <span aria-hidden="true">→</span>
+        </button>
+        <TourCountdown what="Lift-off" />
+      </>
+    );
+  } else if (!introHeard) {
+    // Ingenuity is still saying who it is: the rotor test waits.
+    action = (
+      <div className="tour-listen">
+        <p className="tour-listen-note">
+          <span className="tour-listen-wave" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          Ingenuity is on the radio
+        </p>
+        <button type="button" className="text-btn" onClick={skipIntro}>
+          Skip to the rotor test <span aria-hidden="true">›</span>
+        </button>
+      </div>
     );
   } else if (reduced) {
     // Reduced motion: one click, straight to the fault's outcome.
@@ -208,7 +266,7 @@ function PrologueDock() {
         </div>
         <button
           type="button"
-          className={`primary dock-primary spin thr-hold${holding ? ' thr-holding' : ''}${fault ? ' busy' : ''}`}
+          className={`primary dock-primary spin thr-hold${holding ? ' thr-holding' : ''}${fault ? ' busy' : ''}${nudge && !holding ? ' tour-nudge' : ''}`}
           disabled={fault}
           aria-pressed={holding}
           onPointerDown={e => {
@@ -234,11 +292,14 @@ function PrologueDock() {
         >
           {fault ? 'Rotor fault' : holding ? `Holding… throttle ${pct} %` : 'Hold to spin up'}
         </button>
-        <p className="thr-hint">Hold Space or the button. Let go to throttle back.</p>
+        <p className="thr-hint">{nudge ? 'Hold Space or the button, or wait: I will try it myself.' : 'Hold Space or the button. Let go to throttle back.'}</p>
       </>
     );
   }
 
+  // Ingenuity's own lines (who it is, then the turn to Flight 73) are said once, in its radio feed
+  // at the top left (GuideBubble.tsx, with a replay chip); the dock only names the task beside its
+  // control, so the same sentences never stand on screen twice.
   return (
     <div className="dock-grid">
       <div className="dock-main">
@@ -246,15 +307,16 @@ function PrologueDock() {
         {imagine ? (
           <>
             <p className="fault-note">Rotor test failed · {ROTOR_FAULT}</p>
-            <Lines lines={after} start={0.1} step={0.9} instant={reduced} big />
+            <h2 className="leg-title dock-task reveal">One last flight</h2>
           </>
         ) : (
-          <Lines lines={before} instant={reduced} />
+          // Dim while Ingenuity is still on the radio (the side column says so, with a skip).
+          <h2 className={`leg-title dock-task${introHeard ? '' : ' dim'}`}>Rotor test</h2>
         )}
       </div>
       <div className="dock-side">
         {action}
-        <p className="jump-hint">Short on time? Pick any stop on the route above to fly straight there.</p>
+        {introHeard && <p className="jump-hint">Short on time? Pick any stop on the route above to fly straight there.</p>}
       </div>
     </div>
   );
@@ -284,23 +346,27 @@ function FlyingDock() {
   const setBoost = useApp(s => s.setBoost);
   const leg = hop(flight.from, flight.leg);
   const to = MACHINE_BY_ID[leg.to];
-  const from = MACHINE_BY_ID[leg.from];
-  // The scripted lines name the planned leg's geometry, so a direct hop gets a plain line instead.
-  const lines = leg.onRoute ? LEG_SCRIPTS[leg.to].enRoute : [`Off the planned route: straight from ${from.shortName} to ${to.shortName}.`];
   const reduced = useMemo(prefersReducedMotion, []);
   const [k, setK] = useState(flight.flyMs === 0 ? 1 : 0);
 
   // Progress and arrival follow stageElapsed(), so boost speeds the odometer and the scene alike.
+  // With the auto tour on, the landing waits (a little) for Ingenuity's lines on the way to end.
   useEffect(() => {
     if (flight.flyMs === 0) {
       arrive();
       return;
     }
     let raf = 0;
+    const linesPending = (s: ReturnType<typeof useApp.getState>, over: number) => {
+      const f = useFeed.getState();
+      return s.autoTour && !s.tourPaused && f.key.startsWith('flying:') && !(f.kind === 'intro' && f.done) && over < ARRIVAL_HOLD_MS;
+    };
     const step = () => {
-      const t = Math.min(1, stageElapsed(useApp.getState()) / flight.flyMs);
+      const s = useApp.getState();
+      const elapsed = stageElapsed(s);
+      const t = Math.min(1, elapsed / flight.flyMs);
       setK(t);
-      if (t < 1) raf = requestAnimationFrame(step);
+      if (t < 1 || linesPending(s, elapsed - flight.flyMs)) raf = requestAnimationFrame(step);
       else arrive();
     };
     raf = requestAnimationFrame(step);
@@ -319,7 +385,6 @@ function FlyingDock() {
           <span className="dim">to</span> {to.name}
         </h2>
         <p className="leg-site">{to.site}</p>
-        <Lines lines={lines} start={0.3} step={1.6} instant={reduced} />
       </div>
       <div className="dock-side">
         <div className={`odometer tabular${boost ? ' boosting' : ''}`} aria-live="off">
@@ -362,10 +427,12 @@ function FlyingDock() {
 
 function SiteDock() {
   const flight = useApp(s => s.flight);
-  const flyTo = useApp(s => s.flyTo);
-  const toEpilogue = useApp(s => s.toEpilogue);
   const story = useApp(s => s.story);
   const setStory = useApp(s => s.setStory);
+  const pauseTour = useApp(s => s.pauseTour);
+  const touring = useApp(s => s.autoTour && !s.tourPaused);
+  const chapter = useTour(s => s.chapter);
+  const invite = useTour(s => s.invite);
   const machine = MACHINE_BY_ID[MACHINE_IDS[flight.leg]];
   const script = LEG_SCRIPTS[machine.id];
   const reduced = useMemo(prefersReducedMotion, []);
@@ -373,9 +440,14 @@ function SiteDock() {
   const next = last ? null : MACHINE_BY_ID[MACHINE_IDS[flight.leg + 1]];
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
+  // A section picked by the visitor takes over from the auto tour.
+  const choose = (i: number) => {
+    pauseTour();
+    setStory(i as StorySection);
+  };
   const pick = (i: number) => {
     const j = ((i % 4) + 4) % 4;
-    setStory(j as StorySection);
+    choose(j);
     tabs.current[j]?.focus();
   };
 
@@ -397,13 +469,17 @@ function SiteDock() {
               tabIndex={story === i ? 0 : -1}
               className={`story-tab${story === i ? ' on' : ''}`}
               title={label}
-              onClick={() => setStory(i as StorySection)}
+              onClick={() => choose(i)}
               onKeyDown={e => {
                 if (e.key === 'ArrowRight') pick(i + 1);
                 if (e.key === 'ArrowLeft') pick(i - 1);
               }}
             >
               <span className="story-tab-n">{String(i + 1).padStart(2, '0')}</span> <span className="story-tab-label">{label}</span>
+              {/* The auto tour reading this section: a hairline that runs out as it goes. */}
+              {touring && chapter?.i === i && story === i && (
+                <span key={chapter.at} className="tour-tick" style={{ animationDuration: `${chapter.ms}ms` }} aria-hidden="true" />
+              )}
             </button>
           ))}
         </div>
@@ -411,7 +487,7 @@ function SiteDock() {
           <p className="story-text">
             {machine.story[STORY_KEYS[story]]}
             {story < 3 && (
-              <button type="button" className="text-btn story-next" onClick={() => setStory((story + 1) as StorySection)}>
+              <button type="button" className="text-btn story-next" onClick={() => choose(story + 1)}>
                 Next · {STORY_LABELS[story + 1]} <span aria-hidden="true">›</span>
               </button>
             )}
@@ -426,11 +502,14 @@ function SiteDock() {
         </div>
       </div>
       <div className="dock-side">
-        <SignatureControls stop={machine.id} />
+        <div className={`tour-invite${invite && touring ? ' on' : ''}`}>
+          <SignatureControls stop={machine.id} />
+          {invite && touring && <TourInvite />}
+        </div>
         <button
           type="button"
           className="primary dock-primary"
-          onClick={() => (next ? flyTo(flight.leg + 1, reduced ? 0 : flyDurationMs(LEGS[flight.leg + 1].distanceKm)) : toEpilogue())}
+          onClick={flyOn}
         >
           {next ? (
             <>
@@ -440,8 +519,27 @@ function SiteDock() {
             <>Settle down at home</>
           )}
         </button>
+        <TourCountdown what={next ? 'Next stop' : 'Home'} />
       </div>
     </div>
+  );
+}
+
+/**
+ * The auto tour's invitation to try the stop's action once, with a way past it. A hairline runs out
+ * over the wait (starting again while the visitor uses the controls); then the tour moves on.
+ */
+function TourInvite() {
+  const skip = () => useTour.setState({ skipAt: Date.now() });
+  const since = useTour(s => s.inviteAt);
+  return (
+    <p className="tour-invite-note">
+      <span key={since} className="tour-tick tour-invite-tick" style={{ animationDuration: `${INVITE_WAIT_MS}ms` }} aria-hidden="true" />
+      <span>Your turn</span>
+      <button type="button" className="text-btn" onClick={skip}>
+        Skip this step <span aria-hidden="true">›</span>
+      </button>
+    </p>
   );
 }
 
@@ -451,13 +549,11 @@ function EpilogueDock() {
   const setPhase = useApp(s => s.setPhase);
   const reduced = useMemo(prefersReducedMotion, []);
   const totalKm = useMemo(() => LEGS[LEGS.length - 1].cumulativeKm, []);
+  // Ingenuity's closing lines are said in its radio feed; the dock keeps the tally.
   return (
     <div className="dock-grid">
       <div className="dock-main">
         <p className="speaker">Ingenuity · home again</p>
-        <Lines lines={EPILOGUE} step={0.9} instant={reduced} />
-      </div>
-      <div className="dock-side">
         <div className="epilogue-stats">
           <div>
             <strong className="tabular">{formatKm(totalKm)}</strong>
@@ -468,10 +564,12 @@ function EpilogueDock() {
             <span>72 real flights</span>
           </div>
         </div>
+      </div>
+      <div className="dock-side">
         <button
           type="button"
           className="primary dock-primary reveal"
-          style={{ animationDelay: reduced ? '0s' : `${0.6 + EPILOGUE.length * 0.9}s` }}
+          style={{ animationDelay: reduced ? '0s' : '5s' }}
           onClick={() => setPhase('report')}
         >
           Open the flight log <span aria-hidden="true">→</span>

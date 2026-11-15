@@ -1,8 +1,28 @@
 // Synthesized sound for Flight 73. No audio files; nothing plays until the visitor has clicked.
 // Every source goes through one master chain (gain → compressor/limiter → speakers), so the whole
 // mix is loud and full without clipping, and muting silences everything at once, continuous loops
-// (Mars wind, Ingenuity's rotors, the charge hum) included. Short feedback cues also pass through
-// a "presence" stage (a little upper-mid lift) so they cut through the wind and the rotors.
+// (the ambient pad, Mars wind, Ingenuity's rotors, the charge hum) included. Short feedback cues
+// also pass through a "presence" stage (a little upper-mid lift) so they cut through the beds.
+
+import {
+  chordFor,
+  chordMoves,
+  chordSeconds,
+  midiHz,
+  PAD_ATTACK_S,
+  PAD_CUTOFF_DRIFT_HZ,
+  PAD_CUTOFF_HZ,
+  PAD_DETUNE_CENTS,
+  PAD_DRIFT_HZ,
+  PAD_DRY,
+  PAD_PANS,
+  PAD_REVERB_S,
+  PAD_VOICE_PEAK,
+  PAD_WET,
+  padDuck,
+  timeConstant,
+  type VoiceMove,
+} from './ambientScore';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -356,6 +376,25 @@ export function playEcho() {
 
 let tickBuffer: AudioBuffer | null = null;
 let lastTick = 0;
+let voiceSounding = false;
+
+/** Called by the voice module while Ingenuity's recorded voice is actually playing. */
+export function setVoiceSounding(on: boolean) {
+  voiceSounding = on;
+  followVoice();
+}
+
+/**
+ * The typing ticks' level (1 = the original click). Quiet on their own; under Ingenuity's voice
+ * they only keep time, so the voice leads.
+ */
+export function typeTickLevel(underVoice: boolean): number {
+  return underVoice ? 0.07 : 0.35;
+}
+
+function voiceAudible(): boolean {
+  return voiceSounding || (typeof window !== 'undefined' && !!window.speechSynthesis?.speaking);
+}
 
 /** One typewriter / telegraph click (call every couple of typed characters; self-throttled). */
 export function playTypeTick() {
@@ -365,10 +404,11 @@ export function playTypeTick() {
   if (t - lastTick < 0.028) return;
   lastTick = t;
   if (!tickBuffer || tickBuffer.sampleRate !== a.sampleRate) tickBuffer = noise(a, 0.012, k => (1 - k) ** 3);
+  const k = typeTickLevel(voiceAudible());
   const r = 0.85 + Math.random() * 0.3;
-  const { src } = burst(a, tickBuffer, 'bandpass', 3600 * r, 0.1, 0, 1.4);
+  const { src } = burst(a, tickBuffer, 'bandpass', 3600 * r, 0.1 * k, 0, 1.4);
   src.playbackRate.value = r;
-  tone(1900 * r, 0, 0.022, 0.026, 'square');
+  tone(1900 * r, 0, 0.022, 0.026 * k, 'square');
 }
 
 /** A guide bubble opens: a burst of radio squelch, then two quick beeps. */
@@ -537,6 +577,14 @@ function drive(loop: Loop, v: number, p = 1) {
   loop.update(v, p, t);
 }
 
+/**
+ * The continuous beds' full levels, before the master gain. Kept under the voice and the cues:
+ * the wind is ambience, and the rotors only need to say the helicopter is flying.
+ */
+const ROTOR_BED = 0.05;
+const WIND_BED = 0.065;
+const WIND_WHISTLE = 0.14;
+
 let rotorLoop: Loop | null = null;
 
 /**
@@ -600,7 +648,7 @@ export function setRotorLoop(speed: number, pitch = 1) {
       update(v, pm, at) {
         const r = Math.min(1, v);
         const bp = (26 + 58 * r) * pm; // blade-pass rate on screen, Hz
-        level.gain.setTargetAtTime(0.13 * v ** 0.8, at, 0.09);
+        level.gain.setTargetAtTime(ROTOR_BED * v ** 0.8, at, 0.09);
         saw.frequency.setTargetAtTime(bp, at, 0.12);
         am.frequency.setTargetAtTime(bp, at, 0.12);
         sawLp.frequency.setTargetAtTime(420 + 300 * r * pm, at, 0.15);
@@ -654,7 +702,7 @@ export function setWind(level: number) {
     whistle.frequency.value = 900;
     whistle.Q.value = 5;
     const wg = a.createGain();
-    wg.gain.value = 0.35;
+    wg.gain.value = WIND_WHISTLE;
     band.connect(whistle).connect(wg).connect(gust);
     src.start(t);
     windLoop = {
@@ -662,13 +710,179 @@ export function setWind(level: number) {
       lastP: 1,
       lastAt: -1,
       update(x, _p, at) {
-        lvl.gain.setTargetAtTime(0.26 * x, at, 0.6);
+        lvl.gain.setTargetAtTime(WIND_BED * x, at, 0.6);
         band.frequency.setTargetAtTime(300 + 520 * x, at, 0.8);
         whistle.frequency.setTargetAtTime(760 + 700 * x, at, 0.8);
       },
     };
   }
   drive(windLoop, v);
+}
+
+// ---- the ambient pad (the score is in ambientScore.ts)
+
+/**
+ * The pad's full level before the master chain. Rendered offline through that chain (gain 8 and
+ * the compressor, whose make-up gain lifts quiet beds too): about 14 dB under the speech level of
+ * Ingenuity's recorded voice, about 23 dB under it while ducked.
+ */
+const AMBIENT_BED = 0.0055;
+/** How slowly the pad comes up or goes down with the scene, s (time constant). */
+const AMBIENT_FADE_TC = 1;
+
+export interface Pad {
+  /** The pad's level gain (set by setAmbience; 0 when built). */
+  level: GainNode;
+  /** Schedule the chord changes up to `until`, s on the audio clock. */
+  scheduleUntil(until: number): void;
+  /** Step back under Ingenuity's voice, or return. */
+  setDuck(underVoice: boolean, at: number): void;
+}
+
+/** A short reverb tail: stereo noise that decays and darkens. */
+function reverbImpulse(a: BaseAudioContext): AudioBuffer {
+  const n = Math.floor(a.sampleRate * PAD_REVERB_S);
+  const b = a.createBuffer(2, n, a.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const d = b.getChannelData(c);
+    let lp = 0;
+    for (let i = 0; i < n; i++) {
+      const k = i / n;
+      lp += (Math.random() * 2 - 1 - lp) * (0.55 - 0.45 * k);
+      d[i] = lp * Math.exp(-4 * k) * (1 - k);
+    }
+  }
+  return b;
+}
+
+/**
+ * The ambient pad on `a`, into `dest`: four voices of two detuned saws, spread left to right,
+ * through a slowly drifting low-pass and a short reverb. Silent until scheduled; the level starts
+ * at 0. Also rendered offline, to measure it against the voice.
+ */
+export function createPad(a: BaseAudioContext, dest: AudioNode): Pad {
+  const t0 = a.currentTime;
+  const level = a.createGain();
+  level.gain.value = 0;
+  const duck = a.createGain();
+  level.connect(duck).connect(dest);
+
+  const filter = a.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = PAD_CUTOFF_HZ;
+  filter.Q.value = 0.5;
+  const drift = a.createOscillator();
+  drift.frequency.value = PAD_DRIFT_HZ;
+  const depth = a.createGain();
+  depth.gain.value = PAD_CUTOFF_DRIFT_HZ;
+  drift.connect(depth).connect(filter.frequency);
+  drift.start(t0);
+
+  const dry = a.createGain();
+  dry.gain.value = PAD_DRY;
+  const verb = a.createConvolver();
+  verb.buffer = reverbImpulse(a);
+  const wet = a.createGain();
+  wet.gain.value = PAD_WET;
+  filter.connect(dry).connect(level);
+  filter.connect(verb).connect(wet).connect(level);
+
+  const voices = PAD_PANS.map(pan => {
+    const env = a.createGain();
+    env.gain.value = 0;
+    const oscs = PAD_DETUNE_CENTS.map(cents => {
+      const o = a.createOscillator();
+      o.type = 'sawtooth';
+      o.detune.value = cents;
+      o.connect(env);
+      o.start(t0);
+      return o;
+    });
+    if (typeof a.createStereoPanner === 'function') {
+      const p = a.createStereoPanner();
+      p.pan.value = pan;
+      env.connect(p).connect(filter);
+    } else {
+      env.connect(filter);
+    }
+    return { env, oscs };
+  });
+
+  const play = (moves: VoiceMove[]) => {
+    for (const m of moves) {
+      const v = voices[m.voice];
+      if (m.retuneAt > m.releaseAt) v.env.gain.setTargetAtTime(0, m.releaseAt, timeConstant(m.retuneAt - m.releaseAt));
+      for (const o of v.oscs) o.frequency.setValueAtTime(midiHz(m.midi), m.retuneAt);
+      v.env.gain.setTargetAtTime(PAD_VOICE_PEAK, m.retuneAt, timeConstant(PAD_ATTACK_S));
+    }
+  };
+
+  let step = 0;
+  let held: readonly number[] | null = null;
+  let nextAt = t0 + 0.05;
+  return {
+    level,
+    scheduleUntil(until) {
+      // A throttled timer (a background tab) may come late: start the next change now.
+      if (nextAt < a.currentTime) nextAt = a.currentTime + 0.05;
+      while (nextAt <= until) {
+        const chord = chordFor(step);
+        play(chordMoves(held, chord, nextAt));
+        held = chord;
+        nextAt += chordSeconds(step);
+        step++;
+      }
+    },
+    setDuck(underVoice, at) {
+      const d = padDuck(underVoice);
+      duck.gain.setTargetAtTime(d.gain, at, timeConstant(d.seconds));
+    },
+  };
+}
+
+let pad: { pad: Pad; loop: Loop } | null = null;
+let padDucked = false;
+
+/** Duck the pad while Ingenuity's voice is heard (called on the voice's own events, and polled). */
+function followVoice() {
+  if (!pad || !ctx) return;
+  const under = voiceAudible();
+  if (under === padDucked) return;
+  padDucked = under;
+  pad.pad.setDuck(under, ctx.currentTime);
+}
+
+/**
+ * The ambient pad, continuously: slow chords under everything. `level` 0..1 (see ambientLevel),
+ * smooth. Created lazily on the first non-zero level after the visitor's first click; its chords
+ * then run on their own clock.
+ */
+export function setAmbience(level: number) {
+  const v = Math.min(1, Math.max(0, level));
+  if (!pad) {
+    if (v < 0.01) return;
+    const a = audio();
+    if (!a) return;
+    const p = createPad(a, out());
+    pad = {
+      pad: p,
+      loop: {
+        last: 0,
+        lastP: 1,
+        lastAt: -1,
+        update(x, _p, at) {
+          p.level.gain.setTargetAtTime(AMBIENT_BED * x, at, AMBIENT_FADE_TC);
+        },
+      },
+    };
+    const tick = () => {
+      p.scheduleUntil(a.currentTime + 1);
+      followVoice();
+    };
+    tick();
+    window.setInterval(tick, 250);
+  }
+  drive(pad.loop, v);
 }
 
 let chargeLoop: Loop | null = null;

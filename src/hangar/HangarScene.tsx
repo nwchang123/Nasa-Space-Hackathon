@@ -20,6 +20,7 @@ import {
 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { MODEL_REGISTRY } from '../scene/models';
+import { MarsEnvironment } from '../scene/MarsEnvironment';
 import type { MachineId } from '../types';
 import { arrange, prepareModel, type PreparedModel } from './build';
 import { useHangar, type HangarLight } from './hangarStore';
@@ -388,8 +389,10 @@ function ArStage() {
 
 export function HangarScene() {
   const inAr = useHangar(s => s.xr !== 'off');
+  const light = useHangar(s => s.light);
   return (
     <>
+      <MarsEnvironment light={light} />
       <HangarModels />
       <RotorSpin />
       {inAr ? <ArStage /> : <Sandbox />}

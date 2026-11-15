@@ -1,7 +1,8 @@
-// The continuous sound of Flight 73, driven from the scene: Ingenuity's rotors whenever they turn
+// The continuous sound of Flight 73, driven from the scene: the ambient pad (slow chords under
+// everything, a little lower on the ground), Ingenuity's rotors whenever they turn
 // (the prologue's hold-to-throttle test, take-off, cruise and boost, the dive and landing, the
-// visitor or the autopilot hovering it beside a part), the Mars wind bed (thin in flight, fuller
-// on the ground, howling with Opportunity's dust storm), the hum of a hold-to-charge action, and
+// visitor or the autopilot hovering it beside a part), the Mars wind bed (only at the landing
+// sites, faint, howling with Opportunity's dust storm), the hum of a hold-to-charge action, and
 // the operation sounds: precision detents for every slider and for the 360° site orbit, toggle
 // clicks, dug and scraped soil, the Scout Cam viewfinder, and the site camera pushing in and out.
 // Renderless. Nothing plays on the title screen; the visitor has clicked by the time it starts.
@@ -20,16 +21,19 @@ import {
   playStormGust,
   playToggle,
   playViewfinder,
+  setAmbience,
   setChargeLoop,
   setRotorLoop,
   setWind,
 } from '../ui/sound';
+import { ambientLevel } from '../ui/ambientScore';
 import { RED_ZONE, useThrottle } from '../ui/throttle';
 import { HOME } from '../flight/route';
 import { live } from './registry';
 
-/** Wind levels, 0..1: over the globe, standing at a site, and the extra a full dust storm adds. */
-const WIND_FLIGHT = 0.3;
+/** Wind levels, 0..1: over the globe (none: the ambient pad is the flight's background), standing
+ * at a site, and the extra a full dust storm adds. */
+const WIND_FLIGHT = 0;
 const WIND_SITE = 0.62;
 const WIND_STORM = 0.38;
 /** Opportunity's storm slider range (tau). */
@@ -153,6 +157,7 @@ export function SoundScape() {
       if (document.hidden) {
         setRotorLoop(0);
         setWind(0);
+        setAmbience(0);
         setChargeLoop(0);
       }
     };
@@ -161,6 +166,7 @@ export function SoundScape() {
       document.removeEventListener('visibilitychange', onVis);
       setRotorLoop(0);
       setWind(0);
+      setAmbience(0);
       setChargeLoop(0);
     };
   }, []);
@@ -171,6 +177,7 @@ export function SoundScape() {
     if (s.phase !== 'flight' || (typeof document !== 'undefined' && document.hidden)) {
       setRotorLoop(0);
       setWind(0);
+      setAmbience(0);
       setChargeLoop(0);
       return;
     }
@@ -213,6 +220,7 @@ export function SoundScape() {
       wind += WIND_STORM * Math.min(1, Math.max(0, (tau - TAU_MIN) / (TAU_MAX - TAU_MIN))) * ground;
     }
     setWind(Math.min(1, wind));
+    setAmbience(ambientLevel(ground));
 
     // ---- a hold-to-charge action building up
     let charge = 0;

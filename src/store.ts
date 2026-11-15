@@ -143,6 +143,14 @@ export interface AppState {
   snapshots: Snapshot[];
   /** Every photo of this Flight 73, for the flight log. Kept across stops; cleared on a new flight. */
   album: AlbumShot[];
+  /**
+   * Auto tour (src/ui/hud/AutoTour.tsx): Ingenuity moves the visit along by itself (the story
+   * sections, the rotor test's lift-off, the next stop), stopping at each hands-on action. On by
+   * default, remembered in this browser.
+   */
+  autoTour: boolean;
+  /** The visitor took over (dragged the view, picked a section…): the tour waits. Cleared on every stage change. */
+  tourPaused: boolean;
 
   setPhase(phase: Phase): void;
   /** Open the AR hangar over the current phase (the flight's state is left untouched). */
@@ -174,6 +182,20 @@ export interface AppState {
   setScoutCam(on: boolean): void;
   requestSnapshot(): void;
   addSnapshot(s: Snapshot): void;
+  setAutoTour(on: boolean): void;
+  /** The visitor took over: hold the tour where it is (no-op while it is off). */
+  pauseTour(): void;
+  resumeTour(): void;
+}
+
+const TOUR_KEY = 'still-here:auto-tour';
+
+function storedAutoTour(): boolean {
+  try {
+    return typeof localStorage === 'undefined' || localStorage.getItem(TOUR_KEY) !== '0';
+  } catch {
+    return true;
+  }
 }
 
 /**
@@ -197,6 +219,7 @@ const FRESH_STAGE = {
   focus: null,
   scoutCam: false,
   snapshots: [] as Snapshot[],
+  tourPaused: false,
 };
 
 /** Where we are standing (home before take-off and after landing back), or null while flying. */
@@ -228,6 +251,7 @@ export const useApp = create<AppState>(set => ({
   viewResetAt: 0,
   snapshotRequest: 0,
   album: [],
+  autoTour: storedAutoTour(),
 
   setPhase: phase => set({ phase }),
   openHangar: () => set(s => (s.phase === 'hangar' ? {} : { phase: 'hangar', hangarFrom: s.phase })),
@@ -287,4 +311,14 @@ export const useApp = create<AppState>(set => ({
       const stop = currentStop(state.flight) ?? HOME;
       return { snapshots: [...state.snapshots, s].slice(-6), album: [...state.album, { ...s, stop }].slice(-ALBUM_MAX) };
     }),
+  setAutoTour: autoTour => {
+    try {
+      localStorage.setItem(TOUR_KEY, autoTour ? '1' : '0');
+    } catch {
+      // Private windows may refuse storage; the switch still works for this visit.
+    }
+    set({ autoTour, tourPaused: false });
+  },
+  pauseTour: () => set(state => (state.autoTour && !state.tourPaused ? { tourPaused: true } : {})),
+  resumeTour: () => set(state => (state.tourPaused ? { tourPaused: false } : {})),
 }));

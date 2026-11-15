@@ -20,7 +20,7 @@ import { MACHINE_BY_ID } from '../data/machines';
 import { HOME, initialBearing, interpolate } from '../flight/route';
 import { stageElapsed, useApp } from '../store';
 import type { MachineId } from '../types';
-import { EPILOGUE_HOLD_MS, type GlobeShot } from './choreo';
+import { EPILOGUE_HOLD_MS, openingCentre, type GlobeShot } from './choreo';
 import {
   HUD_ANCHOR_Y,
   HUD_FILL_HEIGHT,
@@ -28,6 +28,7 @@ import {
   ROUTE_BASE,
   TITLE_DIR,
   angleDelta,
+  blendAbout,
   blendPose,
   cameraGoal,
   chaseGoal,
@@ -36,6 +37,7 @@ import {
   horizonDir,
   navcamPose,
   orbitOffset,
+  titleDirAt,
   type Pose,
   type Vec3,
 } from './layout';
@@ -254,8 +256,21 @@ export function CameraRig() {
       }
       case 'title':
         // The title text sits on the left (its column ends by ~54 % of the width): Mars large on
-        // the right, from ~57 % to ~98 % of the width, so the two never touch.
-        globe = orbitPose(TITLE_DIR, aspect, { anchorX: 0.775, anchorY: 0.5, fillWidth: 0.56 });
+        // the right, from ~57 % to ~98 % of the width, so the two never touch. The visitor may
+        // pitch the view toward a pole (live.titleDrag.el); the framing stays the same.
+        globe = orbitPose(titleDirAt(live.titleDrag.el), aspect, { anchorX: 0.775, anchorY: 0.5, fillWidth: 0.56 });
+        // The opening descent: first swing round until Jezero sits in the middle of the screen
+        // (the title's view aims at empty space left of Mars), so the dive goes straight down
+        // into it instead of lunging sideways across the globe.
+        if (s.phase === 'flight' && f.stage === 'prologue' && live.site.valid) {
+          // On the opening's own clock (choreo.ts), so a slow first frame never makes it leap.
+          const k = reduced ? 1 : openingCentre(shot.opening ?? stageElapsed(s, now));
+          if (k > 0) {
+            const p = live.site.point;
+            const centred = orbitPose(clampPolar([p.x, p.y, p.z]), aspect, { anchorX: 0.5, anchorY: 0.5, fillWidth: 0.56 });
+            globe = { position: blendAbout(globe.position, centred.position, k, [0, 0, 0]), target: lerp3(globe.target, centred.target, k), up: Y };
+          }
+        }
         break;
       case 'epilogue':
         globe = orbitPose(epilogueDir.current, aspect, { ...HUD_FRAMING, radius: 1.1 });

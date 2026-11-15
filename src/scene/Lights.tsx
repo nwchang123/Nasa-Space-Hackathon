@@ -17,6 +17,7 @@ import { Color, Object3D, SRGBColorSpace, Vector3, type DirectionalLight, type H
 import { smoothstep, SITE_SCALE } from './layout';
 import { live } from './registry';
 import { SITE_PRESETS } from './sites';
+import { SHADOW_BIAS, SHADOW_LIGHT_M, SHADOW_NORMAL_BIAS_M, siteShadowFrustum } from './grounding';
 
 const GLOBE_SUN = new Color('#ffeedd');
 const GLOBE_SKY = new Color('#a7b4c8');
@@ -83,21 +84,29 @@ export function Lights() {
         lifted.copy(flat).multiplyScalar(Math.cos(NIGHT_KEY_ELEV)).addScaledVector(up, Math.sin(NIGHT_KEY_ELEV));
         dir.lerp(lifted, look.nightKey).normalize();
       }
-      s.position.copy(p).addScaledVector(dir, 80 * SITE_SCALE);
+      s.position.copy(p).addScaledVector(dir, SHADOW_LIGHT_M * SITE_SCALE);
       const preset = SITE_PRESETS[shot.siteId];
-      const key = shot.siteId;
+      const bounds = siteShadowFrustum(preset);
+      const flyer = live.flyer;
+      if (live.landedIngenuity && flyer.site === shot.siteId) {
+        bounds.radius = Math.max(bounds.radius, Math.ceil((Math.hypot(flyer.x, flyer.z) + 0.8) * 2) / 2);
+        const depth = Math.max(8, bounds.radius + 3);
+        bounds.near = SHADOW_LIGHT_M - depth;
+        bounds.far = SHADOW_LIGHT_M + depth;
+      }
+      const key = `${shot.siteId}:${bounds.radius}`;
       if (key !== lastBounds.current) {
         lastBounds.current = key;
-        const r = (Math.max(-preset.frame.left, preset.frame.right) + 6) * SITE_SCALE;
+        const r = bounds.radius * SITE_SCALE;
         const cam = s.shadow.camera;
         cam.left = -r;
         cam.right = r;
         cam.top = r;
         cam.bottom = -r;
-        cam.near = 0;
-        cam.far = 200 * SITE_SCALE;
+        cam.near = bounds.near * SITE_SCALE;
+        cam.far = bounds.far * SITE_SCALE;
         cam.updateProjectionMatrix();
-        s.shadow.normalBias = 0.02 * SITE_SCALE;
+        s.shadow.normalBias = SHADOW_NORMAL_BIAS_M * SITE_SCALE;
       }
       const nightKey = NIGHT_KEY * look.nightKey;
       const total = Math.max(1e-6, look.sunIntensity + nightKey);
@@ -144,7 +153,7 @@ export function Lights() {
     <>
       <primitive object={target} />
       <primitive object={searchTarget} />
-      <directionalLight ref={sun} target={target} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} />
+      <directionalLight ref={sun} target={target} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={SHADOW_BIAS} />
       <directionalLight ref={fill} target={target} color={FILL_COLOR} intensity={0} />
       <spotLight ref={search} target={searchTarget} color={SEARCH_COLOR} intensity={0} angle={SEARCH_ANGLE} penumbra={0.6} decay={0} distance={0} />
       <hemisphereLight ref={hemi} />

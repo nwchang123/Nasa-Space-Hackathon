@@ -131,7 +131,7 @@ def bake_material(mat, recipe, fields, seed):
     metal = np.full((SIZE, SIZE), metallic)
     if family == 'paint':
         h = .00045*grain+.0014*mottle-.0035*seams
-        shade = .96+.025*mottle+.008*grain-.035*seams
+        shade = .96+.025*mottle+.008*grain-.075*seams
         rough_map = rough+.035*mottle+.012*grain+.07*seams
     elif family == 'metal':
         h = .0014*fine+.00025*grain+.0008*mottle
@@ -201,48 +201,49 @@ def bake_material(mat, recipe, fields, seed):
             'metallicRange': [float(metal.min()), float(metal.max())]}
 
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.gltf(filepath=str(ROOT / 'assets-raw/viking-lander.glb'), merge_vertices=False)
-bpy.context.view_layer.update()
-meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
-before = geometry_state(meshes)
-assert set(before) == {'polySurfa1', 'polySurfa2'}
-points = [o.matrix_world @ Vector(v) for o in meshes for v in o.bound_box]
-bottom, top = min(v.z for v in points), max(v.z for v in points)
-scale = 2/(top-bottom)  # MODEL_REGISTRY Viking height = 2 m; no object is rescaled here.
-for o in meshes:
-    if not o.data.uv_layers:
-        o.data.uv_layers.new(name='Viking surface UV')
-bpy.ops.object.select_all(action='DESELECT')
-for o in meshes:
-    o.select_set(True)
-bpy.context.view_layer.objects.active = meshes[0]
-bpy.context.tool_settings.mesh_select_mode = (False, False, True)
-bpy.ops.object.mode_set(mode='EDIT')
-for name in FINISHES:
+if __name__ == '__main__':
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=str(ROOT / 'assets-raw/viking-lander.glb'), merge_vertices=False)
+    bpy.context.view_layer.update()
+    meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+    before = geometry_state(meshes)
+    assert set(before) == {'polySurfa1', 'polySurfa2'}
+    points = [o.matrix_world @ Vector(v) for o in meshes for v in o.bound_box]
+    bottom, top = min(v.z for v in points), max(v.z for v in points)
+    scale = 2/(top-bottom)  # MODEL_REGISTRY Viking height = 2 m; no object is rescaled here.
     for o in meshes:
-        bm = bmesh.from_edit_mesh(o.data)
-        for f in bm.faces:
-            f.select_set(o.material_slots[f.material_index].material.name == name)
-        bmesh.update_edit_mesh(o.data, loop_triangles=False, destructive=False)
-    bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=.008,
-                             area_weight=.1, correct_aspect=True, scale_to_bounds=True)
-    print('VIKING_UV', name, flush=True)
-bpy.ops.object.mode_set(mode='OBJECT')
-assert geometry_state(meshes) == before, 'UV generation must not change NASA geometry or transforms'
-records = []
-for i, (name, recipe) in enumerate(FINISHES.items()):
-    fields, coverage = surface_fields(meshes, name, bottom, scale)
-    record = bake_material(bpy.data.materials[name], recipe, fields, 197600+i)
-    record['uvCoverage'] = coverage
-    records.append(record)
-    print('VIKING_BAKED', name, recipe[0], 'UV coverage', round(coverage, 3), flush=True)
-assert geometry_state(meshes) == before
-bpy.ops.wm.save_as_mainfile(filepath=str(WORK / 'viking-materials.blend'))
-bpy.ops.export_scene.gltf(filepath=str(WORK / 'viking-materials-raw.glb'), export_format='GLB',
-    export_yup=True, export_apply=False, export_animations=False, export_extras=True,
-    export_cameras=False, export_lights=False, export_tangents=True, export_image_format='AUTO')
-(WORK / 'bake-report.json').write_text(json.dumps({'blender': bpy.app.version_string, 'size': SIZE,
-    'sourceSha256': hashlib.sha256((ROOT/'assets-raw/viking-lander.glb').read_bytes()).hexdigest(),
-    'geometry': before, 'materials': records}, indent=2))
-print('VIKING_MATERIALS_COMPLETE', sum(x['triangles'] for x in before.values()), 'NASA triangles retained', flush=True)
+        if not o.data.uv_layers:
+            o.data.uv_layers.new(name='Viking surface UV')
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in meshes:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    bpy.context.tool_settings.mesh_select_mode = (False, False, True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    for name in FINISHES:
+        for o in meshes:
+            bm = bmesh.from_edit_mesh(o.data)
+            for f in bm.faces:
+                f.select_set(o.material_slots[f.material_index].material.name == name)
+            bmesh.update_edit_mesh(o.data, loop_triangles=False, destructive=False)
+        bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=.008,
+                                 area_weight=.1, correct_aspect=True, scale_to_bounds=True)
+        print('VIKING_UV', name, flush=True)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    assert geometry_state(meshes) == before, 'UV generation must not change NASA geometry or transforms'
+    records = []
+    for i, (name, recipe) in enumerate(FINISHES.items()):
+        fields, coverage = surface_fields(meshes, name, bottom, scale)
+        record = bake_material(bpy.data.materials[name], recipe, fields, 197600+i)
+        record['uvCoverage'] = coverage
+        records.append(record)
+        print('VIKING_BAKED', name, recipe[0], 'UV coverage', round(coverage, 3), flush=True)
+    assert geometry_state(meshes) == before
+    bpy.ops.wm.save_as_mainfile(filepath=str(WORK / 'viking-materials.blend'))
+    bpy.ops.export_scene.gltf(filepath=str(WORK / 'viking-materials-raw.glb'), export_format='GLB',
+        export_yup=True, export_apply=False, export_animations=False, export_extras=True,
+        export_cameras=False, export_lights=False, export_tangents=True, export_image_format='AUTO')
+    (WORK / 'bake-report.json').write_text(json.dumps({'blender': bpy.app.version_string, 'size': SIZE,
+        'sourceSha256': hashlib.sha256((ROOT/'assets-raw/viking-lander.glb').read_bytes()).hexdigest(),
+        'geometry': before, 'materials': records}, indent=2))
+    print('VIKING_MATERIALS_COMPLETE', sum(x['triangles'] for x in before.values()), 'NASA triangles retained', flush=True)

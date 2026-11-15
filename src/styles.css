@@ -389,17 +389,6 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.title-eyebrow {
-  margin: 0 0 clamp(10px, 1.8vh, 18px);
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 400;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--amber);
-}
-
 /* Bound by height as well as width, so a short window never pushes it off the top. The only
    italic line on the screen. */
 .title-screen h1 {
@@ -1459,17 +1448,11 @@ button:disabled {
   text-transform: uppercase;
   transition: color 0.15s ease;
 }
-/* Narrower desktops (up to 1440 px): tighter tracking, so "5 · OPPORTUNITY" fits its own column
-   and the nine names keep clear gaps between them. */
-@media (max-width: 1439px) {
-  .hud-route .stop-name {
-    letter-spacing: 0.03em;
-  }
-}
-/* Up to common laptop widths (1280, 1360) the one-row bar cannot hold nine names side by side
-   without them running together: only the stop we are at (or flying to) keeps its name, the others
-   show their number, and their name while hovered. */
-@media (max-width: 1365px) {
+/* Below very wide screens the one-row bar cannot hold nine names side by side without one running
+   into the next stop's number ("VIKING 12", "SPIRIT5"): only the stop we are at (or flying to)
+   keeps its name, the others show their number, and their name while hovered or focused, lifted
+   over its neighbours on the bar's own ink. */
+@media (max-width: 1799px) {
   .hud-route li:not(.here):not(.next) .stop-label {
     display: none;
   }
@@ -1477,6 +1460,15 @@ button:disabled {
   .hud-route li:not(.here):not(.next) .hop:focus-visible .stop-label {
     display: inline;
   }
+}
+.hud-route li:hover,
+.hud-route li:focus-within {
+  z-index: 1;
+}
+.hud-route li:hover .stop-name,
+.hud-route li .hop:focus-visible .stop-name {
+  padding: 0 4px;
+  background: var(--ink);
 }
 /* Narrow windows: even the current stop's name would run over its neighbours' numbers, so the route
    shows numbers only (the site card and the dock name the stop); a name still opens on hover. */
@@ -1538,9 +1530,21 @@ button:disabled {
   gap: 0.9em;
   white-space: nowrap;
 }
+/* The bar's switches are quiet words, not a row of boxes: a hairline only on hover and focus,
+   amber while on. Only the camera's two-way switch keeps its segmented frame. */
 .hud-tools .icon-btn {
-  padding: 0.3em 0.55em;
+  padding: 0.3em 0.45em;
   font-size: 9px;
+  border-color: transparent;
+}
+.hud-tools .icon-btn:hover {
+  border-color: var(--line-soft);
+}
+.hud-tools .cam-toggle .icon-btn {
+  border-color: var(--line);
+}
+.hud-tools .tabular {
+  letter-spacing: 0.1em;
 }
 .cam-toggle {
   display: flex;
@@ -1657,9 +1661,10 @@ button:disabled {
   font-family: var(--serif);
   font-style: italic;
   font-weight: 400;
-  font-size: 19px;
-  line-height: 1.12;
+  font-size: 21px;
+  line-height: 1.1;
   color: var(--bone);
+  text-wrap: balance;
 }
 /* Where it is: the place, then its coordinates on a mono line of their own. Both wrap rather than
    being cut short. */
@@ -2174,15 +2179,6 @@ button:disabled {
 .story-tab:first-child {
   padding-left: 0;
 }
-.story-tab + .story-tab::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 5px;
-  bottom: 7px;
-  width: 1px;
-  background: var(--line-soft);
-}
 .story-tab:hover {
   color: var(--bone);
 }
@@ -2223,13 +2219,17 @@ button:disabled {
 .story-panel.instant {
   animation: none;
 }
+/* The machine speaking: the largest running text on screen, well above the 9–10 px telemetry, kept
+   to a comfortable measure. */
 .story-text {
+  max-width: 68ch;
   margin: 0;
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(14px, 1.1vw, 15.5px);
-  line-height: 1.38;
+  font-size: clamp(15px, 1.15vw, 16.5px);
+  line-height: 1.42;
   color: var(--bone);
+  text-wrap: pretty;
 }
 /* "Next ›" runs on at the end of the story text instead of taking a row of its own. */
 .story-text .story-next {
@@ -2243,7 +2243,7 @@ button:disabled {
 .inherit-line {
   margin: 6px 0 0;
   padding-left: 9px;
-  border-left: 2px solid var(--amber);
+  border-left: 1px solid var(--amber);
   font-family: var(--serif);
   font-style: italic;
   font-size: 13px;
@@ -2373,7 +2373,10 @@ button:disabled {
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--bone-dim);
-  opacity: 0.75;
+  /* It sits straight on the sand and the sky: a soft dark halo keeps it readable on bright ground. */
+  text-shadow:
+    0 1px 2px rgba(5, 7, 10, 0.9),
+    0 0 8px rgba(5, 7, 10, 0.6);
   pointer-events: none;
 }
 
@@ -2668,10 +2671,6 @@ button:disabled {
     margin: 18px var(--tf-pad) 20px;
     max-width: none;
   }
-  .title-eyebrow {
-    margin-bottom: 10px;
-    letter-spacing: 0.22em;
-  }
   .lede {
     margin-top: 14px;
     font-size: 17px;
@@ -2710,5 +2709,54 @@ button:disabled {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ---------- Title: the drag hint under Mars (src/scene/TitleGlobeInput.tsx) ---------- */
+
+/* Mars is centred 77.5 % across with a radius of min(21vw, 36vh) (CameraRig 'title' framing): the
+   hint sits just under it, above the footer bar, in the footer's bracketed mono at a whisper. It
+   fades in after the title's own reveal and away once the visitor has turned Mars (TitleGlobeInput
+   sets body[data-mars-spun]). Never takes the pointer. */
+.title-drag-hint {
+  position: fixed;
+  left: 77.5vw;
+  /* ×1.04: perspective draws the disk ~3.3 % larger than the framing radius. */
+  top: min(calc(50vh + min(21vw, 36vh) * 1.04 + 14px), calc(100vh - 92px));
+  transform: translateX(-50%);
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.5;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bone-dim);
+  pointer-events: none;
+  opacity: 0;
+  animation: fade-in 1.4s ease 2.2s forwards;
+}
+.title-drag-hint span {
+  opacity: 0.6;
+  transition: opacity 0.9s ease;
+}
+body[data-mars-spun] .title-drag-hint span {
+  opacity: 0;
+}
+.title-drag-hint .tdh-touch {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .title-drag-hint .tdh-fine {
+    display: none;
+  }
+  .title-drag-hint .tdh-touch {
+    display: inline;
+  }
+}
+/* Portrait (Mars at the top, the brief below it) and very short windows: no room under Mars. */
+@media (max-aspect-ratio: 11/10), (max-height: 560px) {
+  .title-drag-hint {
+    display: none;
   }
 }

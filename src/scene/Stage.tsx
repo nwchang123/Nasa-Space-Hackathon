@@ -15,8 +15,11 @@ import { FadeQuad } from './FadeQuad';
 import { Globe } from './Globe';
 import { Ingenuity } from './Ingenuity';
 import { Lights } from './Lights';
+import { MarsEnvironment } from './MarsEnvironment';
+import { ShaderWarmup } from './ShaderWarmup';
 import { SoundScape } from './SoundScape';
 import { Starfield } from './Starfield';
+import { TitleGlobeInput } from './TitleGlobeInput';
 
 function Scene() {
   // The one diorama mounted right now (the Director swaps it only once the old one is left behind).
@@ -24,7 +27,11 @@ function Scene() {
   return (
     <>
       <Director onSite={setSite} />
+      {/* Before anything that mounts materials, so it sees them in the frame they appear. */}
+      <ShaderWarmup />
       <CameraRig />
+      {/* Drag Mars round on the title screen. */}
+      <TitleGlobeInput />
       {/* Enabled by the rig only in the flight log, once the camera has settled. */}
       <OrbitControls
         makeDefault
@@ -39,6 +46,7 @@ function Scene() {
       />
       <Starfield />
       <Lights />
+      <MarsEnvironment />
       <Globe />
       {site && <Diorama key={site} stop={site} />}
       <Ingenuity />

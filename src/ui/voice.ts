@@ -1,12 +1,12 @@
 // Ingenuity's voice in the radio bubble: pre-recorded clips (scripts/voice/ingenuity_voice.py, a
 // Kokoro voice made locally), loaded only when a stop needs them. A clip reports how far its speech
-// has got, so the bubble types each line as it is heard (voiceSync.ts). A line with no clip (say,
-// edited after the clips were made) falls back to the browser's own speech synthesis, which the
-// bubble does not try to follow. On by default, remembered in this browser, silent while the
-// console sound is muted.
+// has got, so the bubble types each line as it is heard (voiceSync.ts). A line with no clip (the
+// prologue, the legs, the story sections and the way home have none) is read by the browser's own
+// speech synthesis, which the bubble follows by its word events and an estimated pace. On by
+// default, remembered in this browser, silent while the console sound is muted.
 
 import clips from '../data/voiceClips.json';
-import { isMuted } from './sound';
+import { isMuted, setVoiceSounding } from './sound';
 import { charsAtTime, type VoiceClip } from './voiceSync';
 
 const KEY = 'still-here:voiceover';
@@ -95,15 +95,20 @@ function playClip(clip: VoiceClip): Speech {
   const a = element(clip);
   const asked = performance.now();
   let state: 'loading' | 'playing' | 'ended' | 'failed' = 'loading';
+  // The typing ticks step back while the voice is heard (sound.ts).
   const fail = () => {
     if (state === 'ended') return;
+    if (state === 'playing') setVoiceSounding(false);
     state = 'failed';
     if (owners.get(a) === speech) a.pause();
   };
   const onPlaying = () => {
-    if (state === 'loading') state = 'playing';
+    if (state !== 'loading') return;
+    state = 'playing';
+    setVoiceSounding(true);
   };
   const onEnded = () => {
+    if (state === 'playing') setVoiceSounding(false);
     if (state !== 'failed') state = 'ended';
   };
   a.addEventListener('playing', onPlaying);
@@ -176,29 +181,107 @@ if (canSynthesize()) {
   });
 }
 
-/** Read lines aloud, one utterance each (long single utterances get cut off in some browsers). */
-function synthesize(lines: string[]) {
+/** The browser's speech at rate 0.96 says about this many characters a second (an estimate the
+ *  typing follows between word events, and the length of a line without a clip). */
+const SYNTH_CPS = 14;
+/** The pause between two lines (each its own utterance), s. */
+const SYNTH_LINE_GAP_S = 0.35;
+
+/**
+ * Read lines aloud, one utterance each (long single utterances get cut off in some browsers). The
+ * speech it returns follows the voice: line by line as each utterance starts, word by word where
+ * the browser reports word boundaries, by the estimated pace in between.
+ */
+function synthesize(lines: string[]): Speech {
   const synth = window.speechSynthesis;
   synth.cancel();
   synthVoice ??= pickVoice();
+  const text = lines.join('\n');
+  const starts: number[] = [];
+  let offset = 0;
   for (const line of lines) {
-    const u = new SpeechSynthesisUtterance(line);
+    starts.push(offset);
+    offset += line.length + 1;
+  }
+  const asked = performance.now();
+  let state: 'loading' | 'speaking' | 'ended' | 'failed' = 'loading';
+  let line = 0;
+  let lineAt = 0;
+  let word = -1;
+  let wordAt = 0;
+  const finish = (to: 'ended' | 'failed') => {
+    if (state === 'ended' || state === 'failed') return;
+    if (state === 'speaking') setVoiceSounding(false);
+    state = to;
+  };
+  lines.forEach((l, i) => {
+    const u = new SpeechSynthesisUtterance(l);
     if (synthVoice) u.voice = synthVoice;
     u.lang = synthVoice?.lang ?? 'en-GB';
     // Soft and unhurried, like a voice on a quiet radio channel.
     u.rate = 0.96;
     u.pitch = 1.08;
     u.volume = 0.9;
+    u.onstart = () => {
+      if (state === 'ended' || state === 'failed') return;
+      if (state === 'loading') setVoiceSounding(true);
+      state = 'speaking';
+      line = i;
+      lineAt = performance.now();
+      word = -1;
+    };
+    u.onboundary = e => {
+      if (line !== i || e.name === 'sentence') return;
+      word = e.charIndex;
+      wordAt = performance.now();
+    };
+    u.onend = () => {
+      if (i === lines.length - 1) finish('ended');
+    };
+    u.onerror = () => finish('failed');
     synth.speak(u);
-  }
+  });
+  const speech: Speech = {
+    charsAt() {
+      if (state === 'failed') return null;
+      if (state === 'ended') return text.length;
+      const now = performance.now();
+      if (state === 'loading') {
+        if (now - asked > START_TIMEOUT_MS) {
+          finish('failed');
+          return null;
+        }
+        return 0;
+      }
+      const said = word >= 0 ? word + ((now - wordAt) / 1000) * SYNTH_CPS : ((now - lineAt) / 1000) * SYNTH_CPS;
+      return starts[line] + Math.min(lines[line].length, Math.floor(said));
+    },
+    stop() {
+      finish('failed');
+      if (current === speech) {
+        current = null;
+        synth.cancel();
+      }
+    },
+  };
+  return speech;
+}
+
+/** How long a message (its lines) takes to say, ms: its clip's length, or an estimate for the browser's speech. */
+export function speechMs(lines: string[]): number {
+  const clip = CLIPS.get(lines.join('\n'));
+  if (clip) return Math.round(clip.duration * 1000);
+  const chars = lines.reduce((n, l) => n + l.length, 0);
+  return Math.round(((chars / SYNTH_CPS + SYNTH_LINE_GAP_S * Math.max(0, lines.length - 1)) * 1000) / 0.96);
 }
 
 // ---------------------------------------------------------------- speaking
 
 /**
- * Speak a message (its lines) if the voiceover is on and sound is not muted. Returns the speech to
- * type along with, or null when the bubble should type by its own clock (voice off, muted, or only
- * the browser's speech available).
+ * Speak a message (its lines) if the voiceover is on and sound is not muted: its recorded clip, or
+ * the browser's speech for a line without one (the prologue, the legs, the story sections, the way
+ * home). Returns the speech to type along with, or null when the caller should go by its own clock
+ * (voice off, muted, or no speech at all in this browser).
  */
 export function speak(lines: string[]): Speech | null {
   stopSpeaking();
@@ -208,7 +291,10 @@ export function speak(lines: string[]): Speech | null {
     current = playClip(clip);
     return current;
   }
-  if (canSynthesize()) synthesize(lines);
+  if (canSynthesize()) {
+    current = synthesize(lines);
+    return current;
+  }
   return null;
 }
 

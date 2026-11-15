@@ -2,7 +2,7 @@
   "source": "Original models.ts before the Blender upgrade",
   "parachute": {
     "vertices": 2231,
-    "positionSha256": "c854d84a6ba45c9114c343b198a23edb29d0361c2ae2e618e780d1aadfd53ad0",
+    "positionSha256": "595c780e72c5cd199c40e21e157c44278f03782e89f59ebdc63314dc5b872f53",
     "colorSha256": "326812a6f4f044279bdafcebce5cdb923fcf2b8c1d77e5dab4bd6fd433255265",
     "indexSha256": "b2c7f558f2b5118fb8eee674719f51390d739b96ceb764c3b62515d6b08ad6b2"
   }

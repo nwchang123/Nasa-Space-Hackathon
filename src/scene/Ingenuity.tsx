@@ -22,6 +22,8 @@ import { live } from './registry';
 import { FLY_SPEED_MS } from './freeFlight';
 import { SITE_PRESETS, siteLayout } from './sites';
 import { useReducedMotion } from './useReducedMotion';
+import { applyMissionFinish, cloneLitMaterials } from './missionFinish';
+import { INGENUITY_SINK_M, terrainLandingFrame } from './grounding';
 
 const URL = MODEL_REGISTRY.ingenuity.url;
 if (URL) useGLTF.preload(URL, false, true);
@@ -108,11 +110,13 @@ function NasaRig({ url, variant, sink }: { url: string; variant: Variant; sink: 
   const rig = useMemo<Rig>(() => {
     const r = ingenuityFromGltf(scene, variant === 'real');
     if (variant === 'phantom') return asPhantom(r, false);
+    const owned=cloneLitMaterials(r.root,new Set(r.blur));
+    applyMissionFinish(r.root,'ingenuity');
     r.root.traverse(o => {
       const m = o as Mesh;
       if (m.isMesh && m.material !== undefined && !(m.material as MeshBasicMaterial).transparent) m.castShadow = true;
     });
-    return { ...r, phantom: null };
+    return { ...r, phantom: null, dispose(){for(const m of owned)m.dispose();r.dispose();} };
   }, [scene, variant]);
   useRig(rig, sink);
   return <primitive object={rig.root} />;
@@ -164,6 +168,8 @@ const MAX_TILT = 0.2;
 const Y = new Vector3(0, 1, 0);
 const X = new Vector3(1, 0, 0);
 const Z = new Vector3(0, 0, 1);
+const landing = { height: 0, rotation: new Quaternion() };
+const landingQ = new Quaternion();
 
 export function Ingenuity() {
   const flyer = useRef<Group>(null);
@@ -183,6 +189,7 @@ export function Ingenuity() {
   useEffect(
     () => () => {
       live.brokenTip = null;
+      live.landedIngenuity = null;
     },
     [],
   );
@@ -221,14 +228,32 @@ export function Ingenuity() {
         const lay = siteLayout(SITE_PRESETS[shot.siteId]);
         const fl = live.flyer;
         if (fl.site === shot.siteId) {
-          posB.set(fl.x, fl.ground + Math.max(shot.hover, fl.alt), fl.z).applyMatrix4(live.site.matrix);
+          const altitude = Math.max(shot.hover, fl.alt);
+          const settle = 1 - smoothstep(0, 0.12, altitude), sink = INGENUITY_SINK_M * settle;
+          const surface = live.surface.site === shot.siteId ? live.surface.heightAt : null;
+          let ground = surface?.(fl.x, fl.z) ?? fl.ground;
           quatB.copy(live.site.quat);
+          if (surface && settle > 0) {
+            terrainLandingFrame(flyerReal.current?.root ?? null, surface, fl.x, fl.z, fl.yaw, landing);
+            ground += (landing.height - ground) * settle;
+            quatB.multiply(landingQ.identity().slerp(landing.rotation, settle));
+          }
+          posB.set(fl.x, ground + altitude - sink, fl.z).applyMatrix4(live.site.matrix);
           const v = Math.hypot(fl.vx, fl.vz);
           if (v > 1e-3) quatB.multiply(tiltQ.setFromAxisAngle(tiltAxis.set(fl.vz / v, 0, -fl.vx / v), Math.min(MAX_TILT, (v / FLY_SPEED_MS) * MAX_TILT)));
           quatB.multiply(yawQ.setFromAxisAngle(Y, fl.yaw));
         } else {
-          posB.set(lay.ingenuity[0], shot.hover, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
-          quatB.copy(live.site.quat).multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
+          const surface = live.surface.site === shot.siteId ? live.surface.heightAt : null;
+          const settle = 1 - smoothstep(0, 0.12, shot.hover), sink = INGENUITY_SINK_M * settle;
+          let ground = surface?.(lay.ingenuity[0], lay.ingenuity[2]) ?? 0;
+          quatB.copy(live.site.quat);
+          if (surface && settle > 0) {
+            terrainLandingFrame(flyerReal.current?.root ?? null, surface, lay.ingenuity[0], lay.ingenuity[2], lay.machineYaw + 0.5, landing);
+            ground += (landing.height - ground) * settle;
+            quatB.multiply(landingQ.identity().slerp(landing.rotation, settle));
+          }
+          posB.set(lay.ingenuity[0], ground + shot.hover - sink, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
+          quatB.multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
         }
         const pivot: Vec3 = [live.site.point.x, live.site.point.y, live.site.point.z];
         g.position.set(...blendAbout([posA.x, posA.y, posA.z], [posB.x, posB.y, posB.z], w, pivot));
@@ -277,17 +302,27 @@ export function Ingenuity() {
     const hr = homeReal.current;
     if (homeShown) {
       const lay = siteLayout(SITE_PRESETS[HOME]);
-      h.position.set(lay.ingenuity[0], 0, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
-      h.quaternion.copy(live.site.quat).multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
+      const surface = live.surface.site === HOME ? live.surface.heightAt : null;
+      h.quaternion.copy(live.site.quat);
+      let ground = surface?.(lay.ingenuity[0], lay.ingenuity[2]) ?? 0;
+      if (surface) {
+        terrainLandingFrame(hr?.root ?? null, surface, lay.ingenuity[0], lay.ingenuity[2], lay.machineYaw + 0.5, landing);
+        ground = landing.height; h.quaternion.multiply(landing.rotation);
+      }
+      h.position.set(lay.ingenuity[0], ground - INGENUITY_SINK_M, lay.ingenuity[2]).applyMatrix4(live.site.matrix);
+      h.quaternion.multiply(yawQ.setFromAxisAngle(Y, lay.machineYaw + 0.5));
       h.scale.setScalar(SITE_SCALE);
       if (hr) spinRig(hr, realAngle.current, 0, 1);
     }
+
+    live.landedIngenuity = homeShown ? hr?.root ?? null
+      : shot.ingenuity && !isPhantom && shot.siteId && shot.blend > 0 ? flyerReal.current?.root ?? null : null;
 
     // The "Broken rotor tip" callout follows whichever real Ingenuity is on screen.
     if (homeShown) live.brokenTip = hr?.brokenTip ?? null;
     else if (shot.ingenuity && !isPhantom) live.brokenTip = flyerReal.current?.brokenTip ?? null;
     else live.brokenTip = null;
-  });
+  }, -0.05); // Publish this frame's physical rig before the lights and ground-contact batch.
 
   return (
     <>

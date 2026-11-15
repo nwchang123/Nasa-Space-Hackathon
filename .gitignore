@@ -8,3 +8,4 @@ dist/
 assets-raw/
 output/playwright/
 .playwright-cli/
+scripts/model-upgrade/__pycache__/

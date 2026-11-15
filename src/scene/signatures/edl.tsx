@@ -9,9 +9,26 @@ import { useReducedMotion } from '../useReducedMotion';
 import { findMachine, SigFocus, SigTag, siteShown, type SiteSignatureProps } from './common';
 import { useSliderDrive } from './drive';
 import { PARACHUTE_RINGS, ringsDecoded } from './logic';
+import { PARACHUTE_AT } from '../grounding';
+import {
+  canopySurfaceLocal,
+  CHUTE_INNER_R,
+  CHUTE_OUTER_R,
+  CHUTE_PHI_SEGMENTS,
+  CHUTE_THETA_SEGMENTS,
+  CHUTE_YAW,
+} from '../parachute';
 
-/** The canopy model (models.ts backshellAndChute): RingGeometry(0.5, 8, 96, 22), bands every 2.1 m. */
-const CHUTE = { inner: 0.5, outer: 8, theta: 96, phi: 22, band: 2.1, at: [-1.5, 0, -8.2] as const, yaw: 0.12, squash: 0.72 };
+/** The canopy model (parachute.ts): RingGeometry(0.5, 8, 96, 22), bands every 2.1 m. */
+const CHUTE = {
+  inner: CHUTE_INNER_R,
+  outer: CHUTE_OUTER_R,
+  theta: CHUTE_THETA_SEGMENTS,
+  phi: CHUTE_PHI_SEGMENTS,
+  band: 2.1,
+  at: PARACHUTE_AT,
+  yaw: CHUTE_YAW,
+};
 const RING_STEP = 0.2125;
 
 const vertex = /* glsl */ `
@@ -56,7 +73,8 @@ function labelSpot(i: number): Vector3 {
   const r1 = i === 3 ? CHUTE.outer : (i + 1) * CHUTE.band;
   const r = (r0 + r1) / 2;
   const th = LABEL_ANGLE[i];
-  const local = new Vector3(r * Math.cos(th), 0.45, r * Math.sin(th) * CHUTE.squash);
+  const local = canopySurfaceLocal(r, th);
+  local.y += 0.36;
   // Into the machine's frame: the canopy is turned by CHUTE.yaw and moved to CHUTE.at.
   return local.applyAxisAngle(new Vector3(0, 1, 0), CHUTE.yaw).add(new Vector3(...CHUTE.at));
 }

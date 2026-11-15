@@ -10,7 +10,8 @@ import { MACHINE_BY_ID } from '../data/machines';
 import { MODEL_REGISTRY } from '../scene/models';
 import { HANGAR_HASH, useApp } from '../store';
 import { MACHINE_IDS } from '../types';
-import { setChargeLoop, setRotorLoop, setWind } from '../ui/sound';
+import { AMBIENT_LEVEL } from '../ui/ambientScore';
+import { setAmbience, setChargeLoop, setRotorLoop, setWind } from '../ui/sound';
 import { stopSpeaking } from '../ui/voice';
 import { arOverride, browserProbe, detectArMode, linkHint, pageLink, type ArMode } from './arSupport';
 import type { Arrangement } from './build';
@@ -353,12 +354,17 @@ export default function Hangar() {
 
   useEffect(() => {
     // The globe's scene pauses behind the hangar; its sound loops would hang on their last level,
-    // and Ingenuity's voiceover (timed from the paused scene) must not talk over the hangar.
+    // and Ingenuity's voiceover (timed from the paused scene) must not talk over the hangar. Only
+    // the ambient pad stays, quieter (it starts here too, once the visitor has clicked).
     setRotorLoop(0);
     setWind(0);
     setChargeLoop(0);
-    stopSpeaking();
-    const hush = window.setInterval(stopSpeaking, 400);
+    const hush = () => {
+      stopSpeaking();
+      setAmbience(AMBIENT_LEVEL.hangar);
+    };
+    hush();
+    const hushing = window.setInterval(hush, 400);
     back.current?.focus({ preventScroll: true });
     // The address is the hangar's deep link while it is open (copy it, or scan the QR code).
     const { pathname, search } = window.location;
@@ -368,7 +374,7 @@ export default function Hangar() {
     };
     window.addEventListener('keydown', onKey);
     return () => {
-      window.clearInterval(hush);
+      window.clearInterval(hushing);
       window.removeEventListener('keydown', onKey);
       endTabletopAr();
       useHangar.getState().setXr('off', null);

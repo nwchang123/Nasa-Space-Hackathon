@@ -16,8 +16,32 @@ import { climbMs, descentMs, easeInOut, flightProgress, smoothstep, type LegLike
 
 export type GlobeShot = 'title' | 'chase' | 'epilogue' | 'report';
 
-/** Title screen → home diorama at "Begin Flight 73", ms. */
-export const OPENING_DESCENT_MS = 2800;
+/**
+ * Title screen → home diorama at "Begin Flight 73", ms. The title shows Mars off to the right, so
+ * the opening first swings the view round to put Jezero in the middle of the screen
+ * (OPENING_CENTRE_MS, see CameraRig), and the dive straight down into it starts part way through
+ * that turn (OPENING_DIVE_AT_MS), so the two read as one move instead of a sideways lunge.
+ */
+export const OPENING_DESCENT_MS = 3400;
+export const OPENING_CENTRE_MS = 1150;
+export const OPENING_DIVE_AT_MS = 700;
+/**
+ * The opening runs on its own clock, which advances at most this much per frame, ms. The first
+ * frames of the dive build the home diorama and compile its shaders; on a slow machine one of those
+ * frames can take most of a second. On the wall clock the camera would then leap from orbit to the
+ * sand in a single frame; on this clock the dive simply waits for the frame and carries on.
+ */
+export const OPENING_FRAME_MAX_MS = 40;
+
+/** How far the opening has turned the view onto Jezero, 0..1, `since` ms after "Begin Flight 73". */
+export function openingCentre(since: number): number {
+  return easeInOut(Math.min(1, Math.max(0, since / OPENING_CENTRE_MS)));
+}
+
+/** How far the opening dive has got (the shot's blend), 0..1, `since` ms after "Begin Flight 73". */
+export function openingDive(since: number): number {
+  return Math.min(1, Math.max(0, (since - OPENING_DIVE_AT_MS) / (OPENING_DESCENT_MS - OPENING_DIVE_AT_MS)));
+}
 /** In the epilogue the home diorama holds this long, then the view rises to the whole globe. */
 export const EPILOGUE_HOLD_MS = 6500;
 export const EPILOGUE_RISE_MS = 3800;
@@ -102,6 +126,8 @@ export interface Shot {
   judder?: number;
   /** A direct hop is still climbing out of the previous site. */
   leaving?: boolean;
+  /** Prologue: time into the opening on its hitch-free clock (see OPENING_FRAME_MAX_MS), ms. */
+  opening?: number;
 }
 
 interface Moment {
@@ -156,6 +182,9 @@ export class Choreographer {
   private skip: { leg: number; from: MachineId; t0: number; flyMs: number; at: number } | null = null;
   private settledAt = 0;
   private lastNow = 0;
+  /** The opening's own clock, ms (OPENING_FRAME_MAX_MS). */
+  private openingMs = 0;
+  private ticked = false;
   private leaving: { site: MachineId; from: number; at: number } | null = null;
 
   update(phase: Phase, f: FlightState, now: number, reduced: boolean, extras: ShotExtras = {}): Shot {
@@ -171,8 +200,12 @@ export class Choreographer {
       this.skip = skipped && fl ? { leg: fl.leg, from: fl.from, t0: fl.t, flyMs: fl.flyMs, at: now } : null;
       if (!(phase === 'flight' && f.stage === 'flying')) this.flying = null;
       this.settledAt = now;
+      this.openingMs = 0;
       if (phase !== 'flight') this.leaving = null;
+    } else if (this.ticked) {
+      this.openingMs += Math.min(OPENING_FRAME_MAX_MS, Math.max(0, now - this.lastNow));
     }
+    this.ticked = true;
     const since = now - this.seenAt;
     const dt = this.lastNow ? Math.min(0.1, Math.max(0, (now - this.lastNow) / 1000)) : 0;
     this.lastNow = now;
@@ -200,10 +233,10 @@ export class Choreographer {
       const blend = this.blendAtChange * (1 - ease(since / RETURN_MS));
       next = { ...REST, siteId: blend > 0 ? prev.siteId : null, blend, globeShot: phase === 'report' ? 'report' : 'title', rotor: spinDown };
     } else if (f.stage === 'prologue') {
-      const blend = this.blendAtChange + (1 - this.blendAtChange) * ease(since / OPENING_DESCENT_MS);
+      const blend = this.blendAtChange + (1 - this.blendAtChange) * ease(reduced ? since : openingDive(this.openingMs));
       const pr = extras.prologue;
       const test = pr && !reduced ? rotorTest(pr.step, now - pr.at, pr.throttle ?? 0) : { rotor: 0, judder: 0 };
-      next = { ...REST, siteId: HOME, blend, globeShot: 'title', rotor: test.rotor, judder: test.judder };
+      next = { ...REST, siteId: HOME, blend, globeShot: 'title', rotor: test.rotor, judder: test.judder, opening: this.openingMs };
     } else if (f.stage === 'flying') {
       const t = now - f.stageStartedAt + boostMs;
       this.flying = { leg: f.leg, from: f.from, t: Math.min(t, f.flyMs), flyMs: f.flyMs };

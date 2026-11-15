@@ -5,6 +5,7 @@
 import { DEG } from '../geo';
 import type { MachineId } from '../types';
 import { horizonDir, smoothstep, type Vec3 } from './layout';
+import { VIKING_2_LANDING, type LandingBank } from './grounding';
 
 // ---------------------------------------------------------------- site presets
 
@@ -38,6 +39,8 @@ export interface SitePreset {
   hills: Hill[];
   /** Radius kept flat and clear of rocks around the machine, m. */
   clear: number;
+  /** Local soil beneath a tilted lander's raised pads; coordinates are machine-local metres. */
+  landingBank?: LandingBank;
   /** Compass bearing from the subject to the camera, deg (180 = camera to the south, looking north). */
   cameraAz: number;
   /** Camera elevation above the horizon, deg. */
@@ -91,6 +94,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     rocks: 420,
     rockSize: 0.45,
     clear: 2.0,
+    landingBank: VIKING_2_LANDING,
     cameraAz: 305,
     cameraElev: 26,
     yawOffset: 40,
@@ -109,7 +113,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
       { azDeg: 228, dist: 78, radius: 15, height: 7 },
       { azDeg: 246, dist: 82, radius: 13, height: 5.5 },
     ],
-    clear: 2.6,
+    clear: 3.6,
     ingenuity: { right: 2.5, toward: 1.2 },
     frame: { left: -3.3, right: 3.2, height: 1.4 },
     antenna: [0.3, 0.675, -0.2],
@@ -190,7 +194,7 @@ export const SITE_PRESETS: Record<MachineId, SitePreset> = {
     yawOffset: 0,
     hills: [{ azDeg: 285, dist: 90, radius: 45, height: 11 }],
     // Wide enough to keep the whole spread-out parachute on flat ground.
-    clear: 15,
+    clear: 18,
     ingenuity: { right: 3.6, toward: 1.5 },
     frame: { left: -8.5, right: 4.3, height: 2.6 },
     antenna: [0, 1.4, 0],
@@ -242,22 +246,22 @@ export const HOTSPOTS: Record<MachineId, [Spot, Spot, Spot, Spot]> = {
   // Body, the low (tilted) footpad, the far side, the other footpad.
   'viking-2': [{ box: [0, 0.5, 0.2] }, { box: [0.75, 0.04, 0.65] }, { box: [-0.65, 0.62, -0.35] }, { box: [-0.7, 0.03, 0.6] }],
   // An airbag, Sojourner, the camera mast (last data), a petal.
-  'pathfinder-sojourner': [{ m: [1.1391, 0.2357, -0.111] }, { m: [-2.6, 0.3105, 0.5] }, { m: [0.079, 1.18, 0.086] }, { m: [0, 0.1399, 1.2] }],
+  'pathfinder-sojourner': [{ m: [1.1391, 0.2237, -0.111] }, { m: [-2.6, 0.2985, 0.5] }, { m: [0.079, 1.168, 0.086] }, { m: [0, 0.1279, 1.2] }],
   // Detailed MER surfaces measured after normalization. Spirit's anchors include its tilt/sink:
   // camera, jammed right-front wheel, the exposed top of a wheel in soft soil, and a solar panel.
   spirit: [{ m: [0.2005, 1.186, 0.4808] }, { m: [-0.5496, 0.0457, 0.5769] }, { m: [0.5106, 0.092, -0.0672] }, { m: [-0.5823, 0.6296, -0.15] }],
   // Camera, the stowed instrument turret in the NASA source, a panel, and an outer wheel face.
-  opportunity: [{ m: [0.0691, 1.32, 0.3903] }, { m: [0.1, 0.3945, 0.31] }, { m: [-0.65, 0.6457, -0.2] }, { m: [0.5644, 0.12, -0.55] }],
+  opportunity: [{ m: [0.0691, 1.308, 0.3903] }, { m: [0.1, 0.3825, 0.31] }, { m: [-0.65, 0.6337, -0.2] }, { m: [0.5644, 0.108, -0.55] }],
   // The deck (ovens, lab), the scoop in its trench, the array that lost power, the broken array.
-  phoenix: [{ m: [0.17, 1.27, -0.16] }, { m: [-0.5, 0.087, 1.95] }, { m: [-1.7993, 0.9453, -0.4005] }, { m: [1.7993, 0.9457, -0.4005] }],
+  phoenix: [{ m: [0.17, 1.258, -0.16] }, { m: [-0.5, 0.075, 1.95] }, { m: [-1.7993, 0.9333, -0.4005] }, { m: [1.7993, 0.9337, -0.4005] }],
   // (NASA model, as placed: deck top ~1.35 m, arrays to x ±3 m, the raised arm at x −1.3…0,
   // y 1.1…2.1, z 0.7…1.7.) The arm, the instruments on the deck's front edge, a dusty array, the
   // deck's top (where the laser reflector is).
-  insight: [{ m: [-0.65, 1.95, 1.2] }, { m: [-0.1, 1.28, 0.9] }, { m: [-2.2, 1.22, 0] }, { m: [0.1, 1.4, -0.6] }],
+  insight: [{ m: [-0.65, 1.938, 1.2] }, { m: [-0.1, 1.268, 0.9] }, { m: [-2.2, 1.208, 0] }, { m: [0.1, 1.388, -0.6] }],
   // The backshell's top, the parachute, a dent from the impact, the canopy's near edge.
-  'mars2020-edl': [{ m: [-0.21, 1.7427, -0.14] }, { m: [-3.0003, 0.0751, -8.1986] }, { m: [1.2617, 0.5181, 0.843] }, { m: [-1.2018, 0.0573, -3.5988] }],
+  'mars2020-edl': [{ m: [-0.21, 1.7307, -0.14] }, { m: [-3.0003, 0.8387, -8.1986] }, { m: [1.2617, 0.5061, 0.843] }, { m: [-1.2018, 0.3491, -3.5988] }],
   // Ingenuity at the diorama's centre: fuselage, rotor, the broken blade (followed live), solar panel.
-  ingenuity: [{ m: [0.05, 0.2, 0.05] }, { m: [0.42, 0.44, 0.1] }, { m: [-0.5, 0.44, 0] }, { m: [0, 0.56, 0] }],
+  ingenuity: [{ m: [0.05, 0.1637, 0.05] }, { m: [0.42, 0.4037, 0.1] }, { m: [-0.5, 0.44, 0] }, { m: [0, 0.5237, 0] }],
 };
 
 export interface SiteLayout {

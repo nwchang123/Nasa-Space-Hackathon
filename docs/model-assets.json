@@ -5,75 +5,49 @@
     "geometry": "EXT_meshopt_compression",
     "textures": "image/webp",
     "maxTextureSize": 1024,
+    "dataTextureMax": 512,
     "flatten": false,
-    "join": false,
     "instance": false,
-    "simplify": false
+    "staticMerge": "MER material batches only; excludes wheels, arms and mast",
+    "simplify": "Blender collapse on static InSight deck and Phoenix supports only",
+    "vikingPositions": "lossless FLOAT32; exact directed-triangle SHA-256 contract",
+    "thinSurfaces": "foil, fabric, shell openings and thin solar panels retain doubleSided"
   },
   "assets": {
     "mer": {
       "file": "public/models/mer.glb",
-      "bytes": 1073196,
-      "sha256": "0bca9d97548f4a39c26adb34398e151980346d88c9ae6ee4d1f42f6ff3c81d06",
-      "nodes": 42,
+      "bytes": 1047076,
+      "sha256": "6563126954a6db7e8bad646f23187aa5cb21c865221b1bd4240ba5a707666b03",
+      "nodes": 26,
       "triangles": 32562,
-      "drawPrimitives": 55,
+      "drawPrimitives": 26,
       "textures": [
         {
-          "name": "tex_arm.psd",
+          "name": "mer-tex_arm-micro-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            256,
+            256
+          ],
+          "bytes": 680
         },
         {
-          "name": "tex_body_n",
+          "name": "tex_arm",
           "mime": "image/webp",
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 74990
         },
         {
-          "name": "tex_body.psd",
+          "name": "mer-tex_arm-surface-MR",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
-        },
-        {
-          "name": "tex_suspension_n",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
-        },
-        {
-          "name": "tex_suspension.psd",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
-        },
-        {
-          "name": "tex_panels_n",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
-        },
-        {
-          "name": "tex_panels-silicon",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
+            256,
+            256
+          ],
+          "bytes": 2432
         },
         {
           "name": "tex_instruments",
@@ -81,39 +55,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 83612
         },
         {
-          "name": "tex_panels2_n",
+          "name": "tex_mast",
           "mime": "image/webp",
           "size": [
             1024,
             1024
-          ]
-        },
-        {
-          "name": "tex_panels2-silicon",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
-        },
-        {
-          "name": "tex_mast.psd",
-          "mime": "image/webp",
-          "size": [
-            1024,
-            1024
-          ]
+          ],
+          "bytes": 76800
         },
         {
           "name": "Silver MLI-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 20258
         },
         {
           "name": "Silver MLI-base",
@@ -121,26 +82,193 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 58682
         },
         {
           "name": "Silver MLI-rough",
           "mime": "image/webp",
           "size": [
+            512,
+            512
+          ],
+          "bytes": 11938
+        },
+        {
+          "name": "mer-Satin titanium-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2464
+        },
+        {
+          "name": "tex_body_n",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 2334
+        },
+        {
+          "name": "tex_body",
+          "mime": "image/webp",
+          "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 106972
+        },
+        {
+          "name": "tex_panels2_n",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 5256
+        },
+        {
+          "name": "tex_panels2-silicon",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 14824
+        },
+        {
+          "name": "mer-tex_panels2_n-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2570
+        },
+        {
+          "name": "tex_panels_n",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 11906
+        },
+        {
+          "name": "tex_panels-silicon",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 20492
+        },
+        {
+          "name": "tex_suspension_n",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 12840
+        },
+        {
+          "name": "tex_suspension",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 52016
+        },
+        {
+          "name": "mer-tex_suspension_n-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2534
+        }
+      ],
+      "materials": [
+        {
+          "name": "tex_arm",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "tex_instruments",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "tex_mast",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Silver MLI",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Satin titanium",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "tex_body_n",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "tex_panels2_n",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "tex_panels_n",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "tex_suspension_n",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
         }
       ],
       "requiredNodes": [
         "mer-right-front-contact",
-        "wheel-right-front"
-      ]
+        "wheel-right-front",
+        "wheel-right-middle",
+        "wheel-right-rear",
+        "wheel-left-front",
+        "wheel-left-middle",
+        "wheel-left-rear"
+      ],
+      "before": {
+        "bytes": 1073196,
+        "triangles": 32562,
+        "primitives": 55
+      }
     },
     "pathfinder": {
       "file": "public/models/pathfinder.glb",
-      "bytes": 1448448,
-      "sha256": "394a1a7d036a3d0226014ce8e668845fc8185f8969d8db76992de89ba7ca9cae",
+      "bytes": 1399016,
+      "sha256": "332bd8582f892404a6adce8d3c84056233ec73649adbb66c5133de3f674d8055",
       "nodes": 18,
       "triangles": 77866,
       "drawPrimitives": 15,
@@ -149,9 +277,10 @@
           "name": "Airbag Vectran weave-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 25340
         },
         {
           "name": "Airbag Vectran weave-base",
@@ -159,23 +288,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 60458
         },
         {
           "name": "Airbag Vectran weave-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11162
         },
         {
           "name": "Thermal white-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 1770
         },
         {
           "name": "Thermal white-base",
@@ -183,23 +315,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 171974
         },
         {
           "name": "Thermal white-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 10798
         },
         {
           "name": "Wrinkled gold MLI-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 21344
         },
         {
           "name": "Wrinkled gold MLI-base",
@@ -207,23 +342,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 38718
         },
         {
           "name": "Wrinkled gold MLI-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 10684
         },
         {
           "name": "Dusty silicon cells-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 2808
         },
         {
           "name": "Dusty silicon cells-base",
@@ -231,37 +369,182 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 16208
         },
         {
           "name": "Dusty silicon cells-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11030
+        },
+        {
+          "name": "pathfinder-Airbag stitched seams-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 680
+        },
+        {
+          "name": "pathfinder-Airbag stitched seams-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2084
+        },
+        {
+          "name": "pathfinder-Satin titanium-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2464
+        },
+        {
+          "name": "pathfinder-Optical glass-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 1864
+        },
+        {
+          "name": "pathfinder-Graphite hardware-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2386
+        },
+        {
+          "name": "pathfinder-Copper cable braid-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2512
+        }
+      ],
+      "materials": [
+        {
+          "name": "Airbag Vectran weave",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Airbag stitched seams",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Thermal white",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Wrinkled gold MLI",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Satin titanium",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Optical glass",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Graphite hardware",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Dusty silicon cells",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Copper cable braid",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
         }
       ],
       "requiredNodes": [
         "sojourner",
         "sojourner-apxs-tip"
-      ]
+      ],
+      "before": {
+        "bytes": 1448448,
+        "triangles": 77866,
+        "primitives": 15
+      }
     },
     "phoenix": {
       "file": "public/models/phoenix.glb",
-      "bytes": 2267996,
-      "sha256": "c722be4162365aadceb8688d2d98ef72c6a77bd0585946adca92716779c3d5fb",
+      "bytes": 1750120,
+      "sha256": "af1cf83ad77d0543364f8a1d28d5792e5f6241a39ea87b86b7e28d8ecb1043cf",
       "nodes": 13,
-      "triangles": 114500,
+      "triangles": 59999,
       "drawPrimitives": 13,
       "textures": [
+        {
+          "name": "phoenix-Satin titanium-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 680
+        },
+        {
+          "name": "phoenix-Satin titanium-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2488
+        },
+        {
+          "name": "phoenix-Graphite hardware-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2386
+        },
         {
           "name": "Polar thermal white-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 1272
         },
         {
           "name": "Polar thermal white-base",
@@ -269,23 +552,35 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 173426
         },
         {
           "name": "Polar thermal white-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11548
+        },
+        {
+          "name": "phoenix-Optical glass-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 1864
         },
         {
           "name": "Polar silver MLI-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 20258
         },
         {
           "name": "Polar silver MLI-base",
@@ -293,23 +588,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 46996
         },
         {
           "name": "Polar silver MLI-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11934
         },
         {
           "name": "Polar silicon cells-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 3484
         },
         {
           "name": "Polar silicon cells-base",
@@ -317,15 +615,17 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 18182
         },
         {
           "name": "Polar silicon cells-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11840
         },
         {
           "name": "Wrinkled gold MLI-base",
@@ -333,26 +633,77 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 44908
         },
         {
           "name": "Wrinkled gold MLI-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11592
+        }
+      ],
+      "materials": [
+        {
+          "name": "Satin titanium",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Graphite hardware",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Polar thermal white",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Optical glass",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Polar silver MLI",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Polar silicon cells",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Wrinkled gold MLI",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
         }
       ],
       "requiredNodes": [
         "phoenix-arm",
         "phoenix-scoop"
-      ]
+      ],
+      "before": {
+        "bytes": 2267996,
+        "triangles": 114500,
+        "primitives": 13
+      }
     },
     "backshell": {
       "file": "public/models/backshell.glb",
-      "bytes": 725524,
-      "sha256": "443224f0bf673066289e6546852eda1539c9f17e68523b5c33d88c9684ebf313",
+      "bytes": 684344,
+      "sha256": "1a9767a53c795103591badc9e9b50c6695fa686d906bcd4763aa8ea00456507d",
       "nodes": 7,
       "triangles": 40752,
       "drawPrimitives": 7,
@@ -361,9 +712,10 @@
           "name": "Weathered backshell thermal coating-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 1770
         },
         {
           "name": "Weathered backshell thermal coating-base",
@@ -371,23 +723,26 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 150594
         },
         {
           "name": "Weathered backshell thermal coating-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 10684
         },
         {
           "name": "Exposed composite laminate-normal",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 25340
         },
         {
           "name": "Exposed composite laminate-base",
@@ -395,15 +750,17 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 8630
         },
         {
           "name": "Exposed composite laminate-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 11206
         },
         {
           "name": "Thermal white-base",
@@ -411,20 +768,847 @@
           "size": [
             1024,
             1024
-          ]
+          ],
+          "bytes": 171974
         },
         {
           "name": "Thermal white-rough",
           "mime": "image/webp",
           "size": [
-            1024,
-            1024
-          ]
+            512,
+            512
+          ],
+          "bytes": 10798
+        },
+        {
+          "name": "backshell-Satin titanium-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 680
+        },
+        {
+          "name": "backshell-Satin titanium-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2464
+        },
+        {
+          "name": "backshell-Fractured heat protection substrate-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 1952
+        }
+      ],
+      "materials": [
+        {
+          "name": "Satin titanium",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Fractured heat protection substrate",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "Weathered backshell thermal coating",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Exposed composite laminate",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "Thermal white",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
         }
       ],
       "requiredNodes": [
         "backshell"
-      ]
+      ],
+      "before": {
+        "bytes": 725524,
+        "triangles": 40752,
+        "primitives": 7
+      }
+    },
+    "insight": {
+      "file": "public/models/insight.glb",
+      "bytes": 1901632,
+      "sha256": "8cf5ec487225a6499484ef750bceaf9513ac34988f7da444e65db6292340caec",
+      "nodes": 6,
+      "triangles": 60997,
+      "drawPrimitives": 16,
+      "textures": [
+        {
+          "name": "insight-InSIGHT_AO_08-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 680
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_08",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 79556
+        },
+        {
+          "name": "insight-InSIGHT_AO_08-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2486
+        },
+        {
+          "name": "insight-dust-InSIGHT_tex_02",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 56860
+        },
+        {
+          "name": "insight-InSIGHT_tex_02-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2408
+        },
+        {
+          "name": "insight-dust-InSIGHT_tex_02.001",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 54956
+        },
+        {
+          "name": "insight-InSIGHT_foil_silver-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 3718
+        },
+        {
+          "name": "insight-dust-InSIGHT_foil_silver",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 950
+        },
+        {
+          "name": "insight-InSIGHT_foil_silver-surface-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2410
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_03",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 42856
+        },
+        {
+          "name": "insight-dust-InSIGHT_tex_01",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 60856
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_02",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 79276
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_05",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 9686
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_04",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 86290
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_06",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 36030
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_01",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 32704
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_08.001",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 78172
+        },
+        {
+          "name": "insight-dust-InSIGHT_tex_01.001",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 61508
+        },
+        {
+          "name": "insight-dust-InSIGHT_AO_07",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 31554
+        }
+      ],
+      "materials": [
+        {
+          "name": "InSIGHT_AO_08",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_tex_02",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_tex_02.001",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_foil_silver",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "InSIGHT_AO_03",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_tex_01",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_02",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_05",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_04",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_06",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_01",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_08.001",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_tex_01.001",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "InSIGHT_AO_07",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        }
+      ],
+      "requiredNodes": [],
+      "before": {
+        "bytes": 2522260,
+        "triangles": 140481,
+        "primitives": 16
+      }
+    },
+    "ingenuity": {
+      "file": "public/models/ingenuity.glb",
+      "bytes": 394580,
+      "sha256": "07fefd836132e3b5c8d3190704d34987def2e46e2ff37604fa31d9b0adb0914d",
+      "nodes": 12,
+      "triangles": 9124,
+      "drawPrimitives": 35,
+      "textures": [
+        {
+          "name": "CarbonFiber_normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 73506
+        },
+        {
+          "name": "CarbonFiber_albedo2",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 68250
+        },
+        {
+          "name": "CarbonFiber_roughness2",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 2010
+        },
+        {
+          "name": "cameras_diff",
+          "mime": "image/webp",
+          "size": [
+            315,
+            512
+          ],
+          "bytes": 7752
+        },
+        {
+          "name": "cameras_metal-cameras_rough",
+          "mime": "image/webp",
+          "size": [
+            315,
+            512
+          ],
+          "bytes": 5464
+        },
+        {
+          "name": "blade",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            512
+          ],
+          "bytes": 53616
+        },
+        {
+          "name": "chopper_sp_r2",
+          "mime": "image/webp",
+          "size": [
+            512,
+            256
+          ],
+          "bytes": 11572
+        },
+        {
+          "name": "foil_n",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 21986
+        },
+        {
+          "name": "PaletteBaseColor",
+          "mime": "image/webp",
+          "size": [
+            32,
+            4
+          ],
+          "bytes": 156
+        },
+        {
+          "name": "PaletteMetallicRoughness",
+          "mime": "image/webp",
+          "size": [
+            32,
+            4
+          ],
+          "bytes": 190
+        },
+        {
+          "name": "ingenuity-hardware-normal",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 680
+        },
+        {
+          "name": "ingenuity-hardware-MR",
+          "mime": "image/webp",
+          "size": [
+            256,
+            256
+          ],
+          "bytes": 2452
+        }
+      ],
+      "materials": [
+        {
+          "name": "carbon fiber",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "binoculars",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "blades",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "chopper_sp",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "PaletteMaterial001",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "PaletteMaterial002",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        }
+      ],
+      "requiredNodes": [],
+      "before": {
+        "bytes": 403504,
+        "triangles": 9124,
+        "primitives": 35
+      }
+    },
+    "viking-lander": {
+      "file": "public/models/viking-lander.glb",
+      "bytes": 2029952,
+      "sha256": "631451d15288009151bc2d6397e21c242a36269c800bc8dd3d77763307d05ccb",
+      "nodes": 3,
+      "triangles": 99526,
+      "drawPrimitives": 12,
+      "textures": [
+        {
+          "name": "blinn4SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 1612
+        },
+        {
+          "name": "blinn4SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 26672
+        },
+        {
+          "name": "blinn4SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 10148
+        },
+        {
+          "name": "blinn6SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 1170
+        },
+        {
+          "name": "blinn6SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 2494
+        },
+        {
+          "name": "blinn6SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 3264
+        },
+        {
+          "name": "blinn2SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 11564
+        },
+        {
+          "name": "blinn2SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 8068
+        },
+        {
+          "name": "blinn2SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 12200
+        },
+        {
+          "name": "blinn8SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 4150
+        },
+        {
+          "name": "blinn8SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 14450
+        },
+        {
+          "name": "blinn8SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 10612
+        },
+        {
+          "name": "blinn11SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 1622
+        },
+        {
+          "name": "blinn11SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 13396
+        },
+        {
+          "name": "blinn11SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 5816
+        },
+        {
+          "name": "initialShadingGr-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 4100
+        },
+        {
+          "name": "initialShadingGr-aged-base",
+          "mime": "image/webp",
+          "size": [
+            1024,
+            1024
+          ],
+          "bytes": 10058
+        },
+        {
+          "name": "initialShadingGr-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 9992
+        },
+        {
+          "name": "blinn9SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 1142
+        },
+        {
+          "name": "blinn9SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 4390
+        },
+        {
+          "name": "blinn9SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 3924
+        },
+        {
+          "name": "blinn10SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 11614
+        },
+        {
+          "name": "blinn10SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 7846
+        },
+        {
+          "name": "blinn10SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 12020
+        },
+        {
+          "name": "blinn12SG-micro-normal",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 8236
+        },
+        {
+          "name": "blinn12SG-aged-base",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 2314
+        },
+        {
+          "name": "blinn12SG-roughness-metallic",
+          "mime": "image/webp",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 6516
+        }
+      ],
+      "materials": [
+        {
+          "name": "blinn4SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "blinn6SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "blinn2SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "blinn8SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "blinn11SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "initialShadingGr",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "blinn9SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        },
+        {
+          "name": "blinn10SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": true
+        },
+        {
+          "name": "blinn12SG",
+          "normal": true,
+          "metallicRoughness": true,
+          "doubleSided": false
+        }
+      ],
+      "requiredNodes": [
+        "viking_car",
+        "polySurfa1",
+        "polySurfa2"
+      ],
+      "before": {
+        "bytes": 3659572,
+        "triangles": 99526,
+        "primitives": 12
+      }
     }
+  },
+  "totals": {
+    "beforeBytes": 12100500,
+    "bytes": 9206720,
+    "beforeDrawPrimitives": 153,
+    "drawPrimitives": 124,
+    "savedPercent": 23.91
   }
 }

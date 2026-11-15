@@ -1,7 +1,7 @@
 {
   "file": "public/models/viking-lander.glb",
-  "bytes": 3659572,
-  "sha256": "a4e7b03122abb3c2ae0d57a36b7851ecc302618eebb126a4986b874a0f20d70c",
+  "bytes": 2029952,
+  "sha256": "631451d15288009151bc2d6397e21c242a36269c800bc8dd3d77763307d05ccb",
   "source": "assets-raw/viking-lander.glb",
   "sourceSha256": "1233dc2c96a1c0b08ca9a20f7ed9c09e0223f06f14f6ae6371349504c1929149",
   "pipeline": {
@@ -17,7 +17,8 @@
     "join": false,
     "instance": false,
     "palette": false,
-    "simplify": false
+    "simplify": false,
+    "dataTextureEncoding": "WebP quality 94 normals / 82 roughness-metallic; small accessories 512"
   },
   "triangles": 99526,
   "nodes": [
@@ -114,7 +115,7 @@
         512,
         512
       ],
-      "bytes": 78834
+      "bytes": 1612
     },
     {
       "name": "blinn4SG-aged-base",
@@ -123,7 +124,7 @@
         1024,
         1024
       ],
-      "bytes": 41682
+      "bytes": 26672
     },
     {
       "name": "blinn4SG-roughness-metallic",
@@ -132,7 +133,7 @@
         512,
         512
       ],
-      "bytes": 113520
+      "bytes": 10148
     },
     {
       "name": "blinn6SG-micro-normal",
@@ -141,16 +142,16 @@
         512,
         512
       ],
-      "bytes": 74084
+      "bytes": 1170
     },
     {
       "name": "blinn6SG-aged-base",
       "mime": "image/webp",
       "size": [
-        1024,
-        1024
+        512,
+        512
       ],
-      "bytes": 8766
+      "bytes": 2494
     },
     {
       "name": "blinn6SG-roughness-metallic",
@@ -159,7 +160,7 @@
         512,
         512
       ],
-      "bytes": 92364
+      "bytes": 3264
     },
     {
       "name": "blinn2SG-micro-normal",
@@ -168,16 +169,16 @@
         512,
         512
       ],
-      "bytes": 95272
+      "bytes": 11564
     },
     {
       "name": "blinn2SG-aged-base",
       "mime": "image/webp",
       "size": [
-        1024,
-        1024
+        512,
+        512
       ],
-      "bytes": 28638
+      "bytes": 8068
     },
     {
       "name": "blinn2SG-roughness-metallic",
@@ -186,7 +187,7 @@
         512,
         512
       ],
-      "bytes": 98734
+      "bytes": 12200
     },
     {
       "name": "blinn8SG-micro-normal",
@@ -195,7 +196,7 @@
         512,
         512
       ],
-      "bytes": 96434
+      "bytes": 4150
     },
     {
       "name": "blinn8SG-aged-base",
@@ -204,7 +205,7 @@
         1024,
         1024
       ],
-      "bytes": 25924
+      "bytes": 14450
     },
     {
       "name": "blinn8SG-roughness-metallic",
@@ -213,7 +214,7 @@
         512,
         512
       ],
-      "bytes": 87250
+      "bytes": 10612
     },
     {
       "name": "blinn11SG-micro-normal",
@@ -222,7 +223,7 @@
         512,
         512
       ],
-      "bytes": 78766
+      "bytes": 1622
     },
     {
       "name": "blinn11SG-aged-base",
@@ -231,7 +232,7 @@
         1024,
         1024
       ],
-      "bytes": 20832
+      "bytes": 13396
     },
     {
       "name": "blinn11SG-roughness-metallic",
@@ -240,7 +241,7 @@
         512,
         512
       ],
-      "bytes": 98594
+      "bytes": 5816
     },
     {
       "name": "initialShadingGr-micro-normal",
@@ -249,7 +250,7 @@
         512,
         512
       ],
-      "bytes": 94588
+      "bytes": 4100
     },
     {
       "name": "initialShadingGr-aged-base",
@@ -258,7 +259,7 @@
         1024,
         1024
       ],
-      "bytes": 16436
+      "bytes": 10058
     },
     {
       "name": "initialShadingGr-roughness-metallic",
@@ -267,7 +268,7 @@
         512,
         512
       ],
-      "bytes": 80932
+      "bytes": 9992
     },
     {
       "name": "blinn9SG-micro-normal",
@@ -276,16 +277,16 @@
         512,
         512
       ],
-      "bytes": 74304
+      "bytes": 1142
     },
     {
       "name": "blinn9SG-aged-base",
       "mime": "image/webp",
       "size": [
-        1024,
-        1024
+        512,
+        512
       ],
-      "bytes": 15646
+      "bytes": 4390
     },
     {
       "name": "blinn9SG-roughness-metallic",
@@ -294,7 +295,7 @@
         512,
         512
       ],
-      "bytes": 105018
+      "bytes": 3924
     },
     {
       "name": "blinn10SG-micro-normal",
@@ -303,16 +304,16 @@
         512,
         512
       ],
-      "bytes": 95048
+      "bytes": 11614
     },
     {
       "name": "blinn10SG-aged-base",
       "mime": "image/webp",
       "size": [
-        1024,
-        1024
+        512,
+        512
       ],
-      "bytes": 27692
+      "bytes": 7846
     },
     {
       "name": "blinn10SG-roughness-metallic",
@@ -321,7 +322,7 @@
         512,
         512
       ],
-      "bytes": 103934
+      "bytes": 12020
     },
     {
       "name": "blinn12SG-micro-normal",
@@ -330,16 +331,16 @@
         512,
         512
       ],
-      "bytes": 65448
+      "bytes": 8236
     },
     {
       "name": "blinn12SG-aged-base",
       "mime": "image/webp",
       "size": [
-        1024,
-        1024
+        512,
+        512
       ],
-      "bytes": 24594
+      "bytes": 2314
     },
     {
       "name": "blinn12SG-roughness-metallic",
@@ -348,7 +349,7 @@
         512,
         512
       ],
-      "bytes": 95866
+      "bytes": 6516
     }
   ],
   "bake": {
