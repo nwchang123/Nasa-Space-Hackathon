@@ -10,6 +10,22 @@ export type V3 = [number, number, number];
 
 /** What the hangar shows: one machine, or all nine in a row. */
 export type HangarPick = MachineId | 'row';
+
+/** The two pairs of twin missions: one design each, so one 3D model per pair. */
+export const TWIN_OF: Partial<Record<MachineId, MachineId>> = {
+  'viking-1': 'viking-2',
+  'viking-2': 'viking-1',
+  spirit: 'opportunity',
+  opportunity: 'spirit',
+};
+
+/** What a visitor stepping from one twin to the other should know (docs/FACT_CHECK.md: viking-2, spirit). */
+export const TWIN_NOTES: Partial<Record<MachineId, string>> = {
+  'viking-1': 'Viking 2 is its twin: the same lander design, so the same model.',
+  'viking-2': 'Twin of Viking 1, the same lander design. This one came to rest tilted 8.5°.',
+  spirit: 'Twin of Opportunity, the same rover design. Shown tilted, as it was left stuck in soft soil at Troy.',
+  opportunity: 'Spirit is its twin: the same rover design, so the same model.',
+};
 /** The nine machines in route order, then the row: ten choices. */
 export const HANGAR_PICKS: readonly HangarPick[] = [...MACHINE_IDS, 'row'];
 

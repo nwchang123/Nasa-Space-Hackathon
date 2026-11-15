@@ -28,9 +28,12 @@ import {
   singleLayout,
   TABLE_ROW_M,
   TABLE_SINGLE_M,
+  TWIN_NOTES,
+  TWIN_OF,
   viewFor,
   type Extent,
 } from '../src/hangar/layout';
+import { MODEL_REGISTRY } from '../src/scene/models';
 import { QrCode } from '../src/hangar/QrCode';
 import { alignmentPositions, dataCodewords, encodeQr, formatBits, qrPath, rawDataModules, rsDivisor, rsRemainder, versionBits } from '../src/hangar/qr';
 import { arSessionInit } from '../src/hangar/xr';
@@ -319,6 +322,16 @@ describe('AR decisions', () => {
     // A feature point only under a downward look, not straight ahead at a wall.
     expect(pickSurface(null, point, null, eye, ahead)).toBeNull();
     expect(pickSurface(null, null, null, eye, down45)).toBeNull();
+  });
+
+  it('names exactly the twins that share a 3D model, both ways, each with a note', () => {
+    const sharing = MACHINE_IDS.filter(id => MACHINE_IDS.some(o => o !== id && MODEL_REGISTRY[o].url === MODEL_REGISTRY[id].url));
+    expect(Object.keys(TWIN_OF).sort()).toEqual([...sharing].sort());
+    for (const [id, twin] of Object.entries(TWIN_OF) as [keyof typeof TWIN_OF, NonNullable<(typeof TWIN_OF)[keyof typeof TWIN_OF]>][]) {
+      expect(TWIN_OF[twin]).toBe(id);
+      expect(MODEL_REGISTRY[twin].url).toBe(MODEL_REGISTRY[id].url);
+      expect(TWIN_NOTES[id]).toBeTruthy();
+    }
   });
 
   it('turns the models to face the visitor when placed', () => {

@@ -17,7 +17,7 @@ import { arOverride, browserProbe, detectArMode, linkHint, pageLink, type ArMode
 import type { Arrangement } from './build';
 import { useHangar } from './hangarStore';
 import { HangarScene } from './HangarScene';
-import { formatLength, HANGAR_PICKS, scaleLabel, TABLE_ROW_M, type HangarPick } from './layout';
+import { formatLength, HANGAR_PICKS, scaleLabel, TABLE_ROW_M, TWIN_NOTES, TWIN_OF, type HangarPick } from './layout';
 import { QrCode } from './QrCode';
 import { exportPlan, exportUsdz, quickLookHref, UsdzCache } from './usdz';
 import { endTabletopAr, startTabletopAr } from './xr';
@@ -70,6 +70,7 @@ function Caption() {
         {shown}
         {kind && <span className="dim"> · {kind}</span>}
       </p>
+      {machine && TWIN_NOTES[machine.id] && <p className="hangar-twin">{TWIN_NOTES[machine.id]}</p>}
       {fallback && <p className="hangar-note">A 3D file did not load; a simplified stand-in is shown.</p>}
       <ScaleToggle />
     </section>
@@ -350,6 +351,7 @@ function XrControls() {
   const status = useXrStatus();
   if (!status) return null;
   const n = pick === 'row' ? null : MACHINE_IDS.indexOf(pick) + 1;
+  const twin = pick === 'row' ? null : (TWIN_OF[pick] ?? null);
   return (
     <div className="xr-ui" data-status={status}>
       <div className="xr-top" ref={keepTapsOnControls}>
@@ -381,6 +383,7 @@ function XrControls() {
                 {n ? `${n} of 9` : 'Route order'}
                 {current && ` · ${scaleLabel(current.layout.scale)}`}
               </span>
+              {twin && <span className="xr-name-sub xr-name-twin">Twin of {pickLabel(twin)}</span>}
             </p>
             <button type="button" className="xr-step" aria-label="Next machine" onClick={() => step(1)}>
               <span aria-hidden="true">›</span>

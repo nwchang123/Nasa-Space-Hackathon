@@ -143,6 +143,12 @@
   margin-bottom: 9px;
   color: var(--amber);
 }
+.hangar-twin {
+  margin: -3px 0 9px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
 .hangar-note {
   margin: 8px 0;
   font-size: 10px;
@@ -621,6 +627,11 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ghost);
+}
+.xr-name-twin {
+  margin-top: -2px;
+  white-space: nowrap;
+  color: var(--bone-dim);
 }
 
 @keyframes xr-pulse {
