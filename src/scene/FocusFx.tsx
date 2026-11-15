@@ -17,7 +17,6 @@ import {
   type Group,
   type Mesh,
 } from 'three';
-import { SIGNATURES } from '../data/signatures';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { SITE_SCALE } from './layout';
@@ -25,7 +24,6 @@ import { live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
 import './focus.css';
 
-const LABELS = ['Why I came', 'What I found', 'My last day', 'Still here'];
 const labelNdc = new Vector3();
 
 function focusKey(): string | null {
@@ -58,14 +56,6 @@ export function FocusReticle({ stop }: { stop: MachineId }) {
     el.current?.classList.toggle('label-up', up);
   });
 
-  const label =
-    focus === null
-      ? ''
-      : focus.kind === 'hotspot'
-        ? focus.id === 'call'
-          ? 'Antenna'
-          : `${String(Number(focus.id) + 1).padStart(2, '0')} ${LABELS[Number(focus.id)] ?? ''}`
-        : (SIGNATURES[stop]?.find(d => d.key === focus.id)?.label ?? 'In action');
   return (
     <group ref={group}>
       <Html center zIndexRange={[3, 1]} pointerEvents="none" className="fx-reticle-wrap">
@@ -81,7 +71,8 @@ export function FocusReticle({ stop }: { stop: MachineId }) {
           <span className="fx-tick r" />
           <span className="fx-tick b" />
           <span className="fx-tick l" />
-          {focus && <span className="fx-lock">{focus.strength < 0.9 ? 'Scanning' : 'Target lock'} · {label}</span>}
+          {/* Only the state: what is locked on is named once, in Ingenuity's bubble. */}
+          {focus && <span className="fx-lock">{focus.strength < 0.9 ? 'Scanning' : 'Target lock'}</span>}
         </div>
       </Html>
     </group>

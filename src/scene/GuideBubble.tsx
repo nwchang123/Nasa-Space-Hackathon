@@ -61,7 +61,7 @@ const REACT_TAG: Record<string, string> = {
   wake: 'Wake-up routine done',
 };
 
-/** What Ingenuity says it is scanning while the close-up camera is on a signature action. */
+/** What the close-up camera is on during a signature action, as the bubble names it. */
 const SIG_SUBJECT: Record<string, string> = {
   scan: 'the first photo',
   frost: 'the frost',
@@ -527,15 +527,20 @@ function RadioFeed({ feed }: { feed: Feed }) {
   );
 }
 
-/** "Scanning 02 · What I found" while the close-up camera is on a hotspot or a signature action. */
+/**
+ * What the close-up camera is on, "02 · What I found", "The antenna": the one place it is named
+ * (the reticle shows only "Scanning" / "Target lock", the pin only its number).
+ */
 function focusLabel(focus: FocusLike | null, stop: MachineId): string | null {
   if (!focus) return null;
   if (focus.kind === 'hotspot') {
-    if (focus.id === 'call') return 'Scanning · antenna';
+    if (focus.id === 'call') return 'The antenna';
     const n = Number(focus.id);
-    if (Number.isInteger(n) && n >= 0 && n < 4) return `Scanning ${String(n + 1).padStart(2, '0')} · ${STORY_LABELS[n]}`;
+    if (Number.isInteger(n) && n >= 0 && n < 4) return `${String(n + 1).padStart(2, '0')} · ${STORY_LABELS[n]}`;
     return 'Scanning';
   }
   const def = (SIGNATURES[stop] ?? []).find(d => d.key === focus.id);
-  return def ? `Scanning · ${SIG_SUBJECT[def.key] ?? def.label}` : 'Scanning';
+  if (!def) return 'Scanning';
+  const subject = SIG_SUBJECT[def.key] ?? def.label;
+  return subject.charAt(0).toUpperCase() + subject.slice(1);
 }

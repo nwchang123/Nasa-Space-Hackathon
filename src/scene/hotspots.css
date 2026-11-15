@@ -78,9 +78,9 @@
     border-color 0.2s ease;
 }
 
+/* The section being read keeps only its number lit: its title is in Ingenuity's bubble. */
 .hs:hover .hs-label,
-.hs:focus-visible .hs-label,
-.hs.on .hs-label {
+.hs:focus-visible .hs-label {
   max-width: 16em;
   padding: 3px 7px 3px 6px;
   border-color: rgba(242, 169, 59, 0.35);
