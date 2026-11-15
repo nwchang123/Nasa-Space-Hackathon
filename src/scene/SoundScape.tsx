@@ -32,10 +32,11 @@ import { HOME } from '../flight/route';
 import { live } from './registry';
 
 /** Wind levels, 0..1: over the globe (none: the ambient pad is the flight's background), standing
- * at a site, and the extra a full dust storm adds. */
+ * at a site (faint, under the pad), and the extra a full dust storm adds (it swells, still under
+ * the voice). */
 const WIND_FLIGHT = 0;
-const WIND_SITE = 0.62;
-const WIND_STORM = 0.38;
+const WIND_SITE = 0.4;
+const WIND_STORM = 0.6;
 /** Opportunity's storm slider range (tau). */
 const TAU_MIN = 1;
 const TAU_MAX = 11;

@@ -578,12 +578,15 @@ function drive(loop: Loop, v: number, p = 1) {
 }
 
 /**
- * The continuous beds' full levels, before the master gain. Kept under the voice and the cues:
- * the wind is ambience, and the rotors only need to say the helicopter is flying.
+ * The continuous beds' full levels, before the master gain. Kept under the voice and the cues.
+ * Rendered through the master chain: the rotors only need to say the helicopter is flying (about
+ * 14 dB under Ingenuity's voice at cruise, a few dB under the ambient pad), and the wind is a faint
+ * texture under the pad (about 10 dB under it at a site, 14 dB under the voice at the height of
+ * Opportunity's storm).
  */
-const ROTOR_BED = 0.05;
-const WIND_BED = 0.065;
-const WIND_WHISTLE = 0.14;
+const ROTOR_BED = 0.016;
+const WIND_BED = 0.018;
+const WIND_WHISTLE = 0.1;
 
 let rotorLoop: Loop | null = null;
 
@@ -723,10 +726,11 @@ export function setWind(level: number) {
 
 /**
  * The pad's full level before the master chain. Rendered offline through that chain (gain 8 and
- * the compressor, whose make-up gain lifts quiet beds too): about 14 dB under the speech level of
- * Ingenuity's recorded voice, about 23 dB under it while ducked.
+ * the compressor, whose make-up gain lifts quiet beds too): about 9 dB under the speech level of
+ * Ingenuity's recorded voice in flight, 11 dB at a site, about 19 dB under it while ducked. It is
+ * the flight's background music, so it sits clearly above the wind.
  */
-const AMBIENT_BED = 0.0055;
+const AMBIENT_BED = 0.011;
 /** How slowly the pad comes up or goes down with the scene, s (time constant). */
 const AMBIENT_FADE_TC = 1;
 
