@@ -9,7 +9,7 @@
 
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Box3, Matrix4, Vector3, type Group, type Mesh, type Object3D } from 'three';
 import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
@@ -36,6 +36,14 @@ function hotspotFade(stop: MachineId): number {
   if (shot.siteId !== stop || !live.site.valid) return 0;
   const settle = Math.min(1, Math.max(0, (shot.blend - 0.95) / 0.05));
   return settle * (1 - Math.min(1, live.black * 3));
+}
+
+/** One hotspot button at fade `k` (0..1): clickable and in the tab order only when mostly in. */
+function showButton(b: HTMLButtonElement, k: number) {
+  b.style.opacity = String(k);
+  b.style.visibility = k > 0 ? 'visible' : 'hidden';
+  b.style.pointerEvents = k > 0.6 ? 'auto' : 'none';
+  b.tabIndex = k > 0.6 ? 0 : -1;
 }
 
 /** Bounding box of the machine's meshes in `frame`'s own coordinates (skipping `skip`). */
@@ -154,14 +162,21 @@ export function Hotspots({ stop }: { stop: MachineId }) {
     const k = s.ready ? Math.round(fade * 100) / 100 : 0;
     if (k === s.shown) return;
     s.shown = k;
-    for (const b of buttons.current) {
-      if (!b) continue;
-      b.style.opacity = String(k);
-      b.style.visibility = k > 0 ? 'visible' : 'hidden';
-      b.style.pointerEvents = k > 0.6 ? 'auto' : 'none';
-      b.tabIndex = k > 0.6 ? 0 : -1;
-    }
+    for (const b of buttons.current) if (b) showButton(b, k);
   });
+
+  // Each <Html> renders its button through a React root of its own, which commits a frame or more
+  // after this component mounts (seconds apart at a low frame rate), one button at a time. The frame
+  // loop above only writes when the fade changes, so a button that arrives after the fade has
+  // settled takes the current value here instead of staying at its initial opacity 0.
+  const bind = useMemo(
+    () =>
+      [0, 1, 2, 3, 4].map(i => (el: HTMLButtonElement | null) => {
+        buttons.current[i] = el;
+        if (el && st.current.shown > 0) showButton(el, st.current.shown);
+      }),
+    [],
+  );
 
   return (
     <group ref={group}>
@@ -170,7 +185,7 @@ export function Hotspots({ stop }: { stop: MachineId }) {
           <Html zIndexRange={[4, 2]} pointerEvents="none" className="hs-wrap">
             <button
               type="button"
-              ref={el => void (buttons.current[i] = el)}
+              ref={bind[i]}
               className={`hs${story === i ? ' on' : ''}`}
               style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
               tabIndex={-1}
@@ -194,7 +209,7 @@ export function Hotspots({ stop }: { stop: MachineId }) {
           <Html zIndexRange={[4, 2]} pointerEvents="none" className="hs-wrap">
             <button
               type="button"
-              ref={el => void (buttons.current[4] = el)}
+              ref={bind[4]}
               className="hs hs-call"
               style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
               tabIndex={-1}
