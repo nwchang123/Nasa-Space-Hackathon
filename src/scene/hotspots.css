@@ -1,5 +1,6 @@
-/* Story hotspots on the machine at a site (src/scene/Hotspots.tsx). The dot sits on the part;
-   the number is always shown, the section name opens on hover, focus, or when it is the one read. */
+/* Story hotspots on the machine at a site (src/scene/Hotspots.tsx), drawn as quiet survey fiducials:
+   a 1 px square with a crosshair on the part, and its index number. The section's name opens beside
+   the number on hover, focus, or while it is the section being read. No glow, no pulsing rings. */
 
 .hs-wrap {
   pointer-events: none;
@@ -10,13 +11,13 @@
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transform: translate(-6px, -50%);
+  gap: 5px;
+  transform: translate(-5px, -50%);
   cursor: pointer;
   font-family: var(--mono, 'Martian Mono', ui-monospace, monospace);
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--bone, #e9e4d8);
   white-space: nowrap;
@@ -24,59 +25,76 @@
   user-select: none;
 }
 
+/* The fiducial: a 9 px hairline square, a crosshair through it reaching 3 px beyond. */
 .hs-dot {
   position: relative;
   flex: none;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 1px solid var(--amber, #f2a93b);
-  background: rgba(242, 169, 59, 0.25);
-  box-shadow: 0 0 10px rgba(242, 169, 59, 0.55);
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(242, 169, 59, 0.9);
+  background: rgba(5, 7, 10, 0.25);
 }
+.hs-dot::before,
 .hs-dot::after {
   content: '';
   position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  border: 1px solid rgba(242, 169, 59, 0.6);
-  animation: hs-pulse 2.4s ease-out infinite;
+  background: rgba(242, 169, 59, 0.75);
+}
+.hs-dot::before {
+  left: 3px;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+}
+.hs-dot::after {
+  top: 3px;
+  left: -4px;
+  right: -4px;
+  height: 1px;
 }
 
 .hs-num,
 .hs-label {
-  padding: 4px 6px;
-  background: rgba(5, 7, 10, 0.74);
-  border: 1px solid rgba(242, 169, 59, 0.45);
-  backdrop-filter: blur(3px);
+  padding: 3px 5px;
+  background: rgba(5, 7, 10, 0.66);
 }
 .hs-num {
   color: var(--amber, #f2a93b);
+  font-variant-numeric: tabular-nums;
 }
 .hs-label {
   max-width: 0;
   padding-left: 0;
   padding-right: 0;
-  border-width: 1px 0;
   overflow: hidden;
-  margin-left: -6px;
+  margin-left: -5px;
+  border: 1px solid transparent;
+  border-left: 0;
   opacity: 0;
-  transition: max-width 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+  transition:
+    max-width 0.25s ease,
+    padding 0.25s ease,
+    opacity 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .hs:hover .hs-label,
 .hs:focus-visible .hs-label,
 .hs.on .hs-label {
   max-width: 16em;
-  padding: 4px 8px;
-  border-width: 1px;
+  padding: 3px 7px 3px 6px;
+  border-color: rgba(242, 169, 59, 0.35);
   opacity: 1;
 }
 .hs:focus-visible .hs-num {
   outline: 1px solid var(--bone, #e9e4d8);
-  outline-offset: 2px;
+  outline-offset: 1px;
+}
+.hs:hover .hs-dot {
+  background: rgba(242, 169, 59, 0.25);
 }
 
+/* The section being read: its number and square filled amber. */
 .hs.on .hs-num {
   background: var(--amber, #f2a93b);
   color: #05070a;
@@ -84,43 +102,23 @@
 .hs.on .hs-dot {
   background: var(--amber, #f2a93b);
 }
-.hs.on .hs-dot::after {
-  animation: none;
-  opacity: 0;
-}
 
-/* The antenna: the radio call, in the cool "signal" colour. */
+/* The antenna: the radio call, a quiet mark in the cool "signal" colour. */
 .hs-call .hs-dot {
-  border-color: var(--ghost, #8fb3c9);
-  background: rgba(143, 179, 201, 0.25);
-  box-shadow: 0 0 10px rgba(143, 179, 201, 0.55);
+  border-color: rgba(143, 179, 201, 0.85);
 }
+.hs-call .hs-dot::before,
 .hs-call .hs-dot::after {
-  border-color: rgba(143, 179, 201, 0.6);
+  background: rgba(143, 179, 201, 0.65);
 }
-.hs-call .hs-num,
-.hs-call .hs-label {
-  border-color: rgba(143, 179, 201, 0.5);
+.hs-call:hover .hs-dot {
+  background: rgba(143, 179, 201, 0.25);
 }
 .hs-call .hs-num {
   color: var(--ghost, #8fb3c9);
   letter-spacing: 0;
 }
-
-@keyframes hs-pulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hs-dot::after {
-    animation: none;
-    opacity: 0.4;
-  }
+.hs-call:hover .hs-label,
+.hs-call:focus-visible .hs-label {
+  border-color: rgba(143, 179, 201, 0.4);
 }

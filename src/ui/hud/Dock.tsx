@@ -1,6 +1,7 @@
 // The bottom-centre stage dock: one thing at a time (the prologue's rotor test, the leg being
-// flown, one section of a machine's story, the way home), with the main action always at its
-// right. It never scrolls.
+// flown, one section of a machine's story behind four index tabs, the way home), with the main
+// action always at its right. It never scrolls. It stands in the HUD's bottom console, with the
+// 360° bearing ruler sitting on its top edge whenever that shows.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { EPILOGUE, LEG_SCRIPTS, PROLOGUE, PROLOGUE_TEST_AT, ROTOR_FAULT } from '../../data/flight';
@@ -381,7 +382,7 @@ function SiteDock() {
   return (
     <div className="dock-grid">
       <div className="dock-main">
-        <div className="capsules" role="tablist" aria-label={`${machine.shortName}'s story`}>
+        <div className="story-tabs" role="tablist" aria-label={`${machine.shortName}'s story`}>
           {STORY_LABELS.map((label, i) => (
             <button
               key={label}
@@ -394,14 +395,15 @@ function SiteDock() {
               aria-selected={story === i}
               aria-controls="story-panel"
               tabIndex={story === i ? 0 : -1}
-              className={`capsule${story === i ? ' on' : ''}`}
+              className={`story-tab${story === i ? ' on' : ''}`}
+              title={label}
               onClick={() => setStory(i as StorySection)}
               onKeyDown={e => {
                 if (e.key === 'ArrowRight') pick(i + 1);
                 if (e.key === 'ArrowLeft') pick(i - 1);
               }}
             >
-              <span className="capsule-n">{String(i + 1).padStart(2, '0')}</span> {label}
+              <span className="story-tab-n">{String(i + 1).padStart(2, '0')}</span> <span className="story-tab-label">{label}</span>
             </button>
           ))}
         </div>

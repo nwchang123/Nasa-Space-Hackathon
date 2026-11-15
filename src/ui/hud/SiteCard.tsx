@@ -1,8 +1,9 @@
 // Bottom-left site card, kept small so the site itself fills the screen. Always shown: the
-// machine's name, one line of where it is, the 24 h local solar time scrubber (the scene relights
-// the site for the picked hour) and a compact radio call from Earth with tonight's real light
-// time. Everything else (kind, dates, facts, model note, radio details, sources) sits in a
-// "Specs & Dossier" fold, closed by default, that scrolls inside the card when open.
+// machine's name, where it is (the place, then its coordinates on a mono line of their own), the
+// 24 h local solar time scale (the scene relights the site for the picked hour) and a compact radio
+// call from Earth with tonight's real light time. Everything else (kind, dates, facts, model note,
+// radio details, sources) sits in a "Specs & Dossier" fold, closed by default, that scrolls inside
+// the card when open; the card never grows into Ingenuity's radio feed above it (--feed-h).
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { siteSky, siteSkyAtHour } from '../../astro';
@@ -33,9 +34,8 @@ export function SiteCard({ machine, standing }: { machine: Machine; standing: bo
         <h2 id="site-card-name" className="card-name">
           {machine.name}
         </h2>
-        <p className="card-site" title={`${machine.site} · ${coords(machine)}`}>
-          {machine.site} <span className="dim tabular">· {coords(machine)}</span>
-        </p>
+        <p className="card-site">{machine.site}</p>
+        <p className="card-coords tabular">{coords(machine)}</p>
         <SunScrubber machine={machine} />
         {canCall && <RadioCall machine={machine} />}
         {standing && machine.noRadio && <p className="card-line">{NO_RADIO_SHORT}</p>}
@@ -108,7 +108,7 @@ function RadioDetails({ machine }: { machine: Machine }) {
   );
 }
 
-/** 00:00 ──●── 24:00. Live by default; dragging picks an hour of today's sol at this site. */
+/** 00:00 ──|── 24:00 on a quiet day-and-night tint. Live by default; dragging picks an hour of today's sol at this site. */
 function SunScrubber({ machine }: { machine: Machine }) {
   const nowMs = useApp(s => s.nowMs);
   const siteHour = useApp(s => s.siteHour);
@@ -126,11 +126,11 @@ function SunScrubber({ machine }: { machine: Machine }) {
         </span>
         {siteHour === null ? (
           <span className="live-pill">
-            <span className="beacon" aria-hidden="true" /> Live now
+            <span className="live-dot" aria-hidden="true" /> Live
           </span>
         ) : (
-          <button type="button" className="icon-btn" onClick={() => setSiteHour(null)} title="Reset to live" aria-label="Reset to live">
-            <span aria-hidden="true">↺</span> Live
+          <button type="button" className="live-pill live-btn" onClick={() => setSiteHour(null)} title="Reset to live" aria-label="Reset to live">
+            <span className="live-dot" aria-hidden="true" /> Live
           </button>
         )}
       </div>
@@ -145,14 +145,14 @@ function SunScrubber({ machine }: { machine: Machine }) {
           aria-label={`Local solar time at ${machine.shortName}`}
           aria-valuetext={`${formatSolarTime(hour)} local solar time${siteHour === null ? ', live' : ''}`}
         />
-        {siteHour !== null && <span className="scrub-live-tick" style={{ left: `${(liveHour / 24) * 100}%` }} title="Now" aria-hidden="true" />}
+        {siteHour !== null && <span className="scrub-live-tick" style={{ left: `calc(5px + (100% - 10px) * ${liveHour / 24})` }} title="Now" aria-hidden="true" />}
       </div>
       <div className="scrub-scale" aria-hidden="true">
-        <span>00:00</span>
+        <span>00</span>
         <span>06</span>
         <span>12</span>
         <span>18</span>
-        <span>24:00</span>
+        <span>24</span>
       </div>
       <p className="scrub-read" aria-live="off">
         {skyWords(el, undefined)}
@@ -201,19 +201,30 @@ function RadioCall({ machine }: { machine: Machine }) {
   return (
     <section className="radio card-radio" aria-label="Radio call">
       <button type="button" className="call radio card-call" onClick={call} disabled={inFlight}>
+        {/* [ CALL FROM EARTH · 21M 55S ]: on a narrow card the round trip wraps as one piece. */}
         <span className="call-label">
-          <span aria-hidden="true">📡</span> {active?.result ? 'Call again' : 'Call from Earth'}
-        </span>
-        <span className="call-sub tabular">
-          {plan.path.roundTripS === null ? (
-            'No estimate'
-          ) : (
-            <>
-              <span aria-hidden="true">⇄ </span>
-              {formatDuration(plan.path.roundTripS)}
-              <span className="sr-only"> radio round trip</span>
-            </>
-          )}
+          <span className="call-br" aria-hidden="true">
+            [
+          </span>{' '}
+          {active?.result ? 'Call again' : 'Call from Earth'}
+        </span>{' '}
+        <span className="call-tail">
+          <span className="call-sep" aria-hidden="true">
+            ·
+          </span>{' '}
+          <span className="call-sub tabular" title="Radio round trip tonight">
+            {plan.path.roundTripS === null ? (
+              'No estimate'
+            ) : (
+              <>
+                {formatDuration(plan.path.roundTripS)}
+                <span className="sr-only"> radio round trip</span>
+              </>
+            )}
+          </span>{' '}
+          <span className="call-br" aria-hidden="true">
+            ]
+          </span>
         </span>
       </button>
       {active && active.result === null && <SignalMeter plan={plan} startedAt={active.startedAt} />}

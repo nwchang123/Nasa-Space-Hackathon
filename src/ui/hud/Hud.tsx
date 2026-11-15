@@ -1,11 +1,15 @@
-// The Flight 73 cockpit HUD over the full-screen 3D view: the route bar on top, the site card at
-// bottom left, the stage dock at bottom centre. The HUD itself lets the pointer through to the
-// scene (orbiting a site, 3D hotspots); only its panels take it.
+// The Flight 73 cockpit HUD over the full-screen 3D view, kept to the edges so the diorama in the
+// middle stays clear: the route bar along the top; under it Ingenuity's radio feed at the left and
+// the site tools at the right; along the bottom the site card (left), the console (the 360° bearing
+// ruler sitting on the stage dock, centre) and the scout photos (right), all on one baseline, with
+// the fine print in its own strip below. The HUD itself lets the pointer through to the scene
+// (orbiting a site, 3D hotspots); only its panels take it.
 
 import { useEffect, useState } from 'react';
 import { FICTION_NOTE } from '../../data/flight';
 import { MACHINE_BY_ID } from '../../data/machines';
 import { HOME } from '../../flight/route';
+import { GuideBubble } from '../../scene/GuideBubble';
 import { live } from '../../scene/registry';
 import { useApp } from '../../store';
 import { MACHINE_IDS, type MachineId } from '../../types';
@@ -27,16 +31,21 @@ export function Hud() {
   // for the picture: never a new stop's text while the camera is still climbing out of the last one.
   const stageCard = stage === 'site' ? MACHINE_IDS[leg] : stage === 'prologue' ? HOME : null;
   const cardId = useSceneReached(stageCard);
+  // Scout photos pinned at the bottom right: the console keeps clear of their column.
+  const roll = useApp(s => s.flight.stage === 'site' && s.snapshots.length > 0);
   return (
-    <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}`}>
+    <div className={`hud stage-${stage}${cardId ? ' with-card' : ''}${roll ? ' with-roll' : ''}`}>
       <NavcamOverlay />
       <ScoutCam />
+      <GuideBubble />
       <FocusControls />
       <TopBar />
       <FaultBanner />
       {cardId && <SiteCard key={cardId} machine={MACHINE_BY_ID[cardId]} standing={stage === 'site'} />}
-      <Dock />
-      <BearingBar />
+      <div className="hud-console">
+        <BearingBar />
+        <Dock />
+      </div>
       <p className="hud-fine">{FICTION_NOTE}</p>
     </div>
   );

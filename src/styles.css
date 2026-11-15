@@ -1026,8 +1026,8 @@ button:disabled {
 /* Marker labels drawn by the scene */
 
 /* Everything drei <Html> draws over the 3D view (marker labels, site callouts, story hotspots,
-   signature tags, the target reticle and its lock label, Ingenuity's radio bubble) lives outside
-   the HUD: dragging the view across it must not start a blue text selection. */
+   signature tags, the target reticle and its lock label) lives outside the HUD: dragging the view
+   across it must not start a blue text selection. */
 .stage,
 .marker-label,
 .site-tag-wrap,
@@ -1038,9 +1038,7 @@ button:disabled {
 .sig-tag,
 .fx-reticle-wrap,
 .fx-reticle,
-.fx-lock,
-.gb-wrap,
-.gb {
+.fx-lock {
   -webkit-user-select: none;
   user-select: none;
 }
@@ -1305,19 +1303,26 @@ button:disabled {
   color: var(--bone-dim);
 }
 
-/* ---------- Flight HUD: full-screen 3D, route bar on top, site card bottom left, dock bottom centre ---------- */
+/* ---------- Flight HUD: perimeter instruments round a clear centre ---------- */
 
+/* The diorama keeps the middle of the screen. The HUD holds the edges: the route bar along the top;
+   under it Ingenuity's radio feed (left) and the site tools (right); along the bottom, all standing
+   on one baseline (--hud-base), the site card (left), the console of bearing ruler and stage dock
+   (centre) and the scout photos (right); the fine print has the strip below that baseline. Panels
+   are flat dark ink with 1 px hairlines and 2 px corners: no blur, no drop shadows, no glow. */
 .hud {
   --hud-gap: 16px;
   /* Height of the one-row top bar; things that sit just under it use this. */
   --hud-top-h: 42px;
+  /* The bottom baseline of the card, the console and the photo roll; the fine print lives below it. */
+  --hud-base: 28px;
   --card-w: min(282px, 24vw);
   /* Narrow enough to leave room at its right for the scout camera's photo strip. */
   --dock-max: 880px;
+  --roll-w: clamp(84px, 10vw, 150px);
   --dock-left: max(var(--hud-gap), calc(50% - var(--dock-max) / 2));
   --dock-right: max(var(--hud-gap), calc(50% - var(--dock-max) / 2));
-  --glass: rgba(7, 10, 15, 0.62);
-  --glass-line: rgba(143, 179, 201, 0.18);
+  --hud-ink: rgba(5, 7, 10, 0.82);
   position: fixed;
   inset: 0;
   z-index: 3;
@@ -1329,19 +1334,46 @@ button:disabled {
 .hud.with-card {
   --dock-left: max(calc(var(--card-w) + 2 * var(--hud-gap)), calc(50% - var(--dock-max) / 2));
 }
+/* Scout photos pinned at the bottom right: the console keeps clear of their column. */
+.hud.with-roll {
+  --dock-right: max(var(--hud-gap), calc(50% - var(--dock-max) / 2), calc(var(--roll-w) + 2 * var(--hud-gap)));
+}
+/* Narrow windows: the photo roll is a row under the site tools instead (sitetools.css), and the
+   console keeps its full width. */
+@media (max-width: 960px) {
+  .hud.with-roll {
+    --dock-right: max(var(--hud-gap), calc(50% - var(--dock-max) / 2));
+  }
+}
 .hud-top,
 .site-card,
 .dock {
   pointer-events: auto;
 }
+/* The bottom console: the 360° bearing ruler (when it shows) sitting flush on the stage dock, one
+   column on the bottom baseline. Only its panels take the pointer. */
+.hud-console {
+  position: absolute;
+  left: var(--dock-left);
+  right: var(--dock-right);
+  bottom: var(--hud-base);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - 140px);
+  pointer-events: none;
+}
 
 .hud-panel {
-  background: var(--glass);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  border: 1px solid var(--glass-line);
-  border-radius: 3px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  background: var(--hud-ink);
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
+}
+/* Inside the HUD: no glow on the beacon, the buttons or the meters. */
+.hud .beacon {
+  box-shadow: none;
+}
+.hud .primary:hover:not(:disabled) {
+  box-shadow: none;
 }
 .hud-panel-in {
   animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.1, 1) both;
@@ -1363,7 +1395,8 @@ button:disabled {
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  background: linear-gradient(rgba(5, 7, 10, 0.88), rgba(5, 7, 10, 0.55) 70%, rgba(5, 7, 10, 0));
+  background: rgba(5, 7, 10, 0.74);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .hud-route {
@@ -1445,6 +1478,17 @@ button:disabled {
     display: inline;
   }
 }
+/* Narrow windows: even the current stop's name would run over its neighbours' numbers, so the route
+   shows numbers only (the site card and the dock name the stop); a name still opens on hover. */
+@media (max-width: 1000px) {
+  .hud-route li .stop-label {
+    display: none;
+  }
+  .hud-route li:hover .stop-label,
+  .hud-route li .hop:focus-visible .stop-label {
+    display: inline;
+  }
+}
 
 /* The ?fps meter (drei <Stats>, inline-styled at top left) sits below the route bar instead. */
 .fps-meter {
@@ -1468,7 +1512,6 @@ button:disabled {
 .hud-route .next .dot {
   background: var(--amber);
   border-color: var(--amber);
-  box-shadow: 0 0 12px var(--amber);
 }
 .hud-route .here .stop-name,
 .hud-route .next .stop-name {
@@ -1526,7 +1569,7 @@ button:disabled {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
-  box-shadow: 0 0 34px rgba(255, 90, 40, 0.35);
+  border-radius: 2px;
   pointer-events: none;
   animation: fault-blink 0.5s steps(2) infinite;
 }
@@ -1538,17 +1581,19 @@ button:disabled {
 
 /* Site card */
 
-/* Small by default: name, where, the sun scrubber, the call. The fold below the toggle (closed by
-   default) scrolls inside the card, which never grows past the space under the top bar. */
+/* Small by default: name, where, the sun scale, the call. The fold below the toggle (closed by
+   default) scrolls inside the card, which never grows past the space under the top bar and
+   Ingenuity's radio feed (its height is --feed-h, 0 when there is none). */
 .site-card {
   position: absolute;
   left: var(--hud-gap);
-  bottom: var(--hud-gap);
+  bottom: var(--hud-base);
   display: flex;
   flex-direction: column;
   width: var(--card-w);
-  max-height: calc(100% - 118px);
-  padding: 11px 14px 8px;
+  container: card / inline-size;
+  max-height: calc(100% - var(--hud-base) - var(--hud-top-h) - 24px - var(--feed-h, 0px));
+  padding: 10px 14px 8px;
   overflow: hidden;
 }
 .card-fixed {
@@ -1575,7 +1620,7 @@ button:disabled {
   gap: 0.5em;
   width: 100%;
   margin: 7px 0 0;
-  padding: 3px 0 1px;
+  padding: 5px 0 1px;
   background: none;
   border: 0;
   border-top: 1px solid var(--line-soft);
@@ -1616,13 +1661,23 @@ button:disabled {
   line-height: 1.12;
   color: var(--bone);
 }
+/* Where it is: the place, then its coordinates on a mono line of their own. Both wrap rather than
+   being cut short. */
 .card-site {
-  margin: 3px 0 0;
-  overflow: hidden;
+  margin: 4px 0 0;
+  min-width: 0;
   font-size: 10px;
-  line-height: 1.5;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.card-coords {
+  margin: 1px 0 0;
+  min-width: 0;
+  font-size: 9.5px;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  color: var(--bone-dim);
+  overflow-wrap: anywhere;
 }
 .card-line {
   margin: 7px 0 0;
@@ -1677,7 +1732,8 @@ button:disabled {
   text-transform: uppercase;
 }
 
-/* 24 h local solar time scrubber */
+/* 24 h local solar time scale: a 2 px day-and-night tint, an hour tick every hour, a 2 x 12 px
+   marker (bone when live, amber when picked) and a quiet LIVE tag. */
 
 .scrub {
   margin: 8px 0 0;
@@ -1689,7 +1745,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 1em;
-  min-height: 20px;
+  min-height: 18px;
 }
 .scrub-label {
   font-size: 9px;
@@ -1704,65 +1760,88 @@ button:disabled {
   color: var(--bone);
 }
 .site-card .scrub-label,
-.site-card .live-pill,
-.site-card .scrub-head .icon-btn {
+.site-card .live-pill {
   white-space: nowrap;
 }
-/* The live badge never gets cut: if the label and the badge do not fit side by side (a narrow
-   card or a wider fallback font), the badge drops under the label, still at the right. */
+/* The live tag never gets cut: if the label and the tag do not fit side by side (a narrow card or
+   a wider fallback font), the tag drops under the label, still at the right. */
 .site-card .scrub-head {
   flex-wrap: wrap;
   gap: 2px 6px;
 }
-.site-card .scrub-head .live-pill,
-.site-card .scrub-head .icon-btn {
+.site-card .scrub-head .live-pill {
   flex: none;
   margin-left: auto;
 }
 .site-card .scrub-label {
   letter-spacing: 0.1em;
 }
-.site-card .live-pill {
-  letter-spacing: 0.12em;
-}
-.scrub-head .icon-btn {
-  padding: 2px 7px;
-  font-size: 9px;
-}
 .live-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.6em;
-  font-size: 9px;
+  gap: 5px;
+  padding: 1px 0;
+  font-size: 8.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--green);
+  color: var(--bone-dim);
 }
-.live-pill .beacon {
-  width: 6px;
-  height: 6px;
+.live-dot {
+  width: 5px;
+  height: 5px;
   background: var(--green);
-  box-shadow: 0 0 8px var(--green);
+  opacity: 0.85;
+}
+/* Picked hour: the tag becomes a hairline button back to live, its square hollow. */
+.live-pill.live-btn {
+  padding: 1px 6px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.live-btn .live-dot {
+  background: none;
+  border: 1px solid var(--green);
+}
+.live-btn:hover {
+  color: var(--bone);
+  border-color: var(--ghost);
 }
 .scrub-track {
   position: relative;
   margin: 3px 0 0;
 }
+/* An hour tick under the tint, aligned with the marker's travel (5 px in from each end). */
+.scrub-track::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 4px;
+  bottom: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(143, 179, 201, 0.4) 0 1px, transparent 1px calc((100% - 1px) / 24));
+  pointer-events: none;
+}
+/* Where the Sun is now, while another hour is picked. */
 .scrub-live-tick {
   position: absolute;
   top: 2px;
-  width: 2px;
-  height: 14px;
-  margin-left: -1px;
+  width: 1px;
+  height: 10px;
+  margin-left: -0.5px;
   background: var(--green);
-  box-shadow: 0 0 6px var(--green);
+  opacity: 0.75;
   pointer-events: none;
 }
 .scrub-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 8px;
+  margin: 1px 0 0;
+  padding: 0 1px;
+  font-size: 7.5px;
   line-height: 1.3;
+  letter-spacing: 0.04em;
   color: var(--bone-dim);
 }
 .scrub-read {
@@ -1772,96 +1851,103 @@ button:disabled {
   color: var(--bone);
 }
 
-/* Range inputs (scrubber and signature sliders) */
+/* Range inputs (the sun scale and the signature sliders): a 2 px hairline track and a 2 x 12 px
+   marker. The marker's box is 10 px wide for an easier grab; only its middle 2 px are drawn. */
 .scrub input[type='range'],
 .sig-slider input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   display: block;
   width: 100%;
-  height: 18px;
+  height: 14px;
   margin: 0;
   background: transparent;
   cursor: pointer;
 }
 .scrub input[type='range']::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 2px;
-  /* Night, dawn, day, dusk, night. */
-  background: linear-gradient(90deg, #0d1424 0%, #0d1424 21%, #6e8fc4 25%, #c98b5c 28%, #e9cda4 50%, #c98b5c 72%, #6e8fc4 75%, #0d1424 79%, #0d1424 100%);
+  height: 2px;
+  border-radius: 0;
+  /* Night, dawn, day, dusk, night, muted. */
+  background: linear-gradient(90deg, #1c2533 0%, #1c2533 21%, #4f6174 25%, #8b7457 29%, #b7a587 50%, #8b7457 71%, #4f6174 75%, #1c2533 79%, #1c2533 100%);
 }
 .scrub input[type='range']::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #0d1424 0%, #0d1424 21%, #6e8fc4 25%, #c98b5c 28%, #e9cda4 50%, #c98b5c 72%, #6e8fc4 75%, #0d1424 79%, #0d1424 100%);
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, #1c2533 0%, #1c2533 21%, #4f6174 25%, #8b7457 29%, #b7a587 50%, #8b7457 71%, #4f6174 75%, #1c2533 79%, #1c2533 100%);
 }
 .sig-slider input[type='range']::-webkit-slider-runnable-track {
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgba(143, 179, 201, 0.6), rgba(242, 169, 59, 0.8));
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, rgba(143, 179, 201, 0.45), rgba(242, 169, 59, 0.7));
 }
 .sig-slider input[type='range']::-moz-range-track {
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgba(143, 179, 201, 0.6), rgba(242, 169, 59, 0.8));
+  height: 2px;
+  border-radius: 0;
+  background: linear-gradient(90deg, rgba(143, 179, 201, 0.45), rgba(242, 169, 59, 0.7));
 }
 .scrub input[type='range']::-webkit-slider-thumb,
 .sig-slider input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 13px;
-  height: 13px;
-  margin-top: -4.5px;
-  border-radius: 50%;
-  background: var(--amber);
-  border: 2px solid var(--ink);
-  box-shadow: 0 0 10px var(--amber);
-}
-.sig-slider input[type='range']::-webkit-slider-thumb {
+  width: 10px;
+  height: 12px;
   margin-top: -5px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(90deg, transparent 4px, var(--amber) 4px 6px, transparent 6px);
+  box-shadow: none;
 }
 .scrub input[type='range']::-moz-range-thumb,
 .sig-slider input[type='range']::-moz-range-thumb {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--amber);
-  border: 2px solid var(--ink);
-  box-shadow: 0 0 10px var(--amber);
+  width: 10px;
+  height: 12px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(90deg, transparent 4px, var(--amber) 4px 6px, transparent 6px);
+  box-shadow: none;
 }
 .scrub.is-live input[type='range']::-webkit-slider-thumb {
-  background: var(--green);
-  box-shadow: 0 0 10px var(--green);
+  background: linear-gradient(90deg, transparent 4px, var(--bone) 4px 6px, transparent 6px);
 }
 .scrub.is-live input[type='range']::-moz-range-thumb {
-  background: var(--green);
-  box-shadow: 0 0 10px var(--green);
+  background: linear-gradient(90deg, transparent 4px, var(--bone) 4px 6px, transparent 6px);
+}
+.scrub input[type='range']:focus-visible,
+.sig-slider input[type='range']:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 1px;
 }
 
-/* Radio call, compact, inside the card: one button row with the round trip on its right. */
+/* Radio call, compact, inside the card: one bracketed telemetry line, [ CALL FROM EARTH · 21M 55S ].
+   On a narrow card the round trip wraps under the label rather than being cut. */
 .card-radio {
   margin: 8px 0 0;
 }
 .card-radio .call.card-call {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  display: block;
   width: 100%;
-  padding: 7px 9px;
+  padding: 6px 8px;
+  border-color: rgba(242, 169, 59, 0.42);
+  background: rgba(242, 169, 59, 0.04);
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-.card-call .call-label {
-  flex: none;
-  font-size: 10px;
-  letter-spacing: 0.08em;
+.card-call .call-br,
+.card-call .call-sep {
+  color: rgba(242, 169, 59, 0.55);
+}
+.card-call .call-label,
+.card-call .call-tail {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 .card-call .call-sub {
-  min-width: 0;
-  overflow: hidden;
   font-size: 9px;
-  letter-spacing: 0;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+  color: var(--bone);
 }
 .card-radio .meter {
   margin: 6px 0 0;
@@ -1874,9 +1960,11 @@ button:disabled {
   font-size: 8px;
 }
 .card-radio .meter-pulse {
-  width: 6px;
-  height: 6px;
-  bottom: -3.5px;
+  width: 5px;
+  height: 5px;
+  bottom: -3px;
+  border-radius: 0;
+  box-shadow: none;
 }
 .card-radio .meter-read {
   margin-top: 17px;
@@ -1901,7 +1989,16 @@ button:disabled {
   font-size: 9.5px;
 }
 .card-live .live-row dd {
+  min-width: 0;
   font-size: 10.5px;
+  overflow-wrap: anywhere;
+}
+@container card (max-width: 250px) {
+  .card-live .live-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 2px 0;
+  }
 }
 .card-live .live-note {
   margin: 3px 0 0;
@@ -1911,16 +2008,20 @@ button:disabled {
 
 /* Stage dock */
 
-/* Compact: tight padding, one-line capsules, 14 px story text, Ingenuity's reply only under the last
-   section, so the site keeps the screen (about 8 % of a 1280 x 800 view at most stops). */
+/* Compact: tight padding, one row of index tabs, 14 px story text, Ingenuity's reply only under the
+   last section, so the site keeps the screen. It stands in the bottom console; with the bearing
+   ruler on top, its top corners go square and its top hairline is the ruler's baseline. */
 .dock {
-  position: absolute;
-  left: var(--dock-left);
-  right: var(--dock-right);
-  bottom: 30px;
-  max-height: calc(100% - 140px);
-  padding: 8px 12px 8px 14px;
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 8px 12px 9px 14px;
   overflow: hidden;
+  container: dock / inline-size;
+}
+.brg:not([hidden]) + .dock {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 .dock-grid {
   display: grid;
@@ -1930,6 +2031,7 @@ button:disabled {
 }
 .dock-main {
   min-width: 0;
+  container: dock-main / inline-size;
 }
 .dock-side {
   display: grid;
@@ -1951,6 +2053,13 @@ button:disabled {
    get a wider side column, so each stays on one line. */
 .dock-prologue .dock-grid {
   grid-template-columns: minmax(0, 1fr) minmax(206px, 294px);
+}
+/* A narrow console (a small window, or the photo roll beside it): the actions go under the text. */
+@container dock (max-width: 500px) {
+  .dock-grid,
+  .dock-prologue .dock-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .dock .voice {
   margin: 0;
@@ -1983,7 +2092,6 @@ button:disabled {
 }
 .dock-primary.spin {
   background: rgba(242, 169, 59, 0.12);
-  box-shadow: 0 0 22px rgba(242, 169, 59, 0.22);
 }
 .dock-primary.spin.busy {
   opacity: 1;
@@ -1991,7 +2099,6 @@ button:disabled {
 }
 .dock-primary.imagine {
   background: rgba(242, 169, 59, 0.16);
-  box-shadow: 0 0 28px rgba(242, 169, 59, 0.32), inset 0 0 14px rgba(242, 169, 59, 0.14);
 }
 
 /* Flying */
@@ -2004,14 +2111,15 @@ button:disabled {
 .dock .odometer {
   margin: 0;
   padding: 8px 12px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border-color: var(--line-soft);
+  border-radius: 2px;
+  transition: border-color 0.2s;
 }
 .dock .odo-big {
   font-size: 28px;
 }
 .dock .odometer.boosting {
   border-color: var(--amber);
-  box-shadow: 0 0 24px rgba(242, 169, 59, 0.25);
 }
 .boost-btn {
   justify-content: center;
@@ -2032,37 +2140,82 @@ button:disabled {
   margin: 0;
 }
 
-/* Site: story capsules, on one line */
-.capsules {
+/* Site: the story's four index tabs, one row on a hairline. The open one is amber with a 2 px
+   underline; the others are dim, with a hairline between. Where the row cannot hold four names, only
+   the open tab keeps its name in view (the others keep theirs for screen readers and as a tooltip). */
+.story-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 0 0 5px;
+  margin: 0 0 7px;
+  border-bottom: 1px solid var(--line-soft);
 }
-.capsule {
-  padding: 3px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(5, 7, 10, 0.45);
+.story-tab {
+  position: relative;
+  flex: 0 1 auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55em;
+  min-width: 0;
+  margin: 0 0 -1px;
+  padding: 3px 10px 5px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   font-size: 9px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   white-space: nowrap;
   text-transform: uppercase;
   color: var(--bone-dim);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
-.capsule:hover {
+.story-tab:first-child {
+  padding-left: 0;
+}
+.story-tab + .story-tab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 7px;
+  width: 1px;
+  background: var(--line-soft);
+}
+.story-tab:hover {
   color: var(--bone);
-  border-color: var(--ghost);
 }
-.capsule.on {
-  color: var(--ink);
-  background: var(--amber);
-  border-color: var(--amber);
+.story-tab:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: -1px;
 }
-.capsule-n {
-  opacity: 0.7;
+.story-tab.on {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+.story-tab-n {
+  font-variant-numeric: tabular-nums;
+  color: var(--ghost);
+  opacity: 0.8;
+}
+.story-tab.on .story-tab-n {
+  color: var(--amber);
+  opacity: 1;
+}
+@container dock-main (max-width: 430px) {
+  .story-tab:not(.on) .story-tab-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .story-tab {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
 }
 .story-panel {
   animation: fade-up 0.45s ease both;
@@ -2102,6 +2255,15 @@ button:disabled {
   margin: 0 0.6em 0 0;
   font-size: 9px;
 }
+/* Narrow windows: slightly smaller story type, so the dock stays low. */
+@media (max-width: 960px) {
+  .story-text {
+    font-size: 13.5px;
+  }
+  .inherit-line {
+    font-size: 12.5px;
+  }
+}
 
 /* Site: signature actions */
 .sig {
@@ -2116,7 +2278,7 @@ button:disabled {
   width: 100%;
   overflow: hidden;
   padding: 0.55em 0.75em;
-  border: 1px solid rgba(143, 179, 201, 0.4);
+  border: 1px solid rgba(143, 179, 201, 0.34);
   border-radius: 2px;
   background: rgba(143, 179, 201, 0.07);
   color: var(--ghost);
@@ -2151,6 +2313,8 @@ button:disabled {
   font-size: 13px;
   line-height: 1;
   letter-spacing: 0;
+  /* The data's symbols (❄ ☀ …) stay monochrome glyphs, never colour emoji. */
+  font-variant-emoji: text;
 }
 .sig-progress {
   position: absolute;
@@ -2158,7 +2322,6 @@ button:disabled {
   bottom: 0;
   height: 2px;
   background: var(--ghost);
-  box-shadow: 0 0 8px var(--ghost);
 }
 .sig-slider {
   display: grid;
@@ -2194,14 +2357,21 @@ button:disabled {
   white-space: nowrap;
 }
 
+/* The fine print has its own 22 px strip under the bottom baseline, clear of every panel. */
 .hud-fine {
   position: absolute;
-  left: var(--dock-left);
-  right: var(--dock-right);
-  bottom: 9px;
+  left: var(--hud-gap);
+  right: var(--hud-gap);
+  bottom: calc(var(--hud-base) - 25px);
+  height: 22px;
   margin: 0;
-  text-align: center;
+  overflow: hidden;
   font-size: 9px;
+  line-height: 22px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--bone-dim);
   opacity: 0.75;
   pointer-events: none;

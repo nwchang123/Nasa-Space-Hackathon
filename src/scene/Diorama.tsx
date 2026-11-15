@@ -18,7 +18,6 @@ import { HOME } from '../flight/route';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
 import { dioramaSunDir, horizonDir, SITE_SCALE, smoothstep } from './layout';
-import { GuideBubble } from './GuideBubble';
 import { Hotspots } from './Hotspots';
 import { MachineModel } from './MachineModel';
 import { buildBladeFragment, disposeObject } from './models';
@@ -185,7 +184,6 @@ export function Diorama({ stop }: { stop: MachineId }) {
         )}
         <SitePing stop={stop} antenna={lay.antenna} size={1} unit={SITE_SCALE} />
         <SiteSignature stop={stop} ground={ground} lay={lay} />
-        <GuideBubble stop={stop} />
         {stop === HOME && (
           <group position={lay.ingenuity}>
             <Hotspots stop={stop} />

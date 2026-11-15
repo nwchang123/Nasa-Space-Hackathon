@@ -1,5 +1,6 @@
 /* Hand-driven signature controls (src/ui/hud/Signature.tsx): the live readout on sliders and the
-   hold-to-charge control. Base styles (.sig-btn, .sig-slider) live in styles.css. */
+   hold-to-charge control, its charge a flat amber fill with a hairline edge. Base styles (.sig-btn,
+   .sig-slider) live in styles.css. */
 
 .sigx-pct {
   margin-left: auto;
@@ -27,8 +28,8 @@
   top: 0;
   bottom: 0;
   width: 0;
-  background: linear-gradient(90deg, rgba(242, 169, 59, 0.1), rgba(242, 169, 59, 0.38));
-  box-shadow: 2px 0 10px rgba(242, 169, 59, 0.45);
+  background: linear-gradient(90deg, rgba(242, 169, 59, 0.08), rgba(242, 169, 59, 0.3));
+  border-right: 1px solid var(--amber);
   pointer-events: none;
 }
 .sigx-hold.holding {
@@ -45,15 +46,9 @@
 }
 .sigx-hold.running .sigx-fill {
   background: rgba(242, 169, 59, 0.16);
-  box-shadow: none;
+  border-right-color: rgba(242, 169, 59, 0.5);
 }
 .sigx-hold:focus-visible {
   outline: 1px solid var(--amber);
   outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sigx-fill {
-    box-shadow: none;
-  }
 }

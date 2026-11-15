@@ -1,90 +1,127 @@
-/* Site tools (FocusControls.tsx) and the scout camera (ScoutCam.tsx). The tools sit at the right
-   edge under the top bar; the photo roll at the bottom right, in the gutter beside the dock. */
+/* Site tools (FocusControls.tsx) and the scout camera (ScoutCam.tsx). The tools are one segmented
+   hairline strip at the right edge under the top bar, with the "?" help dropping below it; the photo
+   roll stands at the bottom right on the HUD's bottom baseline, in the column the console keeps clear. */
 
 .site-tools {
   position: absolute;
-  top: calc(var(--hud-top-h, 90px) + 24px);
+  top: calc(var(--hud-top-h, 42px) + 12px);
   right: var(--hud-gap, 16px);
-  display: grid;
-  justify-items: end;
-  gap: 7px;
   pointer-events: auto;
+}
+
+.tool-strip {
+  display: flex;
+  background: var(--hud-ink, rgba(5, 7, 10, 0.82));
+  border: 1px solid rgba(143, 179, 201, 0.26);
+  border-radius: 2px;
 }
 
 .tool-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 11px;
-  background: var(--glass, rgba(7, 10, 15, 0.62));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-line, rgba(143, 179, 201, 0.18));
-  border-radius: 3px;
+  padding: 6px 10px;
+  background: none;
+  border: 0;
+  border-radius: 0;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 9px;
+  line-height: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--bone);
+  white-space: nowrap;
+  color: var(--bone-dim);
   cursor: pointer;
   transition:
-    border-color 0.2s,
     color 0.2s,
     background 0.2s;
 }
+.tool-btn + .tool-btn {
+  border-left: 1px solid rgba(143, 179, 201, 0.2);
+}
 .tool-btn:hover {
-  border-color: var(--amber);
-  color: var(--amber);
+  color: var(--bone);
+  background: rgba(143, 179, 201, 0.07);
 }
 .tool-btn:focus-visible {
   outline: 1px solid var(--amber);
-  outline-offset: 2px;
+  outline-offset: -3px;
 }
-.tool-btn.live {
-  border-color: rgba(242, 169, 59, 0.6);
+/* A close-up to leave: the reset reads in full. (Not ".live": that is the radio panel's class.) */
+.tool-btn.armed {
+  color: var(--bone);
 }
 .tool-btn.on {
-  border-color: var(--amber);
   color: var(--amber);
-  background: rgba(242, 169, 59, 0.12);
+  background: rgba(242, 169, 59, 0.1);
 }
 .tool-btn.capture {
-  border-color: var(--amber);
-  background: rgba(242, 169, 59, 0.18);
-  color: var(--amber);
-  box-shadow: 0 0 18px rgba(242, 169, 59, 0.25);
+  color: var(--ink);
+  background: var(--amber);
+}
+.tool-btn.capture:hover {
+  background: #f6bb60;
+}
+.tool-help-btn {
+  padding: 6px 10px;
+  letter-spacing: 0;
 }
 .tool-btn kbd,
-.tool-hint kbd {
-  padding: 1px 4px;
-  border: 1px solid var(--glass-line, rgba(143, 179, 201, 0.25));
+.tool-help kbd {
+  display: inline-block;
+  min-width: 13px;
+  padding: 0 3px;
+  border: 1px solid rgba(143, 179, 201, 0.32);
+  border-radius: 1px;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 11px;
+  text-align: center;
+  color: inherit;
+}
+
+/* How to fly and look around: a hairline sheet under the strip, only while "?" is on. */
+.tool-help {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  margin: 0;
+  padding: 8px 11px 9px;
+  background: var(--hud-ink, rgba(5, 7, 10, 0.82));
+  border: 1px solid rgba(143, 179, 201, 0.26);
+  border-left: 2px solid var(--amber);
   border-radius: 2px;
   font-family: var(--mono);
   font-size: 9px;
-  color: var(--bone-dim);
-}
-
-/* Readable over anything behind it, even the bright orange-and-white parachute: a light dark
-   backing and a firm shadow. */
-.tool-hint {
-  display: grid;
-  justify-items: end;
-  gap: 3px;
-  margin: 2px 0 0;
-  padding: 4px 7px;
-  background: rgba(5, 7, 10, 0.5);
-  border-radius: 3px;
-  font-family: var(--mono);
-  font-size: 9px;
+  line-height: 1.5;
   letter-spacing: 0.06em;
   color: var(--bone);
-  text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.95),
-    0 0 6px rgba(0, 0, 0, 0.7);
+  animation: fade-in 0.2s ease both;
 }
-.tool-hint kbd {
-  margin-right: 2px;
-  color: var(--bone);
+.tool-help[hidden] {
+  display: none;
+}
+.tool-help div {
+  display: grid;
+  grid-template-columns: 10.5em auto;
+  gap: 12px;
+  align-items: baseline;
+}
+.tool-help dt {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bone-dim);
+}
+.tool-help dd {
+  margin: 0;
 }
 
 /* ---- the viewfinder */
@@ -217,13 +254,13 @@
   }
 }
 
-/* ---- the photo roll, newest on top */
+/* ---- the photo roll, newest on top, on the HUD's bottom baseline */
 
 .scout-roll {
   position: absolute;
   right: var(--hud-gap, 16px);
-  bottom: 30px;
-  width: max(104px, min(150px, calc(var(--dock-right, 150px) - 2 * var(--hud-gap, 16px))));
+  bottom: var(--hud-base, 28px);
+  width: var(--roll-w, 150px);
   display: flex;
   flex-direction: column-reverse;
   gap: 6px;
@@ -246,8 +283,8 @@
   width: 100%;
   padding: 3px 3px 4px;
   background: #e9e4d8;
-  border-radius: 2px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  border-radius: 1px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   cursor: default;
 }
 .scout-roll button {
@@ -268,12 +305,24 @@
   margin-top: 3px;
   font-family: var(--mono);
   font-size: 8px;
-  letter-spacing: 0.08em;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #2a2722;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+/* Narrow windows: a row of small prints under the site tools, newest at the right, so the bottom
+   console keeps its full width (styles.css lifts the console's reserve for the roll). */
+@media (max-width: 960px) {
+  .scout-roll {
+    top: calc(var(--hud-top-h, 42px) + 12px + 27px + 10px);
+    bottom: auto;
+    width: auto;
+    flex-direction: row-reverse;
+  }
+  .scout-roll li {
+    width: 72px;
+  }
 }
 @keyframes scout-pin {
   from {

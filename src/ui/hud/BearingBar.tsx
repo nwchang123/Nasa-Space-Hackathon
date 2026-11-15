@@ -1,9 +1,11 @@
-// The 360° bearing bar at a site: a slim compass strip just above the dock. Its needle is the way
-// the camera faces (live.camHeadingDeg, written by the CameraRig). Drag the bar, click on it, or
-// use the arrow keys to walk the camera round the machine (it writes the orbit goal,
-// live.siteOrbitGoal); double-click goes back to the wide view. Amber marks show where a story
-// hotspot on the side or back of the machine can be seen; turning near one lights it up and
-// pings. At home (before lift-off and after landing back) it marks the broken blade's fragment.
+// The 360° bearing ruler at a site: a 24 px compass scale sitting flush on the top edge of the
+// stage dock (both stacked in the HUD's bottom console), the heading readout at its left. Its needle
+// is the way the camera faces (live.camHeadingDeg, written by the CameraRig). Drag the ruler, click
+// on it, or use the arrow keys (Page Up/Down: a compass point) to walk the camera round the machine
+// (it writes the orbit goal, live.siteOrbitGoal); double-click goes back to the wide view. Amber
+// diamonds show where a story hotspot on the side or back of the machine can be seen; turning near
+// one lights it up and pings. At home (before lift-off and after landing back) it marks the broken
+// blade's fragment.
 //
 // It reads the scene's live values in its own animation loop and writes the DOM directly, so it
 // never re-renders React every frame.
@@ -27,7 +29,7 @@ const KEY_STEP = 5;
 const PAGE_STEP = 45;
 /** The blade fragment lies 15 m west of Ingenuity at home: face west to see it beyond the helicopter. */
 const FRAGMENT_HEADING = 270;
-/** Marks closer than this, degrees, would print their numbers on top of each other: every other one is raised a row. */
+/** Marks closer than this, degrees, would print their numbers on top of each other: the left one of the pair turns its number to the left. */
 const STAGGER_DEG = 12;
 
 interface Mark {
@@ -35,21 +37,23 @@ interface Mark {
   heading: number;
   num: string;
   label: string;
-  /** Raised a row, clear of a neighbour's number. */
+  /** Number on the left of the diamond: the left one of two close marks, clear of its neighbour. */
   alt?: boolean;
 }
 
-/** Raise every other mark of a run of marks that sit within STAGGER_DEG of each other (also across north). */
+/**
+ * Of two marks within STAGGER_DEG of each other, the left one turns its number to the left and the
+ * right one keeps it on the right, so the two numbers point away from each other. (The ruler runs
+ * 0°→360° left to right, so neighbours across north sit at its two ends and never collide.)
+ */
 function stagger(marks: Mark[]): Mark[] {
   const sorted = [...marks].sort((a, b) => a.heading - b.heading);
+  let partner = false;
   sorted.forEach((m, i) => {
-    const prev = sorted[i - 1];
-    m.alt = !!prev && Math.abs(headingDelta(prev.heading, m.heading)) < STAGGER_DEG && !prev.alt;
+    const next = sorted[i + 1];
+    m.alt = !partner && !!next && Math.abs(headingDelta(m.heading, next.heading)) < STAGGER_DEG;
+    partner = m.alt;
   });
-  // Across north: the last mark and the first one may also be neighbours.
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-  if (sorted.length > 2 && !first.alt && !last.alt && Math.abs(headingDelta(last.heading, first.heading)) < STAGGER_DEG) last.alt = true;
   return sorted;
 }
 
@@ -71,7 +75,7 @@ function barStop(): MachineId | null {
 function measureMarks(stop: MachineId): Mark[] {
   const marks: Mark[] = [];
   if (stop === HOME) {
-    marks.push({ key: 'fragment', heading: FRAGMENT_HEADING, num: '◆', label: 'Blade fragment' });
+    marks.push({ key: 'fragment', heading: FRAGMENT_HEADING, num: 'Fragment', label: 'Blade fragment' });
     return marks;
   }
   inv.copy(live.site.matrix).invert();
@@ -107,7 +111,7 @@ export function BearingBar() {
   const stopRef = useRef<MachineId | null>(null);
   const marksRef = useRef<Mark[]>([]);
 
-  // The animation loop: visibility, where it sits (above the dock), the needle, lit marks, pings.
+  // The animation loop: visibility, the marks (measured now and then), the needle, lit marks, pings.
   useEffect(() => {
     let raf = 0;
     let frame = 0;
@@ -130,14 +134,7 @@ export function BearingBar() {
       const el = root.current;
       if (!s || !el) return;
 
-      // Sit just above the dock, centred on it (measured now and then: it changes with the stage).
       if (frame++ % 20 === 0) {
-        const dock = document.querySelector('.dock');
-        if (dock) {
-          const r = dock.getBoundingClientRect();
-          el.style.left = `${Math.round(r.left + r.width / 2)}px`;
-          el.style.bottom = `${Math.round(window.innerHeight - r.top + 10)}px`;
-        }
         const found = measureMarks(s);
         const key = found.map(m => `${m.key}@${Math.round(m.heading / 3)}${m.alt ? '^' : ''}`).join('|');
         if (key !== lastKey) {
@@ -184,97 +181,81 @@ export function BearingBar() {
 
   if (!stop) return <div ref={root} className="brg" hidden />;
   return (
-    <div ref={root} className="brg" aria-label="Look around: 360 degree bearing">
-      <div className="brg-row">
-        <span ref={readout} className="brg-readout tabular" aria-hidden="true" />
-        <div
-          ref={track}
-          className="brg-track"
-          role="slider"
-          tabIndex={0}
-          aria-label="Camera heading"
-          aria-valuemin={0}
-          aria-valuemax={359}
-          onPointerDown={e => {
-            if (e.button !== 0) return;
-            drag.current = e.pointerId;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            const h = headingAt(e.clientX);
-            if (h !== null) turnTo(h);
-          }}
-          onPointerMove={e => {
-            if (drag.current !== e.pointerId) return;
-            const h = headingAt(e.clientX);
-            if (h !== null) turnTo(h);
-          }}
-          onPointerUp={e => {
-            if (drag.current === e.pointerId) drag.current = null;
-          }}
-          onPointerCancel={() => {
-            drag.current = null;
-          }}
-          onDoubleClick={() => useApp.getState().resetView()}
-          onKeyDown={e => {
-            const h = live.camHeadingDeg;
-            if (!Number.isFinite(h)) return;
-            const step = e.key === 'ArrowRight' ? KEY_STEP : e.key === 'ArrowLeft' ? -KEY_STEP : e.key === 'PageUp' ? PAGE_STEP : e.key === 'PageDown' ? -PAGE_STEP : 0;
-            if (step) {
-              e.preventDefault();
-              // Step from the goal, so held keys keep turning even before the camera catches up.
-              const goalHeading = h - ((live.siteOrbitGoal.az - live.siteOrbit.az) * 180) / Math.PI;
-              turnTo(goalHeading + step);
-            } else if (e.key === 'Home' || e.key === 'Escape') {
-              e.preventDefault();
-              useApp.getState().resetView();
-            }
-          }}
-        >
-          <span className="brg-rail" aria-hidden="true" />
-          {Array.from({ length: 24 }, (_, i) => i * 15).map(d => (
-            <span key={d} className={`brg-tick${d % 45 === 0 ? ' major' : ''}`} style={{ left: `${(d / 360) * 100}%` }} aria-hidden="true">
-              {d % 90 === 0 && <i>{compassPoint(d)}</i>}
-            </span>
-          ))}
-          <span className="brg-tick major end" style={{ left: '100%' }} aria-hidden="true">
-            <i>N</i>
+    <div ref={root} className="brg" role="group" aria-label="Look around: 360 degree bearing">
+      <span ref={readout} className="brg-readout tabular" aria-hidden="true" />
+      <div
+        ref={track}
+        className="brg-track"
+        role="slider"
+        tabIndex={0}
+        aria-label="Camera heading"
+        aria-valuemin={0}
+        aria-valuemax={359}
+        title="Look around: drag, or ← → · double-click: wide view"
+        onPointerDown={e => {
+          if (e.button !== 0) return;
+          drag.current = e.pointerId;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          const h = headingAt(e.clientX);
+          if (h !== null) turnTo(h);
+        }}
+        onPointerMove={e => {
+          if (drag.current !== e.pointerId) return;
+          const h = headingAt(e.clientX);
+          if (h !== null) turnTo(h);
+        }}
+        onPointerUp={e => {
+          if (drag.current === e.pointerId) drag.current = null;
+        }}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+        onDoubleClick={() => useApp.getState().resetView()}
+        onKeyDown={e => {
+          const h = live.camHeadingDeg;
+          if (!Number.isFinite(h)) return;
+          const step = e.key === 'ArrowRight' ? KEY_STEP : e.key === 'ArrowLeft' ? -KEY_STEP : e.key === 'PageUp' ? PAGE_STEP : e.key === 'PageDown' ? -PAGE_STEP : 0;
+          if (step) {
+            e.preventDefault();
+            // Step from the goal, so held keys keep turning even before the camera catches up.
+            const goalHeading = h - ((live.siteOrbitGoal.az - live.siteOrbit.az) * 180) / Math.PI;
+            turnTo(goalHeading + step);
+          } else if (e.key === 'Home' || e.key === 'Escape') {
+            e.preventDefault();
+            useApp.getState().resetView();
+          }
+        }}
+      >
+        {/* A tick every 15°, taller every 45°; N E S W N at the cardinal points. */}
+        {Array.from({ length: 25 }, (_, i) => i * 15).map(d => (
+          <span key={d} className={`brg-tick${d % 90 === 0 ? ' card' : d % 45 === 0 ? ' major' : ''}`} style={{ left: `${(d / 360) * 100}%` }} aria-hidden="true">
+            {d % 90 === 0 && <i>{compassPoint(d % 360)}</i>}
           </span>
-          {marks.map(m => (
-            <button
-              key={m.key}
-              type="button"
-              tabIndex={-1}
-              ref={el => {
-                if (el) markEls.current.set(m.key, el);
-                else markEls.current.delete(m.key);
-              }}
-              className={`brg-mark${m.alt ? ' brg-mark-alt' : ''}`}
-              style={{ left: `${(m.heading / 360) * 100}%` }}
-              title={`${m.num === '◆' ? '' : `${m.num} `}${m.label} · seen from behind`}
-              aria-label={`Turn to ${m.label}`}
-              onPointerDown={e => {
-                e.stopPropagation();
-                turnTo(m.heading);
-              }}
-            >
-              <span className="brg-mark-dot" aria-hidden="true" />
-              <span className="brg-mark-num">{m.num}</span>
-            </button>
-          ))}
-          <span ref={needle} className="brg-needle" aria-hidden="true" />
-        </div>
+        ))}
+        {marks.map(m => (
+          <button
+            key={m.key}
+            type="button"
+            tabIndex={-1}
+            ref={el => {
+              if (el) markEls.current.set(m.key, el);
+              else markEls.current.delete(m.key);
+            }}
+            className={`brg-mark${m.alt ? ' brg-mark-alt' : ''}`}
+            style={{ left: `${(m.heading / 360) * 100}%` }}
+            title={`${m.key === 'fragment' ? '' : `${m.num} `}${m.label} · seen from behind`}
+            aria-label={`Turn to ${m.label}`}
+            onPointerDown={e => {
+              e.stopPropagation();
+              turnTo(m.heading);
+            }}
+          >
+            <span className="brg-mark-dot" aria-hidden="true" />
+            <span className="brg-mark-num">{m.num}</span>
+          </button>
+        ))}
+        <span ref={needle} className="brg-needle" aria-hidden="true" />
       </div>
-      <p className="brg-hint">
-        <span className="brg-hint-icon" aria-hidden="true">
-          ◎
-        </span>{' '}
-        360° · drag view or bar · double-click: wide view
-        {marks.length > 0 && (
-          <>
-            {' · '}
-            <span className="brg-legend-dot" aria-hidden="true" /> {stop === HOME ? 'something off to one side' : 'side or back detail'}
-          </>
-        )}
-      </p>
     </div>
   );
 }

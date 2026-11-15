@@ -1,8 +1,10 @@
-// Site tools at the right edge of the screen, at each stop: back to the wide view (the close-up,
-// the orbit and the camera following Ingenuity all let go, and Ingenuity flies home and lands),
-// the scout camera switch (key C) with its capture button, and how to fly Ingenuity.
+// Site tools at the top right, under the route bar, at each stop: one segmented strip. Back to the
+// wide view (the close-up, the orbit and the camera following Ingenuity all let go, and Ingenuity
+// flies home and lands), the scout camera switch (key C, Esc to close) with its capture button while
+// it is on, and a "?" that opens how to fly Ingenuity and look around (closed by default, so the sky
+// stays clear; Esc closes it too).
 
-import { useEffect } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { live } from '../../scene/registry';
 import { useApp } from '../../store';
 import { playShutter } from '../sound';
@@ -31,15 +33,20 @@ export function FocusControls() {
   const scoutCam = useApp(s => s.scoutCam);
   const setScoutCam = useApp(s => s.setScoutCam);
   const resetView = useApp(s => s.resetView);
+  const [help, setHelp] = useState(false);
+  const helpId = useId();
 
-  // C: scout camera on and off; Escape: off.
+  // C: scout camera on and off; Escape: off, and the help closes.
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       const s = useApp.getState();
       if (s.phase !== 'flight' || s.flight.stage !== 'site') return;
       if (e.code === 'KeyC') s.setScoutCam(!s.scoutCam);
-      else if (e.code === 'Escape' && s.scoutCam) s.setScoutCam(false);
+      else if (e.code === 'Escape') {
+        if (s.scoutCam) s.setScoutCam(false);
+        setHelp(false);
+      }
     };
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
@@ -48,26 +55,66 @@ export function FocusControls() {
   if (!atSite) return null;
   return (
     <div className="site-tools hud-panel-in">
-      <button type="button" className={`tool-btn${focused ? ' live' : ''}`} onClick={resetView}>
-        <span aria-hidden="true">↩</span> Reset wide view
-      </button>
-      <button type="button" className={`tool-btn${scoutCam ? ' on' : ''}`} aria-pressed={scoutCam} onClick={() => setScoutCam(!scoutCam)}>
-        <span aria-hidden="true">📷</span> Scout cam <kbd>C</kbd>
-      </button>
-      {scoutCam && (
-        <button type="button" className="tool-btn capture" onClick={captureScoutPhoto}>
-          <span aria-hidden="true">📸</span> Capture target
+      <div className="tool-strip" role="group" aria-label="View">
+        <button type="button" className={`tool-btn${focused ? ' armed' : ''}`} onClick={resetView}>
+          Reset wide view
         </button>
-      )}
-      <p className="tool-hint">
-        <span>
-          <kbd>W</kbd>
-          <kbd>A</kbd>
-          <kbd>S</kbd>
-          <kbd>D</kbd> / click ground to fly
-        </span>
-        <span>drag to look · double-click: wide view</span>
-      </p>
+        <button type="button" className={`tool-btn${scoutCam ? ' on' : ''}`} aria-pressed={scoutCam} onClick={() => setScoutCam(!scoutCam)}>
+          Scout cam <kbd>C</kbd>
+        </button>
+        {scoutCam && (
+          <button type="button" className="tool-btn capture" onClick={captureScoutPhoto}>
+            Capture
+          </button>
+        )}
+        <button
+          type="button"
+          className={`tool-btn tool-help-btn${help ? ' on' : ''}`}
+          aria-expanded={help}
+          aria-controls={helpId}
+          aria-label="How to fly and look around"
+          title="How to fly and look around"
+          onClick={() => setHelp(h => !h)}
+        >
+          ?
+        </button>
+      </div>
+      <dl id={helpId} className="tool-help" hidden={!help}>
+        <div>
+          <dt>
+            <kbd>W</kbd>
+            <kbd>A</kbd>
+            <kbd>S</kbd>
+            <kbd>D</kbd>
+          </dt>
+          <dd>Fly Ingenuity</dd>
+        </div>
+        <div>
+          <dt>Click ground</dt>
+          <dd>Fly there</dd>
+        </div>
+        <div>
+          <dt>Drag</dt>
+          <dd>Look around</dd>
+        </div>
+        <div>
+          <dt>Double-click</dt>
+          <dd>Wide view</dd>
+        </div>
+        <div>
+          <dt>
+            Ruler · <kbd>←</kbd>
+            <kbd>→</kbd>
+          </dt>
+          <dd>Turn round the machine</dd>
+        </div>
+        <div>
+          <dt>
+            <kbd>C</kbd> · <kbd>Esc</kbd>
+          </dt>
+          <dd>Scout cam on · off</dd>
+        </div>
+      </dl>
     </div>
   );
 }
