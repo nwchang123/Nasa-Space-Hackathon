@@ -43,9 +43,11 @@ const TAU_MAX = 11;
 /** Slider detents per full range, and the shortest gap between two ticks, ms. */
 const DETENTS = 40;
 const TICK_GAP_MS = 35;
-/** Orbit detents: one per this many degrees of azimuth, and per this much zoom. */
+/** Orbit detents: one per this many degrees of azimuth, and per this much zoom; on a fast drag, at
+ * most one per this many ms (a light ratchet, not a buzz). */
 const AZ_STEP_DEG = 5;
 const ZOOM_STEP = 0.05;
+const ORBIT_TICK_GAP_MS = 60;
 /** Boost: rotor pitch +20 %, a little louder; eased at this rate, 1/s. */
 const BOOST_PITCH = 0.2;
 const BOOST_LOUD = 0.1;
@@ -251,7 +253,7 @@ export function SoundScape() {
       const turned = azStep !== o.az;
       o.az = azStep;
       o.zoom = zoomStep;
-      if (now - o.at >= TICK_GAP_MS) {
+      if (now - o.at >= ORBIT_TICK_GAP_MS) {
         o.at = now;
         if (turned) {
           const deg = ((((live.siteOrbit.az * 180) / Math.PI) % 360) + 360) % 360;

@@ -502,7 +502,10 @@ let lastDetent = 0;
 
 /**
  * One precision detent: a very short, clean mechanical tick whose pitch follows `v` (0..1).
- * `soft` for the background ones (orbit, zoom). Self-guarded against stacking (≥ 20 ms apart).
+ * Through the cue bus, a slider's fast sweep of them sits about 11 dB under Ingenuity's voice (16 dB
+ * on a slow one); `soft` for the background ones (dragging the view round a site, zooming), about
+ * 17 dB under it, under the ambient pad, even on a fast drag. (The clicks sit where the ear is
+ * keenest, and louder levels only pile into the limiter.) Self-guarded against stacking (≥ 20 ms).
  */
 export function playDetent(v: number, soft = false) {
   const a = audio();
@@ -512,7 +515,7 @@ export function playDetent(v: number, soft = false) {
   lastDetent = t;
   const x = Math.min(1, Math.max(0, v));
   if (!detentBuffer || detentBuffer.sampleRate !== a.sampleRate) detentBuffer = noise(a, 0.006, k => (1 - k) ** 4);
-  const k = soft ? 0.5 : 1;
+  const k = soft ? 0.1 : 0.15;
   burst(a, detentBuffer, 'highpass', 4200, 0.12 * k, 0, 0.7);
   tone(1500 + 1700 * x, 0, 0.028, 0.045 * k, 'sine');
 }
@@ -547,13 +550,16 @@ export function playViewfinder(on: boolean) {
   tone(2093, 0.34, 0.07, 0.07, 'square');
 }
 
-/** A short sonar-like ping, clear but soft (the bearing bar finds a hidden side). */
+/**
+ * A short sonar-like ping, clear but soft (the bearing bar finds a hidden side): its peak about
+ * 10 dB under the voice's peaks. (Louder levels only pile into the limiter, so they barely drop.)
+ */
 export function playLocate() {
   const a = audio();
   if (!a) return;
-  tone(1480, 0, 0.55, 0.075, 'sine', 1400);
-  tone(2960, 0, 0.12, 0.02, 'sine');
-  tone(1480, 0.22, 0.4, 0.025, 'sine', 1400);
+  tone(1480, 0, 0.55, 0.011, 'sine', 1400);
+  tone(2960, 0, 0.12, 0.003, 'sine');
+  tone(1480, 0.22, 0.4, 0.004, 'sine', 1400);
 }
 
 // ---------------------------------------------------------------- continuous loops
