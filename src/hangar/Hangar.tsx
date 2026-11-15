@@ -15,7 +15,7 @@ import { setAmbience, setChargeLoop, setRotorLoop, setWind } from '../ui/sound';
 import { stopSpeaking } from '../ui/voice';
 import { arOverride, browserProbe, detectArMode, linkHint, pageLink, type ArMode } from './arSupport';
 import type { Arrangement } from './build';
-import { useHangar, type HangarState } from './hangarStore';
+import { useHangar } from './hangarStore';
 import { HangarScene } from './HangarScene';
 import { formatLength, HANGAR_PICKS, scaleLabel, TABLE_ROW_M, type HangarPick } from './layout';
 import { QrCode } from './QrCode';
@@ -98,7 +98,8 @@ function Segmented<T extends string>({
   );
 }
 
-function ScaleToggle() {
+/** `compact`: the short labels the AR dock has room for. */
+function ScaleToggle({ compact = false }: { compact?: boolean }) {
   const scale = useHangar(s => s.scale);
   const setScale = useHangar(s => s.setScale);
   return (
@@ -106,8 +107,8 @@ function ScaleToggle() {
       label="Scale"
       value={scale}
       options={[
-        ['table', 'Table scale'],
-        ['real', '1:1 real'],
+        ['table', compact ? 'Table' : 'Table scale'],
+        ['real', compact ? '1:1' : '1:1 real'],
       ]}
       onChange={setScale}
     />
@@ -277,11 +278,67 @@ const keepTapsOnControls: RefCallback<HTMLElement> = el => {
   el.addEventListener('beforexrselect', e => e.preventDefault());
 };
 
-const XR_HINT: Record<Exclude<HangarState['xr'], 'off'>, string> = {
-  starting: 'Starting the camera…',
-  scanning: 'Move the phone slowly over the table. When the ring lies flat on it, tap to place.',
-  placed: 'Walk all the way round. Re-place to move it.',
+/**
+ * What the phone is doing right now, one word for the status line. Scanning has three faces:
+ * looking, looking for a while (time for tips), and a surface under the ring (tap to place).
+ */
+type XrStatus = 'starting' | 'loading' | 'searching' | 'slow' | 'found' | 'placed';
+
+const XR_STATUS: Record<XrStatus, { tag: string; text: string }> = {
+  starting: { tag: 'Camera', text: 'Starting the camera…' },
+  loading: { tag: 'Loading', text: 'Loading the models…' },
+  searching: { tag: 'Looking for a surface', text: 'Aim at a table or the floor and sweep the phone slowly from side to side.' },
+  slow: { tag: 'Still looking', text: 'The camera needs a surface with some texture to hold on to.' },
+  found: { tag: 'Surface found', text: 'Tap anywhere to place it.' },
+  placed: { tag: 'Placed', text: 'Walk all the way round it. Re-place to move it.' },
 };
+
+const XR_TIPS = [
+  'Sweep the phone side to side, not just a tilt.',
+  'Plain white or glossy tops are hard: add a book or a placemat.',
+  'Or try the floor, with more light.',
+];
+
+function useXrStatus(): XrStatus | null {
+  const xr = useHangar(s => s.xr);
+  const surface = useHangar(s => s.xrSurface);
+  const slow = useHangar(s => s.xrSlow);
+  const current = useCurrent();
+  if (xr === 'off') return null;
+  if (xr === 'starting') return 'starting';
+  if (!current) return 'loading';
+  if (xr === 'placed') return 'placed';
+  if (surface === 'found') return 'found';
+  return slow ? 'slow' : 'searching';
+}
+
+function XrStatusLine({ status }: { status: XrStatus }) {
+  const pick = useHangar(s => s.pick);
+  const { tag } = XR_STATUS[status];
+  const text =
+    status === 'found' ? `Tap anywhere to place ${pick === 'row' ? 'all nine' : pickLabel(pick)}.` : XR_STATUS[status].text;
+  const working = status === 'starting' || status === 'loading' || status === 'searching' || status === 'slow';
+  return (
+    <div className="xr-status" data-status={status} role="status">
+      {/* Keyed, so each new state fades in rather than swapping under the reader's eye. */}
+      <div key={status} className="xr-status-body">
+        <p className="xr-status-tag">
+          <span className="xr-dot" aria-hidden="true" />
+          {tag}
+        </p>
+        <p className="xr-status-text">{text}</p>
+        {status === 'slow' && (
+          <ol className="xr-tips">
+            {XR_TIPS.map(t => (
+              <li key={t}>{t}</li>
+            ))}
+          </ol>
+        )}
+      </div>
+      {working && <span className="xr-scan" aria-hidden="true" />}
+    </div>
+  );
+}
 
 function XrControls() {
   const xr = useHangar(s => s.xr);
@@ -290,38 +347,45 @@ function XrControls() {
   const toggleRow = useHangar(s => s.toggleRow);
   const replace = useHangar(s => s.replace);
   const current = useCurrent();
-  if (xr === 'off') return null;
+  const status = useXrStatus();
+  if (!status) return null;
+  const n = pick === 'row' ? null : MACHINE_IDS.indexOf(pick) + 1;
   return (
-    <div className="xr-ui">
-      <div className="xr-panel xr-top" ref={keepTapsOnControls}>
-        <button type="button" className="icon-btn" onClick={endTabletopAr}>
+    <div className="xr-ui" data-status={status}>
+      <div className="xr-top" ref={keepTapsOnControls}>
+        <button type="button" className="xr-exit" onClick={endTabletopAr}>
+          <span className="xr-exit-x" aria-hidden="true" />
           Exit AR
         </button>
-        <p className="xr-hint" aria-live="polite">
-          {current ? XR_HINT[xr] : 'Loading the models…'}
-        </p>
       </div>
-      <div className="xr-panel xr-bottom" ref={keepTapsOnControls}>
-        <div className="xr-pick">
-          <button type="button" className="icon-btn" aria-label="Previous machine" onClick={() => step(-1)}>
-            ‹
-          </button>
-          <span className="xr-name">
-            {pickLabel(pick)}
-            {current && <span className="dim"> · {scaleLabel(current.layout.scale)}</span>}
-          </span>
-          <button type="button" className="icon-btn" aria-label="Next machine" onClick={() => step(1)}>
-            ›
-          </button>
-        </div>
-        <div className="xr-actions">
-          <button type="button" className="icon-btn" aria-pressed={pick === 'row'} onClick={toggleRow}>
-            All nine
-          </button>
-          <ScaleToggle />
-          <button type="button" className="icon-btn" onClick={replace} disabled={xr !== 'placed'}>
-            Re-place
-          </button>
+
+      <div className="xr-foot">
+        <XrStatusLine status={status} />
+        <div className="xr-dock" ref={keepTapsOnControls}>
+          <div className="xr-actions">
+            <button type="button" className="xr-btn" aria-pressed={pick === 'row'} onClick={toggleRow}>
+              All nine
+            </button>
+            <ScaleToggle compact />
+            <button type="button" className="xr-btn" data-ready={xr === 'placed' || undefined} onClick={replace} disabled={xr !== 'placed'}>
+              Re-place
+            </button>
+          </div>
+          <div className="xr-pick">
+            <button type="button" className="xr-step" aria-label="Previous machine" onClick={() => step(-1)}>
+              <span aria-hidden="true">‹</span>
+            </button>
+            <p className="xr-name">
+              <span className="xr-name-main">{pickLabel(pick)}</span>
+              <span className="xr-name-sub tabular">
+                {n ? `${n} of 9` : 'Route order'}
+                {current && ` · ${scaleLabel(current.layout.scale)}`}
+              </span>
+            </p>
+            <button type="button" className="xr-step" aria-label="Next machine" onClick={() => step(1)}>
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

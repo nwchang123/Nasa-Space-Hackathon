@@ -297,7 +297,12 @@
   }
 }
 
-/* ---------- inside AR: the WebXR DOM overlay ---------- */
+/* ---------- inside AR: the WebXR DOM overlay ----------
+   A phone held upright over the live camera, one-handed. The middle of the screen stays clear for
+   the ring and the models; everything sits at the bottom in thumb reach: a status line that says
+   what the phone is doing, then a dock of controls. Only Exit stays up top, out of the way of a
+   stray tap. Every tap target is at least 44 px. The status line lets taps through (a tap there
+   places the models like any tap on the camera); the dock and Exit keep theirs (beforexrselect). */
 
 .hangar-xr {
   display: none;
@@ -312,70 +317,368 @@
 .hangar[data-xr='placed'] .hangar-xr {
   display: block;
 }
+
 .xr-ui {
+  --xr-glass: rgba(5, 7, 10, 0.7);
+  --xr-edge: rgba(143, 179, 201, 0.2);
+  --xr-c: var(--ghost);
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
     max(12px, env(safe-area-inset-left));
   pointer-events: none;
 }
-.xr-panel {
-  pointer-events: auto;
-  background: rgba(8, 11, 16, 0.78);
-  border: 1px solid var(--line);
-  padding: 10px 12px;
+.xr-ui[data-status='slow'],
+.xr-ui[data-status='placed'] {
+  --xr-c: var(--amber);
 }
+.xr-ui[data-status='found'] {
+  --xr-c: var(--green);
+}
+
+/* ---------- Exit, alone at the top ---------- */
+
 .xr-top {
+  align-self: flex-start;
+  pointer-events: auto;
+}
+.xr-exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px 0 14px;
+  background: var(--xr-glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--xr-edge);
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone);
+  cursor: pointer;
+}
+.xr-exit:active {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+/* A drawn ×, so it is the same weight in every font. */
+.xr-exit-x {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.xr-exit-x::before,
+.xr-exit-x::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 15px;
+  height: 1.5px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.xr-exit-x::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* ---------- the bottom: status line over the dock ---------- */
+
+.xr-foot {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 460px);
+  margin: 0 auto;
+}
+
+.xr-status {
+  position: relative;
+  overflow: hidden;
+  padding: 11px 14px 12px;
+  background: var(--xr-glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--xr-edge);
+  border-left: 2px solid var(--xr-c);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: border-color 0.3s;
+}
+.xr-status-body {
+  animation: xr-status-in 0.35s ease-out both;
+}
+.xr-status-tag {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
+  margin: 0 0 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--xr-c);
 }
-.xr-top .icon-btn,
-.xr-bottom .icon-btn {
-  min-height: 38px;
-  min-width: 38px;
-  font-size: 10px;
+.xr-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--xr-c);
+  box-shadow: 0 0 10px var(--xr-c);
 }
-.xr-hint {
+.xr-ui[data-status='starting'] .xr-dot,
+.xr-ui[data-status='loading'] .xr-dot,
+.xr-ui[data-status='searching'] .xr-dot,
+.xr-ui[data-status='slow'] .xr-dot {
+  animation: xr-pulse 1.4s ease-in-out infinite;
+}
+.xr-status-text {
   margin: 0;
   font-family: var(--serif);
-  font-size: 15px;
-  line-height: 1.35;
+  font-size: 16.5px;
+  line-height: 1.3;
   color: var(--bone);
+  text-wrap: pretty;
 }
-.xr-bottom {
-  display: grid;
-  gap: 10px;
-}
-.xr-pick {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.xr-pick .icon-btn {
+.xr-ui[data-status='found'] .xr-status-text {
   font-size: 18px;
-  line-height: 1;
-  padding: 0 0.5em;
 }
-.xr-name {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+.xr-tips {
+  display: grid;
+  gap: 5px;
+  margin: 9px 0 1px;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--line-soft);
+  list-style: none;
+  counter-reset: xr-tip;
+}
+.xr-tips li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: baseline;
+  font-family: var(--serif);
+  font-size: 14.5px;
+  line-height: 1.3;
+  color: var(--bone-dim);
+  text-wrap: pretty;
+  counter-increment: xr-tip;
+}
+.xr-tips li::before {
+  content: counter(xr-tip, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
   color: var(--amber);
-  text-align: center;
 }
+/* While it works: a thin sweep along the bottom edge, so a still screen never reads as stuck. */
+.xr-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5px;
+  background: rgba(143, 179, 201, 0.12);
+}
+.xr-scan::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32%;
+  background: linear-gradient(90deg, transparent, var(--xr-c), transparent);
+  animation: xr-sweep 1.9s ease-in-out infinite alternate;
+}
+
+/* ---------- the dock ---------- */
+
+.xr-dock {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  background: var(--xr-glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--xr-edge);
+  border-radius: 2px;
+  pointer-events: auto;
+}
+/* Registration ticks at the top corners, as on the rest of the console. */
+.xr-dock::before,
+.xr-dock::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--amber);
+  pointer-events: none;
+}
+.xr-dock::before {
+  left: -1px;
+  border-left: 1px solid var(--amber);
+}
+.xr-dock::after {
+  right: -1px;
+  border-right: 1px solid var(--amber);
+}
+
 .xr-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 6px;
+}
+.xr-btn,
+.xr-dock .seg button {
+  min-height: 44px;
+  padding: 0 6px;
+  background: rgba(233, 228, 216, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bone-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.xr-dock .seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 0;
+}
+.xr-dock .seg button + button {
+  border-left: 0;
+}
+.xr-btn[aria-pressed='true'],
+.xr-dock .seg button[aria-pressed='true'] {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+/* Re-place wakes up once the models stand on the table. */
+.xr-btn[data-ready] {
+  color: var(--bone);
+  border-color: rgba(242, 169, 59, 0.55);
+}
+.xr-btn:disabled {
+  opacity: 0.35;
+}
+.xr-btn:active:not(:disabled),
+.xr-dock .seg button:active,
+.xr-step:active {
+  background: rgba(242, 169, 59, 0.22);
+  color: var(--amber);
+}
+
+.xr-pick {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
 }
-.xr-actions .icon-btn[aria-pressed='true'] {
+.xr-step {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  padding: 0 0 3px;
+  background: rgba(233, 228, 216, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--bone);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.xr-name {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+  text-align: center;
+}
+.xr-name-main {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--amber);
-  border-color: var(--amber);
+}
+.xr-name-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ghost);
+}
+
+@keyframes xr-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+@keyframes xr-sweep {
+  from {
+    left: -32%;
+  }
+  to {
+    left: 100%;
+  }
+}
+@keyframes xr-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Short phones: the screen centre (where the searching ring breathes) must stay clear even with the
+   tips up, so the lead sentence gives way to the tips and the dock tightens. */
+@media (max-height: 700px) {
+  .xr-ui[data-status='slow'] .xr-status-text {
+    display: none;
+  }
+  .xr-ui[data-status='slow'] .xr-tips {
+    margin-top: 2px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .xr-step {
+    height: 46px;
+  }
+  .xr-dock {
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xr-dot,
+  .xr-scan::after,
+  .xr-status-body {
+    animation: none !important;
+  }
+  .xr-scan::after {
+    left: 34%;
+  }
 }

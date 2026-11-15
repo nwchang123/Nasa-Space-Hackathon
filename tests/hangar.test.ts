@@ -5,7 +5,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { Vector3 } from 'three';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   arOverride,
   detectArMode,
@@ -13,6 +13,8 @@ import {
   isHorizontalHit,
   linkHint,
   pageLink,
+  pickSurface,
+  rayToLevel,
   type ArProbe,
 } from '../src/hangar/arSupport';
 import { useHangar } from '../src/hangar/hangarStore';
@@ -232,6 +234,19 @@ describe('hangar store: picking, the row, placing', () => {
     h().setXr('starting');
     expect(h().xrNote).toBe('Camera denied');
   });
+
+  it('starts every search afresh: found and slow reset on each change of state', () => {
+    h().setXr('scanning');
+    expect(h().xrSurface).toBe('searching');
+    h().setXrSurface('searching', true);
+    expect(h().xrSlow).toBe(true);
+    h().setXrSurface('found', false);
+    h().setXr('placed');
+    expect(h().xrSurface).toBe('searching');
+    h().setXrSurface('searching', true);
+    h().replace();
+    expect([h().xr, h().xrSurface, h().xrSlow]).toEqual(['scanning', 'searching', false]);
+  });
 });
 
 describe('AR decisions', () => {
@@ -278,6 +293,34 @@ describe('AR decisions', () => {
     expect(isHorizontalHit(pose([0, 0, 0]))).toBe(false);
   });
 
+  it('carries a ray down to a level, or not at all', () => {
+    const down45: [number, number, number] = [0, -Math.SQRT1_2, -Math.SQRT1_2];
+    const p = rayToLevel([0, 0, 0], down45, -0.5)!;
+    expect(p[1]).toBe(-0.5);
+    expect(p[2]).toBeCloseTo(-0.5, 9);
+    expect(rayToLevel([0, 0, 0], [0, 0, -1], -0.5)).toBeNull(); // level look never reaches it
+    expect(rayToLevel([0, 0, 0], [0, 1, 0], -0.5)).toBeNull(); // looking up
+    expect(rayToLevel([0, 0, 0], [0, -0.05, -0.9987], -0.5)).toBeNull(); // 10 m away: too far
+  });
+
+  it('finds the table: plane first, then its level past the patch, then a feature point', () => {
+    const eye: [number, number, number] = [0, 0, 0];
+    const down45: [number, number, number] = [0, -Math.SQRT1_2, -Math.SQRT1_2];
+    const ahead: [number, number, number] = [0, 0, -1];
+    const plane: [number, number, number] = [0, -0.5, -0.5];
+    const point: [number, number, number] = [0.05, -0.48, -0.52];
+    expect(pickSurface(plane, point, null, eye, down45)).toEqual({ at: plane, kind: 'plane' });
+    // The plane patch is behind the ray now, but the ray still lands on its level near it.
+    const ext = pickSurface(null, point, [0.2, -0.5, -0.3], eye, down45)!;
+    expect(ext.kind).toBe('extended');
+    expect(ext.at[1]).toBe(-0.5);
+    // Far from the last patch (another table, the floor beyond): not that level any more.
+    expect(pickSurface(null, point, [3, -0.5, -3], eye, down45)).toEqual({ at: point, kind: 'point' });
+    // A feature point only under a downward look, not straight ahead at a wall.
+    expect(pickSurface(null, point, null, eye, ahead)).toBeNull();
+    expect(pickSurface(null, null, null, eye, down45)).toBeNull();
+  });
+
   it('turns the models to face the visitor when placed', () => {
     const at: [number, number, number] = [0.4, 0.75, -1.2];
     for (const viewer of [[0.4, 1.5, 0], [2, 1.5, -1.2], [-1, 1.4, -3], [0.4, 1.6, -2.5]] as [number, number, number][]) {
@@ -296,6 +339,80 @@ describe('AR decisions', () => {
     expect(pageLink({ protocol: 'http:', hostname: 'localhost', origin: 'http://localhost:5190', pathname: '/' }).kind).toBe('localhost');
     expect(linkHint('http')).toMatch(/plain-HTTP.*blocks the camera and WebXR/);
     expect(linkHint('localhost')).toMatch(/HTTPS/);
+  });
+});
+
+describe('WebXR frame loop with a stand-in session', () => {
+  type Hit = number[] | null;
+  const listeners = new Map<string, (() => void)[]>();
+  const session = {
+    addEventListener: (t: string, f: () => void) => listeners.set(t, [...(listeners.get(t) ?? []), f]),
+    removeEventListener: () => undefined,
+    requestReferenceSpace: async () => ({}),
+    requestHitTestSource: async (o: { entityTypes: string[] }) => ({ type: o.entityTypes[0], cancel: () => undefined }),
+    end: async () => (listeners.get('end') ?? []).forEach(f => f()),
+  };
+  const gl = { xr: { enabled: false, setReferenceSpaceType: () => undefined, setSession: async () => undefined } };
+  // The phone at eye height 0, tilted down by `deg` (about +X), looking along -Z.
+  const viewer = (deg: number) => {
+    const a = (-deg * Math.PI) / 180;
+    return {
+      transform: {
+        matrix: [1, 0, 0, 0, 0, Math.cos(a), Math.sin(a), 0, 0, -Math.sin(a), Math.cos(a), 0, 0, 0, 0, 1],
+        orientation: { x: Math.sin(a / 2), y: 0, z: 0, w: Math.cos(a / 2) },
+      },
+    };
+  };
+  const level = (x: number, y: number, z: number) => [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1];
+  const frame = (deg: number, plane: Hit, point: Hit = null) =>
+    ({
+      getViewerPose: () => viewer(deg),
+      getHitTestResults: (src: { type: string }) => {
+        const m = src.type === 'plane' ? plane : point;
+        return m ? [{ getPose: () => ({ transform: { matrix: m } }) }] : [];
+      },
+    }) as unknown as XRFrame;
+  const ref = {} as XRReferenceSpace;
+
+  it('finds, holds, places, and tells the overlay when the search is slow', async () => {
+    vi.stubGlobal('navigator', { xr: { requestSession: async () => session } });
+    const { startTabletopAr, updateHit, placeAtHit, xrRuntime, endTabletopAr } = await import('../src/hangar/xr');
+    useHangar.setState({ xr: 'off' });
+    await startTabletopAr(gl as never, null);
+    const h = () => useHangar.getState();
+    expect(h().xr).toBe('scanning');
+    xrRuntime()!.searchSince = 1000; // this test's clock
+
+    // Nothing yet: the search goes on, and after SLOW_SCAN_MS the overlay is told.
+    expect(updateHit(frame(45, null), ref, 1000)).toBeNull();
+    expect([h().xrSurface, h().xrSlow]).toEqual(['searching', false]);
+    // A feature point while looking straight ahead (a wall) is ignored.
+    expect(updateHit(frame(0, null, level(0, -0.5, -2)), ref, 2000)).toBeNull();
+    updateHit(frame(45, null), ref, 1000 + 9000);
+    expect(h().xrSlow).toBe(true);
+
+    // A plane under the centre: found, and the reticle stands on it.
+    const m = updateHit(frame(45, level(0, -0.5, -0.5)), ref, 11000)!;
+    expect(m.elements[13]).toBeCloseTo(-0.5, 9);
+    expect([h().xrSurface, h().xrSlow, xrRuntime()!.hitKind]).toEqual(['found', false, 'plane']);
+    // The plane patch is missed next frame: its level carries the reticle on.
+    expect(updateHit(frame(40, null), ref, 11016)).not.toBeNull();
+    expect(xrRuntime()!.hitKind).toBe('extended');
+    // Looking level, nothing to stand on: held for a moment, then gone.
+    expect(updateHit(frame(0, null), ref, 11200)).not.toBeNull();
+    expect(updateHit(frame(0, null), ref, 11500)).toBeNull();
+    expect(h().xrSurface).toBe('searching');
+
+    updateHit(frame(45, level(0.1, -0.5, -0.5)), ref, 12000);
+    expect(placeAtHit()).toBe(true);
+    expect(h().xr).toBe('placed');
+    expect(xrRuntime()!.anchor!.position.x).toBeCloseTo(0.1, 9);
+
+    endTabletopAr();
+    await Promise.resolve();
+    expect(h().xr).toBe('off');
+    expect(xrRuntime()).toBeNull();
+    vi.unstubAllGlobals();
   });
 });
 

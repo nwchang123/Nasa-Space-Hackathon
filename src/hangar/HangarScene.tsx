@@ -11,6 +11,7 @@ import {
   LineBasicMaterial,
   LineLoop,
   Vector3,
+  type MeshBasicMaterial,
   type DirectionalLight,
   type Group,
   type HemisphereLight,
@@ -304,6 +305,8 @@ function useReticle(size: V3) {
 
 const DEFAULT_SUN: V3 = [0.35, 1, 0.25];
 const tmpDir = new Vector3();
+/** The searching ring floats this far in front of the phone until a surface is found. */
+const SEEK_DIST_M = 0.4;
 
 function ArStage() {
   const arr = useHangar(s => s.arrangement);
@@ -311,6 +314,8 @@ function ArStage() {
   const span = Math.max(...size);
   const placed = useRef<Group>(null);
   const reticle = useRef<Group>(null);
+  const seek = useRef<Group>(null);
+  const seekMat = useRef<MeshBasicMaterial>(null);
   const sun = useRef<DirectionalLight>(null);
   const hemi = useRef<HemisphereLight>(null);
   const probe = useRef<LightProbe>(null);
@@ -328,11 +333,23 @@ function ArStage() {
     const g = placed.current, r = reticle.current, l = sun.current;
     if (!frame || !g || !r || !l) return;
     const xr = useHangar.getState().xr;
-    const hit = updateHit(frame, state.gl.xr.getReferenceSpace(), state.camera.position);
+    const now = performance.now();
+    const hit = updateHit(frame, state.gl.xr.getReferenceSpace(), now);
     r.visible = xr === 'scanning' && !!hit;
     if (hit) {
       r.matrix.copy(hit);
       r.matrixWorldNeedsUpdate = true;
+    }
+    // Until a surface is found, a small ring breathes at the screen centre: the phone is looking.
+    const rt = xrRuntime();
+    const s = seek.current;
+    if (s && rt) {
+      s.visible = xr === 'scanning' && !hit;
+      if (s.visible) {
+        s.position.copy(rt.viewer).addScaledVector(rt.forward, SEEK_DIST_M);
+        s.quaternion.copy(rt.viewerQuat);
+        if (seekMat.current) seekMat.current.opacity = 0.45 + 0.35 * Math.sin(now / 260);
+      }
     }
     const anchor = xrRuntime()?.anchor;
     g.visible = xr === 'placed' && !!anchor;
@@ -374,6 +391,12 @@ function ArStage() {
           <meshBasicMaterial color="#f2a93b" transparent opacity={0.95} depthWrite={false} />
         </mesh>
         <primitive object={outline} />
+      </group>
+      <group ref={seek} visible={false}>
+        <mesh renderOrder={3}>
+          <ringGeometry args={[0.014, 0.0175, 40]} />
+          <meshBasicMaterial ref={seekMat} color="#f6ead8" transparent opacity={0.6} depthTest={false} depthWrite={false} />
+        </mesh>
       </group>
       <group ref={placed} visible={false}>
         {arr && <primitive object={arr.root} />}

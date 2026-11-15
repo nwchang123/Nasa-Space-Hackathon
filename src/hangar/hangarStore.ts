@@ -11,6 +11,9 @@ export type HangarLight = 'day' | 'night';
 /** 'off' (sandbox) → 'starting' → 'scanning' (looking for the table) → 'placed'. */
 export type XrState = 'off' | 'starting' | 'scanning' | 'placed';
 
+/** While scanning: whether a flat surface is under the screen centre right now. */
+export type XrSurface = 'searching' | 'found';
+
 export interface HangarState {
   pick: HangarPick;
   /** The last single machine shown, for leaving the row. */
@@ -20,6 +23,10 @@ export interface HangarState {
   /** Built by the scene for the current pick and scale; null while the models load. */
   arrangement: Arrangement | null;
   xr: XrState;
+  /** While scanning: a flat surface is under the screen centre ('found') or not yet. */
+  xrSurface: XrSurface;
+  /** Scanning for a while (SLOW_SCAN_MS) with no surface: the overlay shows tips. */
+  xrSlow: boolean;
   /** Why the last AR session could not start or ended early, for the visitor. */
   xrNote: string | null;
   /** A USDZ for AR Quick Look is being written (the sandbox draws only when moved meanwhile). */
@@ -34,6 +41,8 @@ export interface HangarState {
   setLight(light: HangarLight): void;
   setArrangement(a: Arrangement | null): void;
   setXr(xr: XrState, note?: string | null): void;
+  /** Set from the XR frame loop, only when either changes. */
+  setXrSurface(surface: XrSurface, slow: boolean): void;
   setExporting(on: boolean): void;
   /** Placed → scanning again, to put the models somewhere else. */
   replace(): void;
@@ -46,6 +55,8 @@ export const useHangar = create<HangarState>(set => ({
   light: 'day',
   arrangement: null,
   xr: 'off',
+  xrSurface: 'searching',
+  xrSlow: false,
   xrNote: null,
   exporting: false,
 
@@ -61,7 +72,13 @@ export const useHangar = create<HangarState>(set => ({
   setScale: scale => set({ scale }),
   setLight: light => set({ light }),
   setArrangement: arrangement => set({ arrangement }),
-  setXr: (xr, note) => set(note === undefined ? { xr } : { xr, xrNote: note }),
+  // Every change of state starts the surface search afresh.
+  setXr: (xr, note) =>
+    set(s => {
+      const fresh = xr === s.xr ? {} : { xrSurface: 'searching' as const, xrSlow: false };
+      return note === undefined ? { xr, ...fresh } : { xr, xrNote: note, ...fresh };
+    }),
+  setXrSurface: (xrSurface, xrSlow) => set(s => (s.xrSurface === xrSurface && s.xrSlow === xrSlow ? {} : { xrSurface, xrSlow })),
   setExporting: exporting => set({ exporting }),
-  replace: () => set(s => (s.xr === 'placed' ? { xr: 'scanning' } : {})),
+  replace: () => set(s => (s.xr === 'placed' ? { xr: 'scanning', xrSurface: 'searching', xrSlow: false } : {})),
 }));
