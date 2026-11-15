@@ -6,7 +6,7 @@ import { OPENING_CENTRE_MS, OPENING_DESCENT_MS, OPENING_DIVE_AT_MS, openingCentr
 import { descentMs } from '../src/scene/layout';
 import { STORY_KEYS, useApp } from '../src/store';
 import { MACHINE_IDS } from '../src/types';
-import { MAX_TOUR_FLY_MS, chapterDone, readingMs, sentences, shouldPauseOnKey, shouldPauseOnPointerTarget, tourFlyMs } from '../src/ui/tour';
+import { MAX_TOUR_FLY_MS, actionDemoMs, actionDemoValue, chapterDone, readingMs, sentences, shouldPauseOnKey, shouldPauseOnPointerTarget, tourFlyMs } from '../src/ui/tour';
 import { speechMs } from '../src/ui/voice';
 
 describe('the opening descent', () => {
@@ -97,5 +97,28 @@ describe('the auto tour', () => {
     useApp.getState().resumeTour();
     expect(useApp.getState().tourPaused).toBe(false);
     useApp.getState().reset();
+  });
+});
+
+describe("the tour's hand on a stop's slider", () => {
+  it('eases from where the slider is to the end, and stays there', () => {
+    expect(actionDemoValue(0, 5000, 0, 1)).toBe(0);
+    expect(actionDemoValue(2500, 5000, 0, 1)).toBeCloseTo(0.5, 10);
+    expect(actionDemoValue(5000, 5000, 0, 1)).toBe(1);
+    expect(actionDemoValue(9000, 5000, 0.4, 1)).toBe(1);
+    expect(actionDemoValue(-100, 5000, 0.4, 1)).toBe(0.4);
+    // Reduced motion: a single step.
+    expect(actionDemoValue(0, 0, 0, 1)).toBe(1);
+    let last = -1;
+    for (let t = 0; t <= 5000; t += 100) {
+      const v = actionDemoValue(t, 5000, 0, 1);
+      expect(v).toBeGreaterThanOrEqual(last);
+      last = v;
+    }
+  });
+  it('takes most of the section, but never crawls or snaps', () => {
+    expect(actionDemoMs(10000)).toBe(6000);
+    expect(actionDemoMs(2000)).toBe(3500);
+    expect(actionDemoMs(60000)).toBe(8000);
   });
 });

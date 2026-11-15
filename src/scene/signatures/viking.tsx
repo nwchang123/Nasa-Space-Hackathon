@@ -6,6 +6,7 @@ import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PerspectiveCamera, Vector3, WebGLRenderTarget, type Group, type MeshStandardMaterial, type Object3D, type Scene, type WebGLRenderer } from 'three';
+import { sigOrPreset } from '../../data/signatures';
 import { useApp } from '../../store';
 import { SITE_SCALE } from '../layout';
 import { live } from '../registry';
@@ -268,8 +269,10 @@ export function VikingFrost({ ground }: SiteSignatureProps) {
   );
 
   useFrame((_, dt) => {
-    const on = sigNow('frost') === 1;
-    // The shader is patched on first use only, so arriving at Viking 2 costs no recompile.
+    // On from the start (its preset, src/data/signatures.ts) until the visitor turns it off: the
+    // frost settles over the ground as the site comes into view. The shader is patched only once
+    // it is wanted.
+    const on = sigOrPreset('frost', sigNow('frost')) === 1;
     if (on && !undo.current) undo.current = ground.materials.map(m => addFrost(m, uniform));
     const target = on ? 1 : 0;
     uniform.value = reduced ? target : uniform.value + (target - uniform.value) * (1 - Math.exp(-dt * 2.2));

@@ -26,7 +26,7 @@ import { HOME, hop } from '../flight/route';
 import { currentStop, useApp, type AppState, type Stage } from '../store';
 import type { MachineId } from '../types';
 import { isMuted, playChirp, playRadioClose, playRadioOpen, playTypeTick } from '../ui/sound';
-import { readingMs, useFeed } from '../ui/tour';
+import { readingMs, useFeed, useTour } from '../ui/tour';
 import { isVoiceOn, onVoiceChange, preloadVoice, setVoice, speak, stopSpeaking, voiceSupported, type Speech } from '../ui/voice';
 import { live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
@@ -280,7 +280,14 @@ function RadioFeed({ feed }: { feed: Feed }) {
     const defs = SIGNATURES[stop] ?? [];
     if (defs.length === 0) return;
     const timers: number[] = [];
+    // A slider that opens already run (its preset, e.g. Sojourner down the ramp) counts as done
+    // until it is pulled back, so the first nudge does not set off the reaction.
     const sliderDone: Record<string, boolean> = {};
+    for (const def of defs) {
+      if (def.kind !== 'slider' || def.preset === undefined) continue;
+      const min = def.min ?? 0;
+      sliderDone[def.key] = (def.preset - min) / ((def.max ?? 1) - min || 1) >= SLIDER_DONE;
+    }
     const react = (def: SignatureDef) => {
       const s = useApp.getState();
       if (!arrivedRef.current || s.flight.stage !== 'site' || currentStop(s.flight) !== stop) return;
@@ -297,7 +304,8 @@ function RadioFeed({ feed }: { feed: Feed }) {
         // once its effect has played.
         if ((def.kind as string) === 'hold') {
           const fire = sig[`${def.key}:fire`];
-          if (fire !== undefined && fire !== old[`${def.key}:fire`]) {
+          // Fired by the auto tour while the narrator reads (AutoTour.tsx): no answer over the narrator.
+          if (fire !== undefined && fire !== old[`${def.key}:fire`] && useTour.getState().demo !== def.key) {
             timers.push(window.setTimeout(() => react(def), Math.min(BUTTON_REACT_MAX_MS, def.durationMs ?? 0)));
           }
           continue;
@@ -308,14 +316,15 @@ function RadioFeed({ feed }: { feed: Feed }) {
           const wait = Math.min(BUTTON_REACT_MAX_MS, def.durationMs ?? 0);
           timers.push(window.setTimeout(() => react(def), wait));
         } else if (def.kind === 'toggle') {
-          if (v === 1) timers.push(window.setTimeout(() => react(def), TOGGLE_REACT_MS));
+          if (v === 1 && useTour.getState().demo !== def.key) timers.push(window.setTimeout(() => react(def), TOGGLE_REACT_MS));
         } else {
           const min = def.min ?? 0;
           const max = def.max ?? 1;
           const k = (v - min) / (max - min || 1);
           if (k >= SLIDER_DONE && !sliderDone[def.key]) {
             sliderDone[def.key] = true;
-            react(def);
+            // Run by the auto tour while the narrator reads it (AutoTour.tsx): no answer over the narrator.
+            if (useTour.getState().demo !== def.key) react(def);
           } else if (k < SLIDER_REARM) sliderDone[def.key] = false;
         }
       }

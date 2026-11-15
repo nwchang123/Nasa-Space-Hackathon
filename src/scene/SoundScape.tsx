@@ -112,7 +112,7 @@ export function SoundScape() {
           } else if (def.kind === 'slider') {
             const { lo, span } = range(def.min, def.max);
             const k = Math.min(1, Math.max(0, (v - lo) / span));
-            const k0 = Math.min(1, Math.max(0, ((was ?? def.initial ?? lo) - lo) / span));
+            const k0 = Math.min(1, Math.max(0, ((was ?? def.preset ?? def.initial ?? lo) - lo) / span));
             // Precision detents: one tick per 1/40 of the range crossed.
             if (Math.floor(k * DETENTS) !== Math.floor(k0 * DETENTS) && now - lastDetent >= TICK_GAP_MS) {
               lastDetent = now;

@@ -35,9 +35,11 @@ export interface TourUi {
   nudge: boolean;
   /** Paused by a touch on the view: when the tour will pick up again by itself (if nothing else is touched), Date.now(); null if it will not. */
   resumeAt: number | null;
+  /** The stop's action the tour is running itself while a section is read (its key), or null. */
+  demo: string | null;
 }
 
-export const NO_TOUR: TourUi = { chapter: null, invite: false, inviteAt: 0, skipAt: 0, countdown: null, nudge: false, resumeAt: null };
+export const NO_TOUR: TourUi = { chapter: null, invite: false, inviteAt: 0, skipAt: 0, countdown: null, nudge: false, resumeAt: null, demo: null };
 export const useTour = create<TourUi>(() => ({ ...NO_TOUR }));
 
 // ---------------------------------------------------------------- timing
@@ -121,6 +123,21 @@ export function tourFlyMs(distanceKm: number, speakMs: number): number {
   let ms = base;
   for (let i = 0; i < 4; i++) ms = Math.max(base, speakMs + 900 + descentMs(ms));
   return Math.round(Math.min(MAX_TOUR_FLY_MS, ms));
+}
+
+/** A stop's action run by the tour (signatures.ts playsDuring) starts this long into its section, ms… */
+export const ACTION_DEMO_DELAY_MS = 1500;
+
+/** …and takes about 60 % of the section's reading time, from 3.5 to 8 s, ms. */
+export function actionDemoMs(chapterMs: number): number {
+  return Math.round(Math.min(8000, Math.max(3500, chapterMs * 0.6)));
+}
+
+/** Where the tour's hand has the slider `elapsedMs` into its run of `ms`: from → to, eased in and out. */
+export function actionDemoValue(elapsedMs: number, ms: number, from: number, to: number): number {
+  const t = Math.min(1, Math.max(0, ms > 0 ? elapsedMs / ms : 1));
+  const k = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  return from + (to - from) * k;
 }
 
 /** Whether a section has been read: the voice has finished (or there is none and it has had its reading time), or it ran far too long. */

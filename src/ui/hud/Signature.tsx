@@ -4,7 +4,7 @@
 // while focused) and fires on release.
 
 import { useEffect, useRef } from 'react';
-import { SIGNATURES, type SignatureDef } from '../../data/signatures';
+import { SIGNATURES, sigOrPreset, type SignatureDef } from '../../data/signatures';
 import { holdCharge, holdRunMs } from '../../scene/signatures/logic';
 import { useApp } from '../../store';
 import type { MachineId } from '../../types';
@@ -18,8 +18,9 @@ export function SignatureControls({ stop }: { stop: MachineId }) {
   if (defs.length === 0) return null;
   return (
     <div className="sig" role="group" aria-label="Try it here">
+      {/* Until the visitor uses a control it shows the stop's preset, if any (Viking 2's frost: on). */}
       {defs.map(def => (
-        <SigControl key={def.key} def={def} value={sig[def.key]} sig={sig} now={now} />
+        <SigControl key={def.key} def={def} value={sigOrPreset(def.key, sig[def.key])} sig={sig} now={now} />
       ))}
     </div>
   );

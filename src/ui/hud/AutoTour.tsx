@@ -7,8 +7,10 @@
 // - on each leg: the flight is long enough for Ingenuity's lines (see tourFlyMs), and the dock
 //   waits for them before landing;
 // - at each stop: after the arrival intro, the four story sections in turn, each read aloud with a
-//   close-up of its part; then the stop's action is offered (never forced: it can be skipped), and
-//   once Ingenuity has answered it, a short countdown to the next stop.
+//   close-up of its part (the section that tells the stop's action runs it too while the narrator
+//   reads: a slider eased to the end, a toggle switched on, a hold charged and released;
+//   signatures.ts playsDuring); then the stop's action is offered (never forced: it can be
+//   skipped), and once Ingenuity has answered it, a short countdown to the next stop.
 // The moment the visitor takes over (picks a section or a hotspot, opens the dossier or the scout
 // camera, flies Ingenuity), the tour pauses where it is. Dragging, zooming or turning the 3D view
 // never pauses it, so Ingenuity keeps telling all four story sections while the visitor looks
@@ -21,13 +23,14 @@
 import { useEffect, useState } from 'react';
 import { LEG_SCRIPTS } from '../../data/flight';
 import { MACHINE_BY_ID } from '../../data/machines';
-import { SIGNATURES } from '../../data/signatures';
+import { SIGNATURES, sigOrPreset } from '../../data/signatures';
 import { LEGS, flyDurationMs } from '../../flight/route';
 import { STORY_KEYS, currentStop, useApp, type AppState, type StorySection } from '../../store';
 import { MACHINE_IDS } from '../../types';
 import { useThrottle } from '../throttle';
 import { live } from '../../scene/registry';
 import {
+  ACTION_DEMO_DELAY_MS,
   CHAPTER_GAP_MS,
   DEMO_MS,
   IDLE_RESUME_MS,
@@ -38,6 +41,8 @@ import {
   NO_TOUR,
   NUDGE_MS,
   RESUME_NOTICE_MS,
+  actionDemoMs,
+  actionDemoValue,
   chapterDone,
   readingMs,
   sentences,
@@ -48,6 +53,7 @@ import {
   useFeed,
   useTour,
 } from '../tour';
+import { holdCharge } from '../../scene/signatures/logic';
 import { prefersReducedMotion } from '../useClock';
 import { speak, speechMs, type Speech } from '../voice';
 import { PlayGlyph, TourSwitchGlyph } from './icons';
@@ -88,6 +94,11 @@ interface Run {
   ms: number;
   /** Ingenuity has answered the stop's action (its inheritance line) at this stop. */
   answered: boolean;
+  /**
+   * The stop's action the tour runs while this section is read, from at (Date.now()): a slider
+   * eased from → to over ms, a toggle switched on, or a hold charged over ms and released.
+   */
+  demo: { key: string; kind: 'slider' | 'toggle' | 'hold'; from: number; to: number; at: number; ms: number } | null;
 }
 
 const stageKey = (s: AppState) => (s.phase === 'flight' ? `${s.flight.stage}:${s.flight.leg}:${s.flight.stageStartedAt}` : '');
@@ -116,6 +127,22 @@ function startChapter(run: Run, s: AppState, i: number, now: number) {
   run.ms = run.speech ? speechMs(lines) : readingMs(text);
   go(run, 'chapter', now);
   useTour.setState({ chapter: { i, at: now, ms: run.ms }, invite: false });
+  // The section that tells the stop's action runs it too, unless the visitor already has: a slider
+  // from wherever it is to the end, a toggle that is off, a hold not yet fired here.
+  run.demo = null;
+  const def = (SIGNATURES[stop] ?? []).find(d => d.playsDuring === i);
+  const at = now + ACTION_DEMO_DELAY_MS;
+  if (def?.kind === 'slider') {
+    const to = def.max ?? 1;
+    const from = sigOrPreset(def.key, s.sig[def.key]) ?? def.initial ?? def.min ?? 0;
+    if (to - from > 1e-6) run.demo = { key: def.key, kind: 'slider', from, to, at, ms: prefersReducedMotion() ? 0 : actionDemoMs(run.ms) };
+  } else if (def?.kind === 'toggle') {
+    if (sigOrPreset(def.key, s.sig[def.key]) !== 1) run.demo = { key: def.key, kind: 'toggle', from: 0, to: 1, at, ms: 0 };
+  } else if (def?.kind === 'hold') {
+    if (s.sig[`${def.key}:fire`] === undefined && s.sig[`${def.key}:hold`] !== 1) {
+      run.demo = { key: def.key, kind: 'hold', from: 0, to: 1, at, ms: def.chargeMs ?? 2500 };
+    }
+  }
 }
 
 function invite(run: Run, s: AppState, now: number) {
@@ -267,8 +294,66 @@ function takeOver() {
 /** Runs the tour (nothing to render: the dock and the top bar show its marks). */
 export function AutoTour() {
   useEffect(() => {
-    let run: Run = { key: '', step: 'idle', at: 0, i: 0, speech: null, said: '', ms: 0, answered: false };
+    let run: Run = { key: '', step: 'idle', at: 0, i: 0, speech: null, said: '', ms: 0, answered: false, demo: null };
     let held = false;
+    // The tour's hand on a slider (run.demo), moved every frame so the scene follows it smoothly.
+    let raf = 0;
+    const endDemo = () => {
+      const d = run.demo;
+      run.demo = null;
+      // Cut off mid-charge (a takeover, the stage over): let go of the hold without firing it.
+      const s = useApp.getState();
+      if (d?.kind === 'hold' && s.sig[`${d.key}:hold`] === 1 && s.sig[`${d.key}:fire`] === undefined) {
+        s.setSig(`${d.key}:hold`, 0);
+        s.setSig(d.key, 0);
+      }
+      if (useTour.getState().demo !== null) useTour.setState({ demo: null });
+    };
+    const demoFrame = () => {
+      raf = 0;
+      const d = run.demo;
+      const s = useApp.getState();
+      // Only while its section is read by the running tour: any takeover leaves the slider where it is.
+      if (!d || run.step !== 'chapter' || stageKey(s) !== run.key || !s.autoTour || s.tourPaused || s.story !== run.i) {
+        endDemo();
+        return;
+      }
+      const now = Date.now();
+      if (now >= d.at) {
+        // Marked first, so Ingenuity does not answer over the narrator (GuideBubble).
+        if (useTour.getState().demo !== d.key) useTour.setState({ demo: d.key });
+        const t = now - d.at;
+        if (d.kind === 'toggle') {
+          s.setSig(d.key, 1);
+          run.demo = null;
+          endDemo();
+          return;
+        }
+        if (d.kind === 'hold') {
+          // As a hand would: press, charge for chargeMs, release (HoldControl in Signature.tsx).
+          if (s.sig[`${d.key}:hold`] !== 1) {
+            s.setSig(d.key, 0);
+            s.setSig(`${d.key}:hold`, 1);
+          }
+          s.setSig(d.key, holdCharge(d.at, now, d.ms));
+          if (t >= d.ms) {
+            s.setSig(`${d.key}:hold`, 0);
+            s.setSig(`${d.key}:fire`, Date.now());
+            run.demo = null;
+            endDemo();
+            return;
+          }
+        } else {
+          const v = actionDemoValue(t, d.ms, d.from, d.to);
+          if (s.sig[d.key] !== v) s.setSig(d.key, v);
+          if (t >= d.ms) {
+            endDemo();
+            return;
+          }
+        }
+      }
+      raf = requestAnimationFrame(demoFrame);
+    };
     const stopSpeech = () => {
       run.speech?.stop();
       run.speech = null;
@@ -283,7 +368,7 @@ export function AutoTour() {
       if (key !== run.key) {
         stopSpeech();
         useTour.setState({ ...NO_TOUR });
-        run = { key, step: 'intro', at: now, i: 0, speech: null, said: '', ms: 0, answered: false };
+        run = { key, step: 'intro', at: now, i: 0, speech: null, said: '', ms: 0, answered: false, demo: null };
         held = false;
         byHand = false;
       }
@@ -316,11 +401,13 @@ export function AutoTour() {
       }
       if (s.flight.stage === 'prologue') prologue(run, s, now);
       else if (s.flight.stage === 'site') site(run, s, now);
+      if (run.demo && !raf) raf = requestAnimationFrame(demoFrame);
     };
     const id = window.setInterval(tick, 150);
     return () => {
       unsubStop();
       window.clearInterval(id);
+      cancelAnimationFrame(raf);
       stopSpeech();
       useTour.setState({ ...NO_TOUR });
     };

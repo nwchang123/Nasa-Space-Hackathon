@@ -2,7 +2,7 @@
 // definitions the HUD renders (src/data/signatures.ts).
 
 import { describe, expect, it } from 'vitest';
-import { SIGNATURES } from '../src/data/signatures';
+import { SIGNATURES, SIG_PRESETS, sigOrPreset } from '../src/data/signatures';
 import { skyLook } from '../src/scene/sites';
 import { applySiteFx } from '../src/scene/signatures/fx';
 import {
@@ -234,6 +234,40 @@ describe('signature definitions', () => {
   it('the converted actions keep their keys (the scene and the guide match on them)', () => {
     const kinds = Object.fromEntries(MACHINE_IDS.flatMap(id => SIGNATURES[id]!.map(d => [d.key, d.kind])));
     expect(kinds).toMatchObject({ scan: 'slider', drag: 'slider', scoop: 'slider', decode: 'slider', wake: 'slider', quake: 'hold', frost: 'toggle', larri: 'toggle', roll: 'slider', storm: 'slider' });
+  });
+  it('presets and tour runs are in range, and a preset is shown, never stored', () => {
+    const all = MACHINE_IDS.flatMap(id => SIGNATURES[id]!);
+    for (const d of all) {
+      if (d.preset !== undefined) {
+        expect(['toggle', 'slider'], d.key).toContain(d.kind);
+        if (d.kind === 'toggle') expect([0, 1], d.key).toContain(d.preset);
+        else {
+          expect(d.preset, d.key).toBeGreaterThanOrEqual(d.min!);
+          expect(d.preset, d.key).toBeLessThanOrEqual(d.max!);
+        }
+        expect(SIG_PRESETS[d.key], d.key).toBe(d.preset);
+      }
+      if (d.playsDuring !== undefined) {
+        expect(['toggle', 'slider', 'hold'], d.key).toContain(d.kind);
+        expect([0, 1, 2, 3], d.key).toContain(d.playsDuring);
+        // Nothing to run if it opens already done.
+        expect(d.preset, d.key).toBeUndefined();
+      }
+    }
+    // Viking 2's frost opens on; the visitor's own value wins.
+    expect(sigOrPreset('frost', undefined)).toBe(1);
+    expect(sigOrPreset('frost', 0)).toBe(0);
+    expect(sigOrPreset('drag', undefined)).toBeUndefined();
+    expect(sigOrPreset('drag', 0.3)).toBe(0.3);
+  });
+  it('every action but the frost is run by the tour in the section that tells it', () => {
+    const when = Object.fromEntries(MACHINE_IDS.flatMap(id => SIGNATURES[id]!.map(d => [d.key, d.playsDuring ?? null])));
+    expect(when).toEqual({ scan: 0, frost: null, roll: 1, drag: 1, storm: 2, scoop: 1, quake: 1, larri: 3, decode: 1, wake: 3 });
+    // At most one per section at a stop (the tour runs one at a time).
+    for (const id of MACHINE_IDS) {
+      const secs = SIGNATURES[id]!.map(d => d.playsDuring).filter(v => v !== undefined);
+      expect(new Set(secs).size, id).toBe(secs.length);
+    }
   });
   it('the storm readout is wired to the model', () => {
     const storm = SIGNATURES.opportunity!.find(d => d.key === 'storm')!;

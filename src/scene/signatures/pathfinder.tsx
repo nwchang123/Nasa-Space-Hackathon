@@ -4,6 +4,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Euler, Mesh, Vector3, type Group, type InstancedMesh, type Object3D } from 'three';
+import { sigOrPreset } from '../../data/signatures';
 import { useReducedMotion } from '../useReducedMotion';
 import { findMachine, groundAt, SigFocus, SigTag, siteShown, sigNow, type SiteSignatureProps } from './common';
 import { ROVER_PATH, sojournerPath } from './logic';
@@ -62,7 +63,8 @@ export function SojournerRoll({ stop, ground, lay }: SiteSignatureProps) {
   /** What the close-up follows: Sojourner itself (a little above its deck), down the ramp and on. */
   const roverFocus = useMemo(() => RAMP_TOP.clone(), []);
   useFrame((_, dt) => {
-    const v = sigNow('roll');
+    // The slider's value, or its preset if it has one (src/data/signatures.ts).
+    const v = sigOrPreset('roll', sigNow('roll'));
     shown.current = v === undefined ? 0 : siteShown(stop);
     const loaded = findMachine(anchor.current)?.getObjectByName('sojourner');
     if (!loaded) return;
