@@ -149,7 +149,7 @@ export interface AppState {
    * default, remembered in this browser.
    */
   autoTour: boolean;
-  /** The visitor took over (dragged the view, picked a section…): the tour waits. Cleared on every stage change. */
+  /** The visitor took over (picked a section, opened the dossier…): the tour waits. Cleared on every stage change. */
   tourPaused: boolean;
 
   setPhase(phase: Phase): void;

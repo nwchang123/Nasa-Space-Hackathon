@@ -5,6 +5,14 @@
 // the CameraRig applies that on top of the site pose. Active only at this stop's site stage once
 // the camera has settled; leaving the stage eases it back to the composed shot.
 //
+// While a voice is speaking there (Ingenuity's or the narrator's), the camera also turns round the
+// machine on its own, always at the same slow pace (siteOrbit.ts: TURN_PACE, 60 s for a full turn,
+// so a line goes only part of the way round), gathering speed at the start and coming to rest as
+// the line ends (turnAngle). The view stays wherever the turn left it. It makes way for
+// the visitor: it stops at once on a drag, the wheel, the bearing bar or a reset and, a few seconds
+// after the last one, picks up again at the line's pace to finish with the line; it coasts to a
+// stop for a close-up on a part, holds while Ingenuity is being flown, and is off with reduced motion.
+//
 // Conventions: az = radians the camera turns about the site's up (right-hand rule, so positive
 // is counter-clockwise seen from above); dragging right turns the camera clockwise, as if the
 // machine were turned with the cursor. el = radians added to the camera's elevation (dragging
@@ -15,11 +23,26 @@ import { useEffect, useRef } from 'react';
 import { HOME } from '../flight/route';
 import { currentStop, useApp } from '../store';
 import type { MachineId } from '../types';
+import { voiceLine } from '../ui/sound';
 import { live } from './registry';
-import { orbitAfterDrag, orbitAfterWheel } from './siteOrbit';
+import {
+  AUTO_ORBIT_IDLE_MS,
+  coastSpeed,
+  TURN_PACE,
+  makeTurn,
+  orbitAfterDrag,
+  orbitAfterWheel,
+  turnAngle,
+  turnSpeed,
+  wholeTurns,
+  type Turn,
+} from './siteOrbit';
+import { useReducedMotion } from './useReducedMotion';
 
 /** How quickly the view follows the pointer, 1/s. */
 const FOLLOW = 14;
+/** No turn is started with less of the line left than this, s. */
+const MIN_TURN_S = 1.5;
 
 function orbitActive(stop: MachineId): boolean {
   const s = useApp.getState();
@@ -35,6 +58,17 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
   const gl = useThree(s => s.gl);
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
   const active = useRef(false);
+  const reduced = useReducedMotion();
+  const reducedRef = useRef(reduced);
+  reducedRef.current = reduced;
+  /** The turn under way with the line being spoken (times in s on performance.now()), from goal angle `az0`. */
+  const turn = useRef<{ line: number; plan: Turn; az0: number } | null>(null);
+  /** A cut-short turn's speed as it coasts to a stop, rad/s. */
+  const spin = useRef(0);
+  /** performance.now() of the visitor's latest move of the view. */
+  const lastInput = useRef(-Infinity);
+  /** The orbit goal as this frame left it: any other change by the next frame was the visitor's. */
+  const seen = useRef({ az: 0, el: 0, zoom: 1 });
 
   useEffect(() => {
     const el = gl.domElement;
@@ -98,6 +132,16 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
 
   useFrame((_, delta) => {
     const on = orbitActive(stop);
+    const t = live.siteOrbitGoal;
+    const now = performance.now();
+    // Anything else that moved the goal since the last frame (a drag, the wheel, the bearing bar,
+    // a reset) was the visitor: the turn stops at once and waits a while.
+    const was = seen.current;
+    if (drag.current || t.az !== was.az || t.el !== was.el || t.zoom !== was.zoom) {
+      lastInput.current = now;
+      spin.current = 0;
+      turn.current = null;
+    }
     if (on !== active.current) {
       active.current = on;
       if (!on) {
@@ -107,18 +151,62 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
       }
       gl.domElement.style.cursor = on ? 'grab' : '';
     }
-    if (live.shot.siteId !== stop) return;
-    const o = live.siteOrbit;
-    const t = live.siteOrbitGoal;
-    const k = 1 - Math.exp(-Math.min(delta, 0.1) * FOLLOW);
-    o.az += (t.az - o.az) * k;
-    o.el += (t.el - o.el) * k;
-    o.zoom += (t.zoom - o.zoom) * k;
-    if (!on && Math.abs(o.az) < 1e-4 && Math.abs(o.el) < 1e-4 && Math.abs(o.zoom - 1) < 1e-4) {
-      o.az = 0;
-      o.el = 0;
-      o.zoom = 1;
+    if (live.shot.siteId === stop) {
+      const o = live.siteOrbit;
+      const dt = Math.min(delta, 0.1);
+      const sec = now / 1000;
+      // The turn while a voice speaks: it moves the goal, so the view eases along with it.
+      const line = voiceLine();
+      const fl = live.flyer;
+      const free =
+        on &&
+        !reducedRef.current &&
+        line !== null &&
+        line.seconds !== null &&
+        now - lastInput.current > AUTO_ORBIT_IDLE_MS &&
+        !useApp.getState().focus &&
+        !(fl.site === stop && fl.follow > 0.05);
+      const cur = turn.current;
+      if (cur && (!free || cur.line !== line?.startedAt)) {
+        // The line ended or changed, or the camera must hold: coast on from the turn's speed.
+        spin.current = on ? turnSpeed(cur.plan, sec) : 0;
+        turn.current = null;
+      }
+      if (!on) spin.current = 0;
+      if (!turn.current && free && line?.seconds) {
+        const start = line.startedAt / 1000;
+        const end = start + line.seconds;
+        // From the line's start when it has only just begun; later (after the visitor looked round,
+        // or a close-up) from now. Either way at the one slow pace, coming to rest as the line ends.
+        const from = sec - start < 0.5 ? start : sec;
+        if (end - sec > MIN_TURN_S) turn.current = { line: line.startedAt, plan: makeTurn(from, end, TURN_PACE), az0: t.az };
+      }
+      if (spin.current !== 0) {
+        spin.current = coastSpeed(spin.current, dt);
+        if (turn.current) turn.current.az0 += spin.current * dt;
+        else t.az += spin.current * dt;
+      }
+      if (turn.current) t.az = turn.current.az0 + turnAngle(turn.current.plan, sec);
+      const k = 1 - Math.exp(-dt * FOLLOW);
+      o.az += (t.az - o.az) * k;
+      o.el += (t.el - o.el) * k;
+      o.zoom += (t.zoom - o.zoom) * k;
+      // Keep the angle within a turn of zero (the goal and the view shifted together, so nothing moves).
+      const turns = wholeTurns(t.az);
+      if (turns !== 0) {
+        t.az -= turns;
+        o.az -= turns;
+        if (turn.current) turn.current.az0 -= turns;
+      }
+      if (!on && Math.abs(o.az) < 1e-4 && Math.abs(o.el) < 1e-4 && Math.abs(o.zoom - 1) < 1e-4) {
+        o.az = 0;
+        o.el = 0;
+        o.zoom = 1;
+      }
     }
+    was.az = t.az;
+    was.el = t.el;
+    was.zoom = t.zoom;
   });
 
   return null;

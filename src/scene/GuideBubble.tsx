@@ -261,10 +261,10 @@ function RadioFeed({ feed }: { feed: Feed }) {
     const read = readingMs(text);
     const t = window.setInterval(() => {
       const sp = speechRef.current;
-      const said = sp ? sp.charsAt() : null;
+      const spDone = sp ? sp.done() : null;
       const elapsed = Date.now() - msg.id - OPEN_MS;
       // While the voice is still going, wait for it (within reason); without it, the reading time.
-      const heard = said !== null ? said >= text.length || elapsed > read * 2 + 4000 : elapsed >= read;
+      const heard = spDone !== null ? spDone || elapsed > read * 2 + 4000 : elapsed >= read;
       if (heard) {
         window.clearInterval(t);
         if (useFeed.getState().id === msg.id) useFeed.setState({ done: true });

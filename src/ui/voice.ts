@@ -86,6 +86,8 @@ export function preloadVoice(messages: string[][]) {
 export interface Speech {
   /** Characters of the message to show now; null once the speech has failed or been stopped (type on by the clock). */
   charsAt(): number | null;
+  /** True once the clip or final utterance has finished playing; false while active; null if failed/stopped. */
+  done(): boolean | null;
   stop(): void;
 }
 
@@ -105,7 +107,7 @@ function playClip(clip: VoiceClip): Speech {
   const onPlaying = () => {
     if (state !== 'loading') return;
     state = 'playing';
-    setVoiceSounding(true);
+    setVoiceSounding(true, clip.duration);
   };
   const onEnded = () => {
     if (state === 'playing') setVoiceSounding(false);
@@ -121,15 +123,20 @@ function playClip(clip: VoiceClip): Speech {
     // Not seekable before its metadata loads; it starts from 0 anyway.
   }
   a.play().catch(fail);
+  const timedOut = () => {
+    if (state !== 'loading' || performance.now() - asked <= START_TIMEOUT_MS) return false;
+    fail();
+    return true;
+  };
   const speech: Speech = {
     charsAt() {
-      if (state === 'failed') return null;
+      if (state === 'failed' || timedOut()) return null;
       if (state === 'ended') return clip.text.length;
-      if (state === 'loading' && performance.now() - asked > START_TIMEOUT_MS) {
-        fail();
-        return null;
-      }
       return charsAtTime(clip.spans, a.currentTime, clip.text.length);
+    },
+    done() {
+      if (state === 'failed' || timedOut()) return null;
+      return state === 'ended';
     },
     stop() {
       fail();
@@ -241,20 +248,25 @@ function synthesize(lines: string[]): Speech {
     u.onerror = () => finish('failed');
     synth.speak(u);
   });
+  if (lines.length === 0) finish('ended');
+  const timedOut = (now: number) => {
+    if (state !== 'loading' || now - asked <= START_TIMEOUT_MS) return false;
+    finish('failed');
+    return true;
+  };
   const speech: Speech = {
     charsAt() {
       if (state === 'failed') return null;
       if (state === 'ended') return text.length;
       const now = performance.now();
-      if (state === 'loading') {
-        if (now - asked > START_TIMEOUT_MS) {
-          finish('failed');
-          return null;
-        }
-        return 0;
-      }
+      if (timedOut(now)) return null;
+      if (state === 'loading') return 0;
       const said = word >= 0 ? word + ((now - wordAt) / 1000) * SYNTH_CPS : ((now - lineAt) / 1000) * SYNTH_CPS;
       return starts[line] + Math.min(lines[line].length, Math.floor(said));
+    },
+    done() {
+      if (state === 'failed' || timedOut(performance.now())) return null;
+      return state === 'ended';
     },
     stop() {
       finish('failed');

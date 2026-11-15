@@ -9,10 +9,11 @@
 // - at each stop: after the arrival intro, the four story sections in turn, each read aloud with a
 //   close-up of its part; then the stop's action is offered (never forced: it can be skipped), and
 //   once Ingenuity has answered it, a short countdown to the next stop.
-// The moment the visitor takes over (drags or zooms the view, uses the bearing ruler, picks a
-// section or a hotspot, opens the dossier or the scout camera, flies Ingenuity), the tour pauses
-// where it is. It picks up again from the top bar's Resume, or by itself once nothing has been
-// touched for a while (IDLE_RESUME_MS; the top bar counts the last seconds), unless the visitor
+// The moment the visitor takes over (picks a section or a hotspot, opens the dossier or the scout
+// camera, flies Ingenuity), the tour pauses where it is. Dragging, zooming or turning the 3D view
+// never pauses it, so Ingenuity keeps telling all four story sections while the visitor looks
+// around. When paused, it picks up again from the top bar's Resume, or by itself once nothing has
+// been touched for a while (IDLE_RESUME_MS; the top bar counts the last seconds), unless the visitor
 // pressed Pause themselves or is busy with the scout camera, the dossier or flying Ingenuity. A
 // stop's action is offered, never required: after INVITE_WAIT_MS untouched the tour moves on.
 // A pause lasts until the next stage.
@@ -41,6 +42,8 @@ import {
   readingMs,
   sentences,
   shouldAutoResume,
+  shouldPauseOnKey,
+  shouldPauseOnPointerTarget,
   tourFlyMs,
   useFeed,
   useTour,
@@ -215,8 +218,8 @@ function site(run: Run, s: AppState, now: number) {
       break;
     case 'chapter': {
       const elapsed = now - run.at;
-      const n = run.speech ? run.speech.charsAt() : null;
-      const voiceDone = n !== null ? n >= run.said.length : elapsed >= readingMs(run.said);
+      const spDone = run.speech ? run.speech.done() : null;
+      const voiceDone = spDone !== null ? spDone : elapsed >= readingMs(run.said);
       if (chapterDone(elapsed, run.ms, voiceDone)) {
         run.speech = null;
         if (run.i < 3) {
@@ -253,10 +256,6 @@ function site(run: Run, s: AppState, now: number) {
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
-/** Keys that fly Ingenuity or turn the view at a stop. */
-const FLY_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-/** Keys that turn the view from the focused bearing ruler (its "Camera heading" slider). */
-const RULER_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);
 
 /** The visitor took over: pause, if there is a tour to pause (at home before lift-off, or at a stop). */
 function takeOver() {
@@ -270,11 +269,19 @@ export function AutoTour() {
   useEffect(() => {
     let run: Run = { key: '', step: 'idle', at: 0, i: 0, speech: null, said: '', ms: 0, answered: false };
     let held = false;
+    const stopSpeech = () => {
+      run.speech?.stop();
+      run.speech = null;
+    };
+    const unsubStop = useApp.subscribe(s => {
+      if (stageKey(s) !== run.key || !s.autoTour) stopSpeech();
+    });
     const tick = () => {
       const s = useApp.getState();
       const now = Date.now();
       const key = stageKey(s);
       if (key !== run.key) {
+        stopSpeech();
         useTour.setState({ ...NO_TOUR });
         run = { key, step: 'intro', at: now, i: 0, speech: null, said: '', ms: 0, answered: false };
         held = false;
@@ -285,11 +292,8 @@ export function AutoTour() {
           held = true;
           useTour.setState({ chapter: null, countdown: null, nudge: false, invite: false });
         }
-        // A section picked by the visitor: stop reading the one the tour was on.
-        if (run.step === 'chapter' && run.speech && s.story !== run.i) {
-          run.speech.stop();
-          run.speech = null;
-        }
+        // Stop chapter reading if the tour was switched off or the visitor picked another section.
+        if (run.step === 'chapter' && run.speech && (!s.autoTour || s.story !== run.i)) stopSpeech();
         // Paused by a touch: pick up again by itself once nothing has been touched for a while.
         const stage = s.flight.stage;
         if (s.autoTour && s.tourPaused && (stage === 'prologue' || stage === 'site')) {
@@ -315,38 +319,40 @@ export function AutoTour() {
     };
     const id = window.setInterval(tick, 150);
     return () => {
+      unsubStop();
       window.clearInterval(id);
+      stopSpeech();
       useTour.setState({ ...NO_TOUR });
     };
   }, []);
 
-  // One touch takes over: the view (the 3D stage, its hotspots), the bearing ruler, the dossier,
-  // the scout camera, the flying keys, the ruler's own keys when it has focus. (The story tabs
-  // pause it themselves, in the dock.)
+  // Manual takeovers: opening the dossier, turning on the scout camera, or flying Ingenuity with
+  // keys (picking story tabs/hotspots or ground-clicking to fly pause at their own handlers).
+  // Orbiting or zooming the 3D view (.stage / .brg) leaves the tour running.
   useEffect(() => {
     const touchInvite = (t: EventTarget | null) => {
       if (t instanceof Element && t.closest('.tour-invite')) inviteTouch = Date.now();
     };
-    const down = (e: Event) => {
-      const t = e.target;
+    const markInput = (t: EventTarget | null) => {
       lastInput = Date.now();
       touchInvite(t);
-      if (t instanceof Element && t.closest('.stage, .brg, .dossier-toggle')) takeOver();
     };
+    const down = (e: Event) => {
+      const t = e.target;
+      markInput(t);
+      const inDossierToggle = t instanceof Element && Boolean(t.closest('.dossier-toggle'));
+      if (shouldPauseOnPointerTarget({ inDossierToggle })) takeOver();
+    };
+    const wheeled = (e: Event) => markInput(e.target);
     const moved = () => {
       lastInput = Date.now();
     };
     const changed = (e: Event) => touchInvite(e.target);
     const key = (e: KeyboardEvent) => {
       const t = e.target;
-      lastInput = Date.now();
-      touchInvite(t);
-      if (t instanceof Element && t.closest('.brg')) {
-        if (RULER_KEYS.has(e.key)) takeOver();
-        return;
-      }
-      if (isTyping(t) || !FLY_KEYS.has(e.code)) return;
-      if (useApp.getState().flight.stage === 'site') takeOver();
+      markInput(t);
+      const inRuler = t instanceof Element && Boolean(t.closest('.brg'));
+      if (shouldPauseOnKey({ stage: useApp.getState().flight.stage, code: e.code, typing: isTyping(t), inRuler })) takeOver();
     };
     let scout = useApp.getState().scoutCam;
     const unsub = useApp.subscribe(s => {
@@ -354,14 +360,14 @@ export function AutoTour() {
       scout = s.scoutCam;
     });
     window.addEventListener('pointerdown', down, true);
-    window.addEventListener('wheel', down, { capture: true, passive: true });
+    window.addEventListener('wheel', wheeled, { capture: true, passive: true });
     window.addEventListener('keydown', key, true);
     window.addEventListener('pointermove', moved, { capture: true, passive: true });
     window.addEventListener('input', changed, true);
     return () => {
       unsub();
       window.removeEventListener('pointerdown', down, true);
-      window.removeEventListener('wheel', down, true);
+      window.removeEventListener('wheel', wheeled, true);
       window.removeEventListener('keydown', key, true);
       window.removeEventListener('pointermove', moved, true);
       window.removeEventListener('input', changed, true);

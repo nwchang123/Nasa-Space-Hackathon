@@ -60,9 +60,10 @@ export const DEMO_MS = 16000;
  */
 export const INVITE_WAIT_MS = 12000;
 /**
- * After the visitor takes over (drags the view, picks a section…), the tour picks up again by
+ * After the visitor takes over (picks a section, opens the dossier…), the tour picks up again by
  * itself once there has been no input for this long, ms. Not after an explicit Pause, and not while
- * they are busy elsewhere (the scout camera, the dossier, flying Ingenuity).
+ * they are busy elsewhere (the scout camera, the dossier, flying Ingenuity). Looking around the 3D
+ * model does not interrupt the tour.
  */
 export const IDLE_RESUME_MS = 25000;
 /** The top bar counts down the last seconds before the tour picks up again, ms. */
@@ -71,6 +72,23 @@ export const RESUME_NOTICE_MS = 6000;
 /** Whether a tour paused by a touch should pick up again by itself now. */
 export function shouldAutoResume(o: { idleMs: number; byHand: boolean; busy: boolean }): boolean {
   return !o.byHand && !o.busy && o.idleMs >= IDLE_RESUME_MS;
+}
+
+/** Keys that fly Ingenuity manually at a stop. */
+export const FLY_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+
+/**
+ * Whether pressing down on a UI element should pause the auto tour: only opening the dossier card
+ * interrupts (orbiting/zooming on `.stage` or the `.brg` camera heading bar keeps the tour going).
+ */
+export function shouldPauseOnPointerTarget(o: { inDossierToggle: boolean }): boolean {
+  return o.inDossierToggle;
+}
+
+/** Whether a key press should pause the auto tour (manual flight keys at a site, never view controls). */
+export function shouldPauseOnKey(o: { stage: string; code: string; typing: boolean; inRuler: boolean }): boolean {
+  if (o.inRuler || o.typing) return false;
+  return o.stage === 'site' && FLY_KEYS.has(o.code);
 }
 /** A flight is never stretched beyond this for its lines, ms. */
 export const MAX_TOUR_FLY_MS = 24000;

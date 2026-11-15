@@ -13,6 +13,7 @@ import { currentStop, standingAt, useApp, type FlightState } from '../../store';
 import { MACHINE_IDS } from '../../types';
 import { formatKm } from '../callPlan';
 import { isMuted, setMuted } from '../sound';
+import { stopSpeaking } from '../voice';
 import { prefersReducedMotion, useUtcClock } from '../useClock';
 import { TourToggle } from './AutoTour';
 import { ChaseGlyph, NavcamGlyph, RouteGlyph, SoundGlyph } from './icons';
@@ -77,8 +78,10 @@ export function TopBar() {
           aria-label="Sound"
           data-tip={muted ? 'Sound off' : 'Sound on'}
           onClick={() => {
-            setMuted(!muted);
-            setMutedState(!muted);
+            const next = !muted;
+            setMuted(next);
+            if (next) stopSpeaking();
+            setMutedState(next);
           }}
           aria-pressed={!muted}
         >

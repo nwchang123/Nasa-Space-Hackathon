@@ -247,6 +247,7 @@ export function SiteFlight({ stop, ground }: { stop: MachineId; ground: Ground }
           mode.current = 'manual';
           auto.current = null;
           if (s.focus && s.focus.strength >= 0.9) s.setFocus(null);
+          s.pauseTour();
         }
         live.flyer.follow = 1;
       }

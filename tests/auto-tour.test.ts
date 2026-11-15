@@ -6,7 +6,7 @@ import { OPENING_CENTRE_MS, OPENING_DESCENT_MS, OPENING_DIVE_AT_MS, openingCentr
 import { descentMs } from '../src/scene/layout';
 import { STORY_KEYS, useApp } from '../src/store';
 import { MACHINE_IDS } from '../src/types';
-import { MAX_TOUR_FLY_MS, chapterDone, readingMs, sentences, tourFlyMs } from '../src/ui/tour';
+import { MAX_TOUR_FLY_MS, chapterDone, readingMs, sentences, shouldPauseOnKey, shouldPauseOnPointerTarget, tourFlyMs } from '../src/ui/tour';
 import { speechMs } from '../src/ui/voice';
 
 describe('the opening descent', () => {
@@ -68,7 +68,18 @@ describe('the auto tour', () => {
     expect(chapterDone(500, 8000, true)).toBe(false); // heard already? not before a short beat
     expect(chapterDone(3000, 8000, true)).toBe(true);
     expect(chapterDone(7000, 8000, false)).toBe(false);
+    expect(chapterDone(8000, 8000, false)).toBe(false); // wait while speech is still speaking past estimate
     expect(chapterDone(8000 * 1.8 + 4000, 8000, false)).toBe(true);
+  });
+
+  it('keeps running while orbiting or zooming the 3D view, pausing only for dossier or manual flight', () => {
+    expect(shouldPauseOnPointerTarget({ inDossierToggle: false })).toBe(false);
+    expect(shouldPauseOnPointerTarget({ inDossierToggle: true })).toBe(true);
+    expect(shouldPauseOnKey({ stage: 'site', code: 'ArrowLeft', typing: false, inRuler: true })).toBe(false);
+    expect(shouldPauseOnKey({ stage: 'site', code: 'ArrowRight', typing: false, inRuler: true })).toBe(false);
+    expect(shouldPauseOnKey({ stage: 'site', code: 'KeyW', typing: true, inRuler: false })).toBe(false);
+    expect(shouldPauseOnKey({ stage: 'prologue', code: 'KeyW', typing: false, inRuler: false })).toBe(false);
+    expect(shouldPauseOnKey({ stage: 'site', code: 'KeyW', typing: false, inRuler: false })).toBe(true);
   });
 
   it('pauses only while it is on, and a pause lasts until the next stage', () => {

@@ -93,6 +93,7 @@ export function Hotspots({ stop }: { stop: MachineId }) {
   const story = useApp(s => s.story);
   const setStory = useApp(s => s.setStory);
   const setFocus = useApp(s => s.setFocus);
+  const pauseTour = useApp(s => s.pauseTour);
   const requestCall = useApp(s => s.requestCall);
   const machine = MACHINE_BY_ID[stop];
   const canCall = !machine.noRadio && stop !== HOME;
@@ -193,7 +194,8 @@ export function Hotspots({ stop }: { stop: MachineId }) {
               aria-pressed={story === i}
               aria-label={`${String(i + 1).padStart(2, '0')} ${LABELS[i]}`}
               onClick={() => {
-                // The close-up first (also when it is already the section shown), then the story.
+                // Deliberately picking a hotspot takes over like clicking a story tab.
+                pauseTour();
                 setFocus({ kind: 'hotspot', id: String(i), strength: 1 });
                 setStory(i);
                 readStory(stop, i);

@@ -377,9 +377,16 @@ export function playEcho() {
 let tickBuffer: AudioBuffer | null = null;
 let lastTick = 0;
 let voiceSounding = false;
+/** When the line now playing started (performance.now() ms) and its clip's length (s; null if unknown). */
+let lineStartedAt = 0;
+let lineSeconds: number | null = null;
 
-/** Called by the voice module while Ingenuity's recorded voice is actually playing. */
-export function setVoiceSounding(on: boolean) {
+/** Called by the voice module while Ingenuity's recorded voice is actually playing (with the clip's length, s, if known). */
+export function setVoiceSounding(on: boolean, seconds?: number) {
+  if (on && !voiceSounding) {
+    lineStartedAt = typeof performance !== 'undefined' ? performance.now() : 0;
+    lineSeconds = seconds !== undefined && Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+  }
   voiceSounding = on;
   followVoice();
 }
@@ -395,6 +402,16 @@ export function typeTickLevel(underVoice: boolean): number {
 
 function voiceAudible(): boolean {
   return voiceSounding || (typeof window !== 'undefined' && !!window.speechSynthesis?.speaking);
+}
+
+/**
+ * The line being heard now (Ingenuity's or the narrator's): when it started (performance.now() ms)
+ * and how long its clip lasts (s; null for the browser's speech); null while no voice is heard. The
+ * site camera turns round the machine meanwhile, timed to finish as the line does.
+ */
+export function voiceLine(): { startedAt: number; seconds: number | null } | null {
+  if (voiceSounding) return { startedAt: lineStartedAt, seconds: lineSeconds };
+  return voiceAudible() ? { startedAt: lineStartedAt, seconds: null } : null;
 }
 
 /** One typewriter / telegraph click (call every couple of typed characters; self-throttled). */
