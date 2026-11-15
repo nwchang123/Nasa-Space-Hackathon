@@ -19,6 +19,8 @@ export interface HangarState {
   /** The last single machine shown, for leaving the row. */
   lastSingle: MachineId;
   scale: HangarScale;
+  /** The row put a 1:1 choice on hold (all nine at 1:1 run tens of metres); leaving the row brings it back. */
+  realAfterRow: boolean;
   light: HangarLight;
   /** Built by the scene for the current pick and scale; null while the models load. */
   arrangement: Arrangement | null;
@@ -37,6 +39,7 @@ export interface HangarState {
   step(dir: 1 | -1): void;
   /** The row, or back from it to the last single machine. */
   toggleRow(): void;
+  /** Ignored for 1:1 while the row is shown: the row always stands at table scale. */
   setScale(scale: HangarScale): void;
   setLight(light: HangarLight): void;
   setArrangement(a: Arrangement | null): void;
@@ -48,10 +51,21 @@ export interface HangarState {
   replace(): void;
 }
 
+/**
+ * Moving to `pick`. All nine at 1:1 would run tens of metres end to end, more than any room, so the
+ * row always stands at table scale; a 1:1 choice waits and comes back with the next single machine.
+ */
+function goTo(s: HangarState, pick: HangarPick): Partial<HangarState> {
+  if (pick === 'row') return s.scale === 'real' ? { pick, scale: 'table', realAfterRow: true } : { pick };
+  const back = s.pick === 'row' && s.realAfterRow ? { scale: 'real' as const, realAfterRow: false } : {};
+  return { pick, lastSingle: pick, ...back };
+}
+
 export const useHangar = create<HangarState>(set => ({
   pick: 'ingenuity',
   lastSingle: 'ingenuity',
   scale: 'table',
+  realAfterRow: false,
   light: 'day',
   arrangement: null,
   xr: 'off',
@@ -60,16 +74,15 @@ export const useHangar = create<HangarState>(set => ({
   xrNote: null,
   exporting: false,
 
-  setPick: pick => set(pick === 'row' ? { pick } : { pick, lastSingle: pick }),
+  setPick: pick => set(s => goTo(s, pick)),
   step: dir =>
     set(s => {
       const i = HANGAR_PICKS.indexOf(s.pick);
       const n = HANGAR_PICKS.length;
-      const pick = HANGAR_PICKS[(i + dir + n) % n];
-      return pick === 'row' ? { pick } : { pick, lastSingle: pick };
+      return goTo(s, HANGAR_PICKS[(i + dir + n) % n]);
     }),
-  toggleRow: () => set(s => ({ pick: s.pick === 'row' ? s.lastSingle : 'row' })),
-  setScale: scale => set({ scale }),
+  toggleRow: () => set(s => goTo(s, s.pick === 'row' ? s.lastSingle : 'row')),
+  setScale: scale => set(s => (s.pick === 'row' && scale === 'real' ? {} : { scale, realAfterRow: false })),
   setLight: light => set({ light }),
   setArrangement: arrangement => set({ arrangement }),
   // Every change of state starts the surface search afresh.

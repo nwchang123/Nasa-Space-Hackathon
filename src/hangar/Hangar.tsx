@@ -71,6 +71,7 @@ function Caption() {
         {kind && <span className="dim"> · {kind}</span>}
       </p>
       {machine && TWIN_NOTES[machine.id] && <p className="hangar-twin">{TWIN_NOTES[machine.id]}</p>}
+      {!machine && <p className="hangar-aside">{ROW_TABLE_ONLY} Pick one machine for 1:1.</p>}
       {fallback && <p className="hangar-note">A 3D file did not load; a simplified stand-in is shown.</p>}
       <ScaleToggle />
     </section>
@@ -82,16 +83,26 @@ function Segmented<T extends string>({
   value,
   options,
   onChange,
+  off,
 }: {
   label: string;
   value: T;
   options: [T, string][];
   onChange(v: T): void;
+  /** An option that cannot be chosen now, and why (its tooltip). */
+  off?: { value: T; why: string } | null;
 }) {
   return (
     <div className="seg" role="group" aria-label={label}>
       {options.map(([v, text]) => (
-        <button key={v} type="button" aria-pressed={value === v} onClick={() => onChange(v)}>
+        <button
+          key={v}
+          type="button"
+          aria-pressed={value === v}
+          disabled={off?.value === v}
+          title={off?.value === v ? off.why : undefined}
+          onClick={() => onChange(v)}
+        >
           {text}
         </button>
       ))}
@@ -99,10 +110,14 @@ function Segmented<T extends string>({
   );
 }
 
+/** Why the row has no 1:1 (the caption says it too). */
+const ROW_TABLE_ONLY = 'All nine stand at table scale: at 1:1 the row would not fit in a room.';
+
 /** `compact`: the short labels the AR dock has room for. */
 function ScaleToggle({ compact = false }: { compact?: boolean }) {
   const scale = useHangar(s => s.scale);
   const setScale = useHangar(s => s.setScale);
+  const row = useHangar(s => s.pick === 'row');
   return (
     <Segmented
       label="Scale"
@@ -112,6 +127,7 @@ function ScaleToggle({ compact = false }: { compact?: boolean }) {
         ['real', compact ? '1:1' : '1:1 real'],
       ]}
       onChange={setScale}
+      off={row ? { value: 'real', why: ROW_TABLE_ONLY } : null}
     />
   );
 }

@@ -199,7 +199,35 @@ describe('the hangar phase leaves Flight 73 untouched', () => {
 
 describe('hangar store: picking, the row, placing', () => {
   const h = () => useHangar.getState();
-  beforeEach(() => useHangar.setState({ pick: 'ingenuity', lastSingle: 'ingenuity', xr: 'off', xrNote: null }));
+  beforeEach(() =>
+    useHangar.setState({ pick: 'ingenuity', lastSingle: 'ingenuity', scale: 'table', realAfterRow: false, xr: 'off', xrNote: null }),
+  );
+
+  it('stands the row at table scale and gives 1:1 back with the next single machine', () => {
+    h().setScale('real');
+    h().toggleRow();
+    expect([h().pick, h().scale]).toEqual(['row', 'table']);
+    h().setScale('real'); // greyed out on the row: no effect
+    expect(h().scale).toBe('table');
+    h().toggleRow();
+    expect([h().pick, h().scale]).toEqual(['ingenuity', 'real']);
+    // Stepping into the row and out of it the other way round does the same.
+    h().step(1);
+    expect([h().pick, h().scale]).toEqual(['row', 'table']);
+    h().step(1);
+    expect([h().pick, h().scale]).toEqual(['viking-1', 'real']);
+    // Table chosen before the row stays table afterwards.
+    h().setScale('table');
+    h().setPick('row');
+    h().setPick('phoenix');
+    expect(h().scale).toBe('table');
+    // So does a table choice made while on the row.
+    h().setScale('real');
+    h().setPick('row');
+    h().setScale('table');
+    h().setPick('spirit');
+    expect(h().scale).toBe('table');
+  });
 
   it('steps through all ten choices and wraps round', () => {
     const seen = new Set<string>();

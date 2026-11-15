@@ -110,6 +110,11 @@
   background: var(--amber-soft);
   color: var(--amber);
 }
+/* 1:1 while all nine are shown: the row only fits at table scale. */
+.seg button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 
 /* ---------- what is shown ---------- */
 
@@ -143,7 +148,8 @@
   margin-bottom: 9px;
   color: var(--amber);
 }
-.hangar-twin {
+.hangar-twin,
+.hangar-aside {
   margin: -3px 0 9px;
   font-size: 10.5px;
   line-height: 1.5;
@@ -577,7 +583,7 @@
   opacity: 0.35;
 }
 .xr-btn:active:not(:disabled),
-.xr-dock .seg button:active,
+.xr-dock .seg button:active:not(:disabled),
 .xr-step:active {
   background: rgba(242, 169, 59, 0.22);
   color: var(--amber);
