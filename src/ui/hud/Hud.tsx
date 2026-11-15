@@ -18,6 +18,7 @@ import { AutoTour } from './AutoTour';
 import { BearingBar } from './BearingBar';
 import { Dock, FaultBanner } from './Dock';
 import { FocusControls } from './FocusControls';
+import { HudHint } from './HudHint';
 import { ScoutCam } from './ScoutCam';
 import { SiteCard } from './SiteCard';
 import { TopBar } from './TopBar';
@@ -53,6 +54,7 @@ export function Hud() {
         <Dock />
       </div>
       <p className="hud-fine">{FICTION_NOTE}</p>
+      <HudHint />
     </div>
   );
 }

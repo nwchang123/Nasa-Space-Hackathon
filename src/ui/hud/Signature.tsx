@@ -28,6 +28,8 @@ export function SignatureControls({ stop }: { stop: MachineId }) {
 function SigControl({ def, value, sig, now }: { def: SignatureDef; value: number | undefined; sig: Record<string, number>; now: number }) {
   const setSig = useApp(s => s.setSig);
   const used = value !== undefined;
+  const shown = def.short ?? def.label;
+  const hint = def.short ? def.label : undefined;
   const readout = def.readout?.(value, now) ?? null;
   const note = [readout, used ? def.caption : null].filter(Boolean).join(' · ');
 
@@ -37,22 +39,22 @@ function SigControl({ def, value, sig, now }: { def: SignatureDef; value: number
     const k = used && ms > 0 ? (now - value) / ms : 1;
     const running = used && k < 1;
     control = (
-      <button type="button" className={`sig-btn${running ? ' running' : ''}`} disabled={running} onClick={() => setSig(def.key, Date.now())}>
+      <button type="button" className={`sig-btn${running ? ' running' : ''}`} disabled={running} aria-label={def.label} data-hint={hint} onClick={() => setSig(def.key, Date.now())}>
         <span className="sig-icon" aria-hidden="true">
           {def.icon}
         </span>
-        <span className="sig-label">{def.label}</span>
+        <span className="sig-label">{shown}</span>
         {running && <span className="sig-progress" style={{ width: `${Math.min(1, k) * 100}%` }} aria-hidden="true" />}
       </button>
     );
   } else if (def.kind === 'toggle') {
     const on = value === 1;
     control = (
-      <button type="button" className={`sig-btn toggle${on ? ' on' : ''}`} aria-pressed={on} onClick={() => setSig(def.key, on ? 0 : 1)}>
+      <button type="button" className={`sig-btn toggle${on ? ' on' : ''}`} aria-pressed={on} aria-label={def.label} data-hint={hint} onClick={() => setSig(def.key, on ? 0 : 1)}>
         <span className="sig-icon" aria-hidden="true">
           {def.icon}
         </span>
-        <span className="sig-label">{def.label}</span>
+        <span className="sig-label">{shown}</span>
         <span className="sig-state">{on ? 'On' : 'Off'}</span>
       </button>
     );
@@ -65,12 +67,12 @@ function SigControl({ def, value, sig, now }: { def: SignatureDef; value: number
     // A 0..1 slider gets a live percentage; ranged ones (the storm's tau) have their own readout.
     const pct = min === 0 && max === 1 ? `${Math.round(v * 100)} %` : null;
     control = (
-      <label className="sig-slider">
+      <label className="sig-slider" data-hint={hint}>
         <span className="sig-slider-head">
           <span className="sig-icon" aria-hidden="true">
             {def.icon}
           </span>
-          <span className="sig-label">{def.label}</span>
+          <span className="sig-label">{shown}</span>
           {pct && (
             <span className="sigx-pct" aria-hidden="true">
               {pct}
@@ -161,12 +163,13 @@ function HoldControl({
   );
 
   const pct = Math.round((charge ?? 0) * 100);
-  const label = holding ? 'Charging… release to fire' : running ? `Pulsing · strength ${pct} %` : def.label;
+  const label = holding ? 'Charging… release to fire' : running ? `Pulsing · strength ${pct} %` : (def.short ?? def.label);
   return (
     <button
       type="button"
       className={`sig-btn sigx-hold${holding ? ' holding' : ''}${running ? ' running' : ''}`}
       aria-label={def.label}
+      data-hint={def.short ? def.label : undefined}
       aria-pressed={holding}
       aria-disabled={running}
       onPointerDown={e => {

@@ -470,7 +470,7 @@ function SiteDock() {
               aria-controls="story-panel"
               tabIndex={story === i ? 0 : -1}
               className={`story-tab${story === i ? ' on' : ''}`}
-              title={label}
+              data-hint={story === i ? undefined : `${String(i + 1).padStart(2, '0')} · ${label}`}
               onClick={() => choose(i)}
               onKeyDown={e => {
                 if (e.key === 'ArrowRight') pick(i + 1);
@@ -489,8 +489,14 @@ function SiteDock() {
           <p className="story-text">
             {machine.story[STORY_KEYS[story]]}
             {story < 3 && (
-              <button type="button" className="text-btn story-next" onClick={() => choose(story + 1)}>
-                Next · {STORY_LABELS[story + 1]} <span aria-hidden="true">›</span>
+              <button
+                type="button"
+                className="text-btn story-next"
+                aria-label={`Next: ${STORY_LABELS[story + 1]}`}
+                data-hint={`Next · ${STORY_LABELS[story + 1]}`}
+                onClick={() => choose(story + 1)}
+              >
+                <span className="tabular">{String(story + 2).padStart(2, '0')}</span> <span aria-hidden="true">›</span>
               </button>
             )}
           </p>

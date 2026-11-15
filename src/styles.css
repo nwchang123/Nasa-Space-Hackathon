@@ -1618,6 +1618,29 @@ button:disabled {
 .hud-tip:focus-visible::after {
   transition-delay: 0s;
 }
+/* The floating tip for the panels that clip their overflow (HudHint.tsx): same look, fixed to the
+   viewport and placed by script. */
+.hud-hint {
+  position: fixed;
+  z-index: 40;
+  max-width: min(300px, calc(100vw - 16px));
+  padding: 5px 8px;
+  font-size: 9px;
+  line-height: 1.45;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone);
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  pointer-events: none;
+  animation: fade-in 0.12s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-hint {
+    animation: none;
+  }
+}
 .cam-toggle {
   display: flex;
 }
@@ -1707,10 +1730,16 @@ button:disabled {
   color: var(--bone-dim);
   cursor: pointer;
 }
-.dossier-toggle span {
+.dossier-toggle .hud-glyph {
+  width: 13px;
+  height: 13px;
+}
+.dossier-toggle .dossier-sign {
   width: 0.8em;
+  margin-left: auto;
   font-size: 12px;
   letter-spacing: 0;
+  text-align: center;
   color: var(--amber);
 }
 .dossier-toggle:hover,
@@ -1825,13 +1854,21 @@ button:disabled {
   min-height: 18px;
 }
 .scrub-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--bone-dim);
 }
+.scrub-label .hud-glyph,
+.scrub-read .hud-glyph {
+  width: 14px;
+  height: 14px;
+  color: var(--bone-dim);
+}
 .scrub-time {
-  margin-left: 0.4em;
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--bone);
@@ -1856,7 +1893,10 @@ button:disabled {
 .live-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  min-width: 16px;
+  min-height: 16px;
   padding: 1px 0;
   font-size: 8.5px;
   letter-spacing: 0.16em;
@@ -1871,7 +1911,9 @@ button:disabled {
 }
 /* Picked hour: the tag becomes a hairline button back to live, its square hollow. */
 .live-pill.live-btn {
-  padding: 1px 6px;
+  min-width: 20px;
+  min-height: 18px;
+  padding: 1px 5px;
   background: none;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -1922,6 +1964,10 @@ button:disabled {
   color: var(--bone-dim);
 }
 .scrub-read {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
   margin: 3px 0 0;
   font-size: 10px;
   line-height: 1.45;
@@ -2000,7 +2046,9 @@ button:disabled {
   margin: 8px 0 0;
 }
 .card-radio .call.card-call {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   width: 100%;
   padding: 6px 8px;
   border-color: rgba(242, 169, 59, 0.42);
@@ -2022,9 +2070,15 @@ button:disabled {
   white-space: nowrap;
 }
 .card-call .call-sub {
+  margin-left: auto;
   font-size: 9px;
   letter-spacing: 0.04em;
+  white-space: nowrap;
   color: var(--bone);
+}
+.card-call .hud-glyph {
+  width: 14px;
+  height: 14px;
 }
 .card-radio .meter {
   margin: 6px 0 0;
@@ -2218,8 +2272,7 @@ button:disabled {
 }
 
 /* Site: the story's four index tabs, one row on a hairline. The open one is amber with a 2 px
-   underline; the others are dim, with a hairline between. Where the row cannot hold four names, only
-   the open tab keeps its name in view (the others keep theirs for screen readers and as a tooltip). */
+   underline and its name; the others are dim numbers. */
 .story-tabs {
   display: flex;
   margin: 0 0 7px;
@@ -2271,19 +2324,19 @@ button:disabled {
   color: var(--amber);
   opacity: 1;
 }
-@container dock-main (max-width: 430px) {
-  .story-tab:not(.on) .story-tab-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  .story-tab {
-    padding-left: 9px;
-    padding-right: 9px;
-  }
+/* Only the open tab shows its name; the others show their number, and their name in the floating
+   tip (data-hint) and to screen readers. */
+.story-tab:not(.on) .story-tab-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.story-tab {
+  padding-left: 9px;
+  padding-right: 9px;
 }
 .story-panel {
   animation: fade-up 0.45s ease both;

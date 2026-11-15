@@ -21,8 +21,10 @@ export interface SignatureDef {
   key: string;
   /** Small glyph shown before the label. */
   icon: string;
-  /** Control label, English. */
+  /** Control label, English: the full instruction (aria-label and tooltip). */
   label: string;
+  /** The few words shown on the control itself; the full label is its tooltip. */
+  short?: string;
   kind: SignatureKind;
   /** Slider range and start value. */
   min?: number;
@@ -45,6 +47,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'scan',
       icon: '◫',
       label: 'Scan the first photo, strip by strip (1976)',
+      short: 'Scan the 1976 photo',
       kind: 'slider',
       min: 0,
       max: 1,
@@ -59,6 +62,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'frost',
       icon: '❄',
       label: 'Utopia winter frost',
+      short: 'Winter frost',
       kind: 'toggle',
       caption:
         'On 18 May 1979 Viking 2 photographed a thin coating of water ice on the rocks and soil around it, one Martian year after frost first formed there.',
@@ -69,6 +73,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'roll',
       icon: '◎',
       label: 'Roll Sojourner down the ramp',
+      short: 'Roll down the ramp',
       kind: 'slider',
       min: 0,
       max: 1,
@@ -83,6 +88,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'drag',
       icon: '◎',
       label: 'Drive backwards, dragging the jammed wheel',
+      short: 'Drive backwards',
       kind: 'slider',
       min: 0,
       max: 1,
@@ -97,6 +103,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'storm',
       icon: '≋',
       label: '2018 global dust storm (tau 1 → 11)',
+      short: '2018 dust storm',
       kind: 'slider',
       min: 1,
       max: 11,
@@ -112,6 +119,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'scoop',
       icon: '⌄',
       label: 'Dig the trench, then let four sols pass',
+      short: 'Dig the trench',
       kind: 'slider',
       min: 0,
       max: 1,
@@ -127,6 +135,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'quake',
       icon: '〰',
       label: 'Hold to charge a marsquake, release to pulse it',
+      short: 'Hold for a marsquake',
       kind: 'hold',
       chargeMs: 2400,
       durationMs: 5000,
@@ -136,6 +145,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'larri',
       icon: '◇',
       label: 'Inspect the LaRRI laser reflector',
+      short: 'Laser reflector',
       kind: 'toggle',
       caption: 'A small reflector on the deck, waiting for a laser. When NASA described it in 2020, no laser for this kind of Mars research was in the works.',
     },
@@ -145,6 +155,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'decode',
       icon: '◐',
       label: 'Decode the parachute, ring by ring',
+      short: 'Decode the parachute',
       kind: 'slider',
       min: 0,
       max: 1,
@@ -160,6 +171,7 @@ export const SIGNATURES: Partial<Record<MachineId, SignatureDef[]>> = {
       key: 'wake',
       icon: '☀',
       label: 'Run the daily wake-up routine, step by step',
+      short: 'Daily wake-up',
       kind: 'slider',
       min: 0,
       max: 1,

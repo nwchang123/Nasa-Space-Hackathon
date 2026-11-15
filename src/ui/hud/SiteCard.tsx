@@ -2,8 +2,9 @@
 // machine's name, where it is (the place, then its coordinates on a mono line of their own), the
 // 24 h local solar time scale (the scene relights the site for the picked hour) and a compact radio
 // call from Earth with tonight's real light time. Everything else (kind, dates, facts, model note,
-// radio details, sources) sits in a "Specs & Dossier" fold, closed by default, that scrolls inside
-// the card when open; the card never grows into Ingenuity's radio feed above it (--feed-h).
+// radio details, sources) sits in a "Dossier" fold, closed by default, that scrolls inside the
+// card when open; the card never grows into Ingenuity's radio feed above it (--feed-h). Labels are
+// glyphs (icons.tsx), named for screen readers and in the floating tip (data-hint, HudHint.tsx).
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { siteSky, siteSkyAtHour } from '../../astro';
@@ -13,6 +14,8 @@ import { useApp } from '../../store';
 import type { Machine } from '../../types';
 import { formatDate, formatDistance, formatDuration, formatSolarTime, formatSpeedup, planCall, silenceLine, skyWords } from '../callPlan';
 import { playSend, playSilence } from '../sound';
+import { AltitudeGlyph, DishGlyph, InfoGlyph, SunGlyph } from './icons';
+import { useIntroSweep } from './introSweep';
 
 const NO_RADIO_SHORT = 'No radio of its own: nobody to call.';
 const NO_RADIO_LONG = 'It never had a radio of its own, so there is nobody to call. It can still tell you its story.';
@@ -40,8 +43,20 @@ export function SiteCard({ machine, standing }: { machine: Machine; standing: bo
         {canCall && <RadioCall machine={machine} />}
         {standing && machine.noRadio && <p className="card-line">{NO_RADIO_SHORT}</p>}
         {isHome && <p className="card-line">{HOME_SHORT}</p>}
-        <button type="button" className="dossier-toggle" aria-expanded={open} aria-controls={dossierId} onClick={() => setOpen(o => !o)}>
-          <span aria-hidden="true">{open ? '−' : '+'}</span> Specs &amp; Dossier
+        <button
+          type="button"
+          className="dossier-toggle"
+          aria-label="Specs and dossier"
+          aria-expanded={open}
+          aria-controls={dossierId}
+          data-hint={open ? 'Close the specs and dossier' : 'Specs and dossier: dates, facts, sources'}
+          onClick={() => setOpen(o => !o)}
+        >
+          <InfoGlyph />
+          <span className="dossier-word">Dossier</span>
+          <span className="dossier-sign" aria-hidden="true">
+            {open ? '−' : '+'}
+          </span>
         </button>
       </div>
       <div id={dossierId} className="dossier" hidden={!open} role="region" aria-label={`${machine.shortName}: specs and dossier`}>
@@ -117,20 +132,36 @@ function SunScrubber({ machine }: { machine: Machine }) {
   const liveHour = live.localSolarHours ?? 12;
   const hour = siteHour ?? liveHour;
   const el = siteHour === null ? live.elevationDeg : siteSkyAtHour(machine.lat, machine.lon, siteHour, new Date(nowMs)).elevationDeg;
+  // At the first stop the scale sweeps a day by itself during the arrival intro (introSweep.ts).
+  const haltSweep = useIntroSweep(machine.id, liveHour);
 
+  const sky = skyWords(el, undefined);
+  const degrees = Math.round(el);
   return (
     <div className={`scrub${siteHour === null ? ' is-live' : ''}`}>
       <div className="scrub-head">
-        <span className="scrub-label">
-          Local solar time <span className="scrub-time tabular">{formatSolarTime(hour)}</span>
+        <span className="scrub-label" data-hint={siteHour === null ? 'Local solar time here, live' : 'Local solar time, picked on the scale'}>
+          <SunGlyph />
+          <span className="sr-only">Local solar time </span>
+          <span className="scrub-time tabular">{formatSolarTime(hour)}</span>
         </span>
         {siteHour === null ? (
-          <span className="live-pill">
-            <span className="live-dot" aria-hidden="true" /> Live
+          <span className="live-pill" data-hint="Live: the Sun here right now">
+            <span className="live-dot" aria-hidden="true" />
+            <span className="sr-only">Live</span>
           </span>
         ) : (
-          <button type="button" className="live-pill live-btn" onClick={() => setSiteHour(null)} title="Reset to live" aria-label="Reset to live">
-            <span className="live-dot" aria-hidden="true" /> Live
+          <button
+            type="button"
+            className="live-pill live-btn"
+            onClick={() => {
+              haltSweep();
+              setSiteHour(null);
+            }}
+            aria-label="Reset to live"
+            data-hint="Back to live"
+          >
+            <span className="live-dot" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -141,7 +172,11 @@ function SunScrubber({ machine }: { machine: Machine }) {
           max={24}
           step={0.05}
           value={hour}
-          onChange={e => setSiteHour(Number(e.target.value))}
+          onChange={e => {
+            haltSweep();
+            setSiteHour(Number(e.target.value));
+          }}
+          onPointerDown={haltSweep}
           aria-label={`Local solar time at ${machine.shortName}`}
           aria-valuetext={`${formatSolarTime(hour)} local solar time${siteHour === null ? ', live' : ''}`}
         />
@@ -154,8 +189,13 @@ function SunScrubber({ machine }: { machine: Machine }) {
         <span>18</span>
         <span>24</span>
       </div>
-      <p className="scrub-read" aria-live="off">
-        {skyWords(el, undefined)}
+      <p className="scrub-read" aria-live="off" data-hint={sky}>
+        <AltitudeGlyph up={el > 0} />
+        <span className="tabular" aria-hidden="true">
+          {degrees > 0 ? '+' : degrees < 0 ? '−' : ''}
+          {Math.abs(degrees)}°
+        </span>
+        <span className="sr-only">{sky}</span>
       </p>
     </div>
   );
@@ -172,6 +212,7 @@ function RadioCall({ machine }: { machine: Machine }) {
   const plan = useMemo(() => planCall(machine, new Date(nowMs)), [machine, nowMs]);
   const active = ping && ping.id === machine.id ? ping : null;
   const inFlight = active !== null && active.result === null;
+  const trip = plan.path.roundTripS === null ? null : formatDuration(plan.path.roundTripS);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
@@ -200,32 +241,18 @@ function RadioCall({ machine }: { machine: Machine }) {
 
   return (
     <section className="radio card-radio" aria-label="Radio call">
-      <button type="button" className="call radio card-call" onClick={call} disabled={inFlight}>
-        {/* [ CALL FROM EARTH · 21M 55S ]: on a narrow card the round trip wraps as one piece. */}
-        <span className="call-label">
-          <span className="call-br" aria-hidden="true">
-            [
-          </span>{' '}
-          {active?.result ? 'Call again' : 'Call from Earth'}
-        </span>{' '}
-        <span className="call-tail">
-          <span className="call-sep" aria-hidden="true">
-            ·
-          </span>{' '}
-          <span className="call-sub tabular" title="Radio round trip tonight">
-            {plan.path.roundTripS === null ? (
-              'No estimate'
-            ) : (
-              <>
-                {formatDuration(plan.path.roundTripS)}
-                <span className="sr-only"> radio round trip</span>
-              </>
-            )}
-          </span>{' '}
-          <span className="call-br" aria-hidden="true">
-            ]
-          </span>
-        </span>
+      {/* Dish · CALL · 21 MIN 55 S: the label is one word, the round trip sits at the right. */}
+      <button
+        type="button"
+        className="call radio card-call"
+        onClick={call}
+        disabled={inFlight}
+        aria-label={`${active?.result ? 'Call again' : 'Call from Earth'}, ${trip === null ? 'no estimate of the radio round trip' : `radio round trip ${trip}`}`}
+        data-hint={`Call from Earth · radio round trip tonight: ${trip ?? 'no estimate'}`}
+      >
+        <DishGlyph />
+        <span className="call-label">{active?.result ? 'Call again' : 'Call'}</span>
+        <span className="call-sub tabular">{trip ?? 'No estimate'}</span>
       </button>
       {active && active.result === null && <SignalMeter plan={plan} startedAt={active.startedAt} />}
       <div aria-live="polite">{active?.result && <p className="result silent">{silenceLine(machine)}</p>}</div>

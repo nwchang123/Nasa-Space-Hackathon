@@ -1,6 +1,7 @@
 // The top bar's glyphs: thin 16px line drawings in the console's own hand (1.25px strokes,
 // currentColor, so amber/bone states come from CSS). Decorative only: every button that wears one
-// carries its own aria-label, and its words show in the bar's tooltip (data-tip, styles.css).
+// carries its own aria-label, and its words show in a tooltip: data-tip (a CSS tip, top bar) or
+// data-hint (the floating tip of HudHint.tsx, for the site card and the dock, which clip overflow).
 
 import type { ReactNode } from 'react';
 
@@ -104,6 +105,49 @@ export function ChaseGlyph() {
       <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
       <ellipse cx="8" cy="8" rx="6.4" ry="2.2" transform="rotate(-35 8 8)" />
       <circle cx="13.2" cy="4.3" r="1.2" fill="currentColor" stroke="none" />
+    </Glyph>
+  );
+}
+
+/** Local solar time: the Sun. */
+export function SunGlyph() {
+  return (
+    <Glyph>
+      <circle cx="8" cy="8" r="2.6" />
+      <path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1" />
+    </Glyph>
+  );
+}
+
+/** The Sun's height: a disc above the horizon line by day, a dashed one below it at twilight and night. */
+export function AltitudeGlyph({ up }: { up: boolean }) {
+  return (
+    <Glyph>
+      <path d="M1.6 10.4h12.8" />
+      {up ? <path d="M4.9 10.4a3.1 3.1 0 0 1 6.2 0M8 3.6v1.3M3.7 5.4l.9.9M12.3 5.4l-.9.9" /> : <path d="M4.9 10.4a3.1 3.1 0 0 0 6.2 0" strokeDasharray="1.3 1.3" />}
+    </Glyph>
+  );
+}
+
+/** A call from Earth: a dish with its feed and two waves going out. */
+export function DishGlyph() {
+  return (
+    <Glyph>
+      <path d="M2.4 7.2a6.2 6.2 0 0 0 6.4 6.4z" />
+      <path d="M5.6 10.4l2.6-2.6" />
+      <path d="M9.6 4.4a2.2 2.2 0 0 1 2 2" />
+      <path d="M9.6 1.9a4.7 4.7 0 0 1 4.5 4.5" />
+    </Glyph>
+  );
+}
+
+/** The specs and dossier: an "i" in a circle. */
+export function InfoGlyph() {
+  return (
+    <Glyph>
+      <circle cx="8" cy="8" r="6.1" />
+      <path d="M8 7.3v4" />
+      <circle cx="8" cy="4.9" r="0.75" fill="currentColor" stroke="none" />
     </Glyph>
   );
 }
