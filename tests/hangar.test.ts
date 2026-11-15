@@ -135,9 +135,13 @@ describe('hangar layout: table scale and the row', () => {
   });
 
   it('keeps the model clear of the panels', () => {
-    // Desktop: AR panel on the right, caption bottom left, so the picture moves left and up and a
-    // long row fits the narrower free width (the camera stands further back for it).
-    const desk = freeArea(1440, 900);
+    // Desktop: AR panel on the right, caption bottom left. A single machine stands mid-screen
+    // (moved up only); the long row moves left too and fits the narrower free width (the camera
+    // stands further back for it).
+    const single = freeArea(1440, 900);
+    expect(single.shiftX).toBe(0);
+    expect(single.shiftY).toBeGreaterThan(0);
+    const desk = freeArea(1440, 900, true);
     expect(desk.shiftX).toBeLessThan(0);
     expect(desk.shiftY).toBeGreaterThan(0);
     expect(desk.widthShare).toBeGreaterThan(0.5);

@@ -191,12 +191,14 @@ function Framer() {
   const frameKey = arr ? `${arr.pick}:${arr.scaleMode}` : '';
 
   // Centre the picture in the part of the screen the panels leave free (the orbit still turns
-  // about the model). Cleared on unmount, so AR and a later visit start from a plain camera.
+  // about the model): a single machine mid-screen, the long row moved clear of the AR panel.
+  // Cleared on unmount, so AR and a later visit start from a plain camera.
+  const row = arr?.pick === 'row';
   useEffect(() => {
-    const free = freeArea(width, height);
+    const free = freeArea(width, height, row);
     camera.setViewOffset(width, height, -free.shiftX, free.shiftY, width, height);
     camera.updateProjectionMatrix();
-  }, [camera, width, height]);
+  }, [camera, width, height, row]);
   useEffect(
     () => () => {
       camera.clearViewOffset();

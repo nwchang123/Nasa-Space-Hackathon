@@ -2,7 +2,7 @@
 // light, the arrangement the scene built from it, and where a WebXR session stands.
 
 import { create } from 'zustand';
-import type { MachineId } from '../types';
+import { MACHINE_IDS, type MachineId } from '../types';
 import type { Arrangement } from './build';
 import { HANGAR_PICKS, type HangarPick, type HangarScale } from './layout';
 
@@ -62,8 +62,9 @@ function goTo(s: HangarState, pick: HangarPick): Partial<HangarState> {
 }
 
 export const useHangar = create<HangarState>(set => ({
-  pick: 'ingenuity',
-  lastSingle: 'ingenuity',
+  // Opens on the first machine of the route, Viking 1, like the numbered picks below it.
+  pick: MACHINE_IDS[0],
+  lastSingle: MACHINE_IDS[0],
   scale: 'table',
   realAfterRow: false,
   light: 'day',

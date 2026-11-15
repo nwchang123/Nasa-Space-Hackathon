@@ -120,13 +120,24 @@ export function formatLength(m: number): string {
 /**
  * Where the panels leave the 3D in view, as a shift of the picture's centre in pixels (right, up)
  * how much further back the camera stands, and the share of the width a long row may span. On a
- * desktop the AR panel takes the right and the caption the bottom left; on a phone the caption,
- * picks and AR button stack up from the bottom.
+ * desktop the AR panel takes the right and the caption the bottom left: a single machine stands in
+ * the middle of the screen (it is small enough to clear both), and only the long `row` of all nine
+ * moves left to keep its far end out from under the AR panel. On a phone the caption, picks and AR
+ * button stack up from the bottom.
  */
-export function freeArea(width: number, height: number): { shiftX: number; shiftY: number; zoomOut: number; widthShare: number } {
+export function freeArea(
+  width: number,
+  height: number,
+  row = false,
+): { shiftX: number; shiftY: number; zoomOut: number; widthShare: number } {
   if (width >= 900) {
     const shift = Math.min(170, width * 0.12);
-    return { shiftX: -shift, shiftY: Math.min(80, height * 0.09), zoomOut: 1, widthShare: Math.max(0.5, (width - 2 * shift - 48) / width) };
+    return {
+      shiftX: row ? -shift : 0,
+      shiftY: Math.min(80, height * 0.09),
+      zoomOut: 1,
+      widthShare: Math.max(0.5, (width - 2 * shift - 48) / width),
+    };
   }
   if (height > width) return { shiftX: 0, shiftY: height * 0.2, zoomOut: 1.2, widthShare: 1 };
   return { shiftX: 0, shiftY: height * 0.12, zoomOut: 1.1, widthShare: 1 };
