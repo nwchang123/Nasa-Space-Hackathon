@@ -1,0 +1,80 @@
+/* The nine stops on the title screen (TitleScreen.tsx): a quiet column of glyphs in the space between
+   the title and Mars, joined by the same dashed route as the top bar's. Landscape desktop windows
+   only: it is hidden wherever that space is not there. */
+
+.title-stops-pos {
+  position: fixed;
+  left: 45vw;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.title-stops {
+  --ts-gap: clamp(7px, 1.7vh, 14px);
+  --ts-year: 34px;
+  --ts-glyph: 20px;
+  --ts-col: 12px;
+  display: grid;
+  gap: var(--ts-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.title-stops li {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--ts-year) var(--ts-glyph) auto;
+  align-items: center;
+  column-gap: var(--ts-col);
+  opacity: 0.7;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease;
+}
+/* The hop from one glyph to the next. */
+.title-stops li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--ts-year) + var(--ts-col) + var(--ts-glyph) / 2);
+  top: calc(50% + var(--ts-glyph) / 2 + 2px);
+  height: calc(100% + var(--ts-gap) - var(--ts-glyph) - 4px);
+  border-left: 1px dashed var(--ghost);
+  opacity: 0.45;
+}
+.title-stops .ts-year {
+  text-align: right;
+  letter-spacing: 0.06em;
+  color: var(--ghost);
+}
+.title-stops .machine-glyph {
+  display: block;
+  width: var(--ts-glyph);
+  height: var(--ts-glyph);
+}
+.title-stops .ts-name {
+  white-space: nowrap;
+}
+.title-stops li:hover {
+  opacity: 1;
+  color: var(--bone);
+}
+/* Home: Ingenuity, where the flight begins and ends, in the route's amber. */
+.title-stops li.ts-home,
+.title-stops li.ts-home .ts-year {
+  color: var(--amber);
+}
+.title-stops li.ts-home {
+  opacity: 0.9;
+}
+
+@media (max-width: 1100px), (max-aspect-ratio: 11/10), (max-height: 520px) {
+  .title-stops-pos {
+    display: none;
+  }
+}

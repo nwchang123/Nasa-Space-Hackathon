@@ -1,12 +1,14 @@
 import { memo, useEffect, useRef } from 'react';
 import { marsLocalSolarTime, signalPath } from '../astro';
 import { FICTION_NOTE } from '../data/flight';
-import { MACHINE_BY_ID } from '../data/machines';
-import { LEGS, TOTAL_KM } from '../flight/route';
+import { MACHINES, MACHINE_BY_ID } from '../data/machines';
+import { HOME, LEGS, TOTAL_KM } from '../flight/route';
 import { HangarButton } from '../hangar/HangarEntry';
 import { useApp } from '../store';
 import { formatDuration, formatKm, formatSolarTime } from './callPlan';
+import { MachineGlyph } from './machineGlyphs';
 import { prefersReducedMotion, useUtcClock } from './useClock';
+import './title-stops.css';
 
 /** Ingenuity's real total over its 72 flights (docs/FACT_CHECK.md). */
 const REAL_FLOWN_KM = '17.0 km';
@@ -42,6 +44,36 @@ const Reticle = memo(function Reticle() {
     </svg>
   );
 });
+
+/**
+ * The nine stops, in the order they landed, as a quiet column of glyphs between the title and Mars:
+ * the year, the machine, its short name; home (Ingenuity) in amber. Hovering one lights its marker
+ * on the globe, as the top bar's route does in flight.
+ */
+function TitleStops() {
+  const hover = useApp(s => s.hover);
+  // Leaving the title mid-hover must not leave a marker lit.
+  useEffect(() => () => useApp.getState().hover(null), []);
+  return (
+    <div className="title-stops-pos">
+      <ol className="title-stops reveal" style={{ animationDelay: '0.95s' }} aria-label="The nine stops of Flight 73, in the order they landed">
+        {MACHINES.map(m => (
+          <li
+            key={m.id}
+            className={m.id === HOME ? 'ts-home' : undefined}
+            title={m.name}
+            onMouseEnter={() => hover(m.id)}
+            onMouseLeave={() => hover(null)}
+          >
+            <span className="ts-year tabular">{m.arrived.slice(0, 4)}</span>
+            <MachineGlyph id={m.id} />
+            <span className="ts-name">{m.shortName}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 /** `leaving`: "Begin Flight 73" was pressed; the title fades out (App keeps it up a moment). */
 export function TitleScreen({ leaving = false }: { leaving?: boolean }) {
@@ -132,6 +164,8 @@ export function TitleScreen({ leaving = false }: { leaving?: boolean }) {
           <HangarButton place="title" />
         </div>
       </div>
+
+      <TitleStops />
 
       <footer className="title-bar title-bar-foot reveal" style={{ animationDelay: '1.15s' }}>
         <p className="fine">{FICTION_NOTE} Some 3D models are simplified or illustrative.</p>
