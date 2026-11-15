@@ -201,6 +201,8 @@ export function CameraRig() {
   const filterOn = useRef(false);
   const follow = useRef(0);
   const focus = useRef<{ at: number; from: Vec3; pose: Pose | null; k: number }>({ at: 0, from: [0, 0, 0], pose: null, k: 0 });
+  /** Last frame's site camera position before the orbit was applied (world), null away from a site. */
+  const unturned = useRef<Vec3 | null>(null);
 
   useEffect(() => {
     if (!controls) return;
@@ -337,7 +339,12 @@ export function CameraRig() {
       const fr = focus.current;
       if (fc && partW && fc.at !== fr.at) {
         fr.at = fc.at;
-        fr.from = v3(tv.copy(camera.position).applyMatrix4(invSite));
+        // The side the close-up is seen from. A part the visitor picked: from where they are
+        // looking. One the auto tour picked: from the composed shot, as if the orbit were not there
+        // (an angle the slow turn left while a voice spoke is nobody's choice, and the orbit eases
+        // back to none as the close-up begins, SiteOrbitInput), so each section gets its own shot.
+        const composed = s.autoTour && !s.tourPaused ? unturned.current : null;
+        fr.from = v3(tv.set(...(composed ?? v3(camera.position))).applyMatrix4(invSite));
       }
       const want = fc && partW ? fc.strength : 0;
       if (fc && partW) {
@@ -357,6 +364,7 @@ export function CameraRig() {
       }
 
       // The visitor's orbit turns the camera about whatever it is looking at.
+      unturned.current = [site.position[0], site.position[1], site.position[2]];
       if (o.az !== 0 || o.el !== 0 || o.zoom !== 1) {
         site = { ...site, position: add(site.target, orbitOffset(sub(site.position, site.target), site.up, o.az, o.el, o.zoom)) };
       }
@@ -364,6 +372,7 @@ export function CameraRig() {
     } else {
       focus.current.k = 0;
       follow.current = 0;
+      unturned.current = null;
     }
 
     // ---- ease from wherever the camera was when the globe end changed

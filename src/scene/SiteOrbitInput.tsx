@@ -8,10 +8,16 @@
 // While a voice is speaking there (Ingenuity's or the narrator's), the camera also turns round the
 // machine on its own, always at the same slow pace (siteOrbit.ts: TURN_PACE, 60 s for a full turn,
 // so a line goes only part of the way round), gathering speed at the start and coming to rest as
-// the line ends (turnAngle). The view stays wherever the turn left it. It makes way for
+// the line ends (turnAngle). The wide view stays wherever the turn left it. It makes way for
 // the visitor: it stops at once on a drag, the wheel, the bearing bar or a reset and, a few seconds
-// after the last one, picks up again at the line's pace to finish with the line; it coasts to a
-// stop for a close-up on a part, holds while Ingenuity is being flown, and is off with reduced motion.
+// after the last one, picks up again at the line's pace to finish with the line; it holds while
+// Ingenuity is being flown, and is off with reduced motion.
+//
+// A close-up (a story section, a part, the stop's action) is framed on its own: as it begins, the
+// orbit eases back to the composed angle while the camera pushes in (settledOrbit), so neither an
+// angle the turn left behind nor one the visitor dragged to turns the close-up away from its part
+// (the CameraRig already starts the close-up from the side the camera was on). Once it is there,
+// dragging turns about the part as before; no turn runs during a close-up.
 //
 // Conventions: az = radians the camera turns about the site's up (right-hand rule, so positive
 // is counter-clockwise seen from above); dragging right turns the camera clockwise, as if the
@@ -32,6 +38,8 @@ import {
   makeTurn,
   orbitAfterDrag,
   orbitAfterWheel,
+  settleSeconds,
+  settledOrbit,
   turnAngle,
   turnSpeed,
   wholeTurns,
@@ -69,6 +77,10 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
   const lastInput = useRef(-Infinity);
   /** The orbit goal as this frame left it: any other change by the next frame was the visitor's. */
   const seen = useRef({ az: 0, el: 0, zoom: 1 });
+  /** The close-up last seen (store focus.at, 0 for none). */
+  const focusAt = useRef(useApp.getState().focus?.at ?? 0);
+  /** The orbit easing back to the composed angle as a close-up begins: from `from`, over [t0, t0 + dur] s. */
+  const settle = useRef<{ from: { az: number; el: number; zoom: number }; t0: number; dur: number } | null>(null);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -141,6 +153,7 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
       lastInput.current = now;
       spin.current = 0;
       turn.current = null;
+      settle.current = null;
     }
     if (on !== active.current) {
       active.current = on;
@@ -155,6 +168,23 @@ export function SiteOrbitInput({ stop }: { stop: MachineId }) {
       const o = live.siteOrbit;
       const dt = Math.min(delta, 0.1);
       const sec = now / 1000;
+      // A close-up begins: back to the composed angle as the camera pushes in (any turn stops).
+      const fc = useApp.getState().focus;
+      const fAt = fc?.at ?? 0;
+      if (fAt !== focusAt.current) {
+        focusAt.current = fAt;
+        if (fc && on && (t.az !== 0 || t.el !== 0 || t.zoom !== 1)) {
+          settle.current = { from: { az: t.az, el: t.el, zoom: t.zoom }, t0: sec, dur: settleSeconds(t.az) };
+          turn.current = null;
+          spin.current = 0;
+        }
+      }
+      if (settle.current && !on) settle.current = null;
+      if (settle.current) {
+        const st = settle.current;
+        Object.assign(t, settledOrbit(st.from, (sec - st.t0) / st.dur));
+        if (sec - st.t0 >= st.dur) settle.current = null;
+      }
       // The turn while a voice speaks: it moves the goal, so the view eases along with it.
       const line = voiceLine();
       const fl = live.flyer;

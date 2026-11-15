@@ -85,6 +85,30 @@ export function coastSpeed(speed: number, dt: number): number {
   return Math.abs(next) < 1e-4 ? 0 : next;
 }
 
+// ---------------------------------------------------------------- a close-up takes the view back
+
+/** When a close-up begins, the orbit eases back to the composed angle over at least this long, s, */
+const SETTLE_MIN_S = 0.9;
+/** plus this long for each radian it had turned, */
+const SETTLE_PER_RAD_S = 0.5;
+/** and never longer than this, s. */
+const SETTLE_MAX_S = 2.4;
+
+/** How long the orbit takes to ease back from angle `az` when a close-up begins, s. Pure, unit-tested. */
+export function settleSeconds(az: number): number {
+  return Math.min(SETTLE_MAX_S, SETTLE_MIN_S + SETTLE_PER_RAD_S * Math.abs(az));
+}
+
+/**
+ * The orbit `k` of the way (0..1) back from `from` to the composed shot (no turn, no tilt, no
+ * zoom), starting and finishing gently. Pure, unit-tested.
+ */
+export function settledOrbit(from: { az: number; el: number; zoom: number }, k: number) {
+  const x = clamp(k, 0, 1);
+  const left = 1 - x * x * (3 - 2 * x);
+  return { az: from.az * left, el: from.el * left, zoom: 1 + (from.zoom - 1) * left };
+}
+
 /**
  * The whole turns to take off an orbit angle so it stays within ±π (0 when it already does). The
  * slow turn keeps adding to the angle; shifting the goal and the eased orbit by the same whole turn

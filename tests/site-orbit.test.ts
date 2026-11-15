@@ -11,6 +11,8 @@ import {
   makeTurn,
   orbitAfterDrag,
   orbitAfterWheel,
+  settleSeconds,
+  settledOrbit,
   turnAngle,
   turnSpeed,
   wholeTurns,
@@ -100,5 +102,34 @@ describe('the turn while a voice speaks', () => {
     expect(wholeTurns(-Math.PI)).toBe(0);
     expect(wholeTurns(-3.5)).toBeCloseTo(-TURN, 12);
     expect(Math.abs(13 - wholeTurns(13))).toBeLessThanOrEqual(Math.PI);
+  });
+});
+
+describe('a close-up takes the view back to its composed angle', () => {
+  it('eases from where the turn left it to no turn, no tilt and no zoom, starting and ending gently', () => {
+    const from = { az: -1.31, el: 0.2, zoom: 1.6 };
+    expect(settledOrbit(from, 0)).toEqual(from);
+    const end = settledOrbit(from, 1);
+    expect(end.az).toBeCloseTo(0, 12);
+    expect(end.el).toBeCloseTo(0, 12);
+    expect(end.zoom).toBe(1);
+    expect(settledOrbit(from, 2).zoom).toBe(1);
+    // Gentle at both ends, steady in between; never past the composed angle.
+    expect(Math.abs(settledOrbit(from, 0.05).az - from.az)).toBeLessThan(0.02);
+    expect(Math.abs(settledOrbit(from, 0.95).az)).toBeLessThan(0.02);
+    let prev = from.az;
+    for (let k = 0.05; k <= 1; k += 0.05) {
+      const az = settledOrbit(from, k).az;
+      expect(az).toBeGreaterThanOrEqual(prev);
+      expect(az).toBeLessThanOrEqual(0);
+      prev = az;
+    }
+  });
+
+  it('a wider angle takes a little longer, never long', () => {
+    expect(settleSeconds(0)).toBeCloseTo(0.9, 12);
+    expect(settleSeconds(-1.31)).toBeGreaterThan(settleSeconds(0.5));
+    expect(settleSeconds(-1.31)).toBeCloseTo(settleSeconds(1.31), 12);
+    expect(settleSeconds(Math.PI)).toBeLessThanOrEqual(2.4);
   });
 });
