@@ -1,4 +1,5 @@
-// Flying Ingenuity around a site. Once it has landed at a stop the visitor can take it up again:
+// Flying Ingenuity around a site. Once it has landed at a stop (any but home, where it is the
+// real, broken one again) the visitor can take it up again:
 // W/A/S/D or the arrow keys move it relative to the camera, a click on the ground sends it there.
 // It lifts to a hover, tilts into its motion, climbs over the machine instead of flying into it,
 // stays within the site, and settles back down after a while with nothing to do (siteFlight.ts).
@@ -74,8 +75,14 @@ function atStage(s: AppState, stop: MachineId): boolean {
   return s.phase === 'flight' && s.flight.stage === 'site' && currentStop(s.flight) === stop;
 }
 
-/** The visitor may fly: at this stop, the camera settled, Ingenuity down from its arrival hover. */
+/**
+ * The visitor may fly: at this stop, the camera settled, Ingenuity down from its arrival hover.
+ * Never at home: there the phantom has settled back into the real, broken Ingenuity, which cannot
+ * fly; it stays on its ripple, and a close-up only moves the camera. (Its hotspots are on its own
+ * body, 03 on the blade tip: the autopilot would chase its own spinning rotor.)
+ */
 function canFly(stop: MachineId): boolean {
+  if (stop === HOME) return false;
   if (!atStage(useApp.getState(), stop)) return false;
   const shot = live.shot;
   return shot.siteId === stop && live.site.valid && shot.blend > 0.95 && live.black < 0.3 && shot.hover < 0.05;

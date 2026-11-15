@@ -6,7 +6,8 @@
 
 import { useEffect, useId, useState } from 'react';
 import { live } from '../../scene/registry';
-import { useApp } from '../../store';
+import { HOME } from '../../flight/route';
+import { currentStop, useApp } from '../../store';
 import { playShutter } from '../sound';
 import { notifyScoutMiss } from './ScoutCam';
 import './sitetools.css';
@@ -29,6 +30,8 @@ export function captureScoutPhoto() {
 
 export function FocusControls() {
   const atSite = useApp(s => s.phase === 'flight' && s.flight.stage === 'site');
+  // Home: the real, broken Ingenuity cannot fly (SiteFlight), so the help leaves flying out.
+  const atHome = useApp(s => currentStop(s.flight) === HOME);
   const focused = useApp(s => s.focus !== null);
   const scoutCam = useApp(s => s.scoutCam);
   const setScoutCam = useApp(s => s.setScoutCam);
@@ -80,19 +83,23 @@ export function FocusControls() {
         </button>
       </div>
       <dl id={helpId} className="tool-help" hidden={!help}>
-        <div>
-          <dt>
-            <kbd>W</kbd>
-            <kbd>A</kbd>
-            <kbd>S</kbd>
-            <kbd>D</kbd>
-          </dt>
-          <dd>Fly Ingenuity</dd>
-        </div>
-        <div>
-          <dt>Click ground</dt>
-          <dd>Fly there</dd>
-        </div>
+        {!atHome && (
+          <>
+            <div>
+              <dt>
+                <kbd>W</kbd>
+                <kbd>A</kbd>
+                <kbd>S</kbd>
+                <kbd>D</kbd>
+              </dt>
+              <dd>Fly Ingenuity</dd>
+            </div>
+            <div>
+              <dt>Click ground</dt>
+              <dd>Fly there</dd>
+            </div>
+          </>
+        )}
         <div>
           <dt>Drag</dt>
           <dd>Look around</dd>
