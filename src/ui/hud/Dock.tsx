@@ -19,6 +19,7 @@ import { playFault } from '../sound';
 import { RED_ZONE, useThrottle } from '../throttle';
 import { ARRIVAL_HOLD_MS, INVITE_WAIT_MS, useFeed, useTour } from '../tour';
 import { prefersReducedMotion } from '../useClock';
+import { readStory } from '../storyVoice';
 import { stopSpeaking } from '../voice';
 import { flyOn, liftOff, pauseByHand, useCountdownLeft } from './AutoTour';
 import { SignatureControls } from './Signature';
@@ -440,10 +441,11 @@ function SiteDock() {
   const next = last ? null : MACHINE_BY_ID[MACHINE_IDS[flight.leg + 1]];
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // A section picked by the visitor takes over from the auto tour.
+  // A section picked by the visitor takes over from the auto tour, and is read aloud.
   const choose = (i: number) => {
     pauseTour();
     setStory(i as StorySection);
+    readStory(machine.id, i as StorySection);
   };
   const pick = (i: number) => {
     const j = ((i % 4) + 4) % 4;

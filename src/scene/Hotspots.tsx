@@ -15,6 +15,7 @@ import { MACHINE_BY_ID } from '../data/machines';
 import { HOME } from '../flight/route';
 import { currentStop, useApp, type StorySection } from '../store';
 import type { MachineId } from '../types';
+import { readStory } from '../ui/storyVoice';
 import type { Vec3 } from './layout';
 import { live } from './registry';
 import { HOTSPOTS, SITE_PRESETS, type Spot } from './sites';
@@ -195,6 +196,7 @@ export function Hotspots({ stop }: { stop: MachineId }) {
                 // The close-up first (also when it is already the section shown), then the story.
                 setFocus({ kind: 'hotspot', id: String(i), strength: 1 });
                 setStory(i);
+                readStory(stop, i);
               }}
             >
               <span className="hs-dot" aria-hidden="true" />

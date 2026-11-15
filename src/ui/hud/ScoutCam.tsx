@@ -7,7 +7,8 @@
 import { useEffect, useState } from 'react';
 import { live } from '../../scene/registry';
 import { VIEWFINDER_H, VIEWFINDER_W } from '../../scene/siteFocus';
-import { useApp, type StorySection } from '../../store';
+import { currentStop, useApp, type StorySection } from '../../store';
+import { readStory } from '../storyVoice';
 import './sitetools.css';
 
 const LABELS = ['Why I came', 'What I found', 'My last day', 'Still here'];
@@ -60,6 +61,8 @@ export function ScoutCam() {
     const s = useApp.getState();
     s.setFocus({ kind: 'hotspot', id: String(section), strength: 1 });
     s.setStory(section);
+    const stop = currentStop(s.flight);
+    if (stop) readStory(stop, section);
   };
 
   return (
