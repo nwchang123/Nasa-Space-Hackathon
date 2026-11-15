@@ -1,24 +1,57 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LEG_SCRIPTS } from '../src/data/flight';
+import { EPILOGUE, LEG_SCRIPTS, PROLOGUE, PROLOGUE_TEST_AT } from '../src/data/flight';
+import { MACHINE_BY_ID } from '../src/data/machines';
 import clips from '../src/data/voiceClips.json';
+import { STORY_KEYS } from '../src/store';
+import { sentences } from '../src/ui/tour';
 import { charsAtTime, type Span, type VoiceClip } from '../src/ui/voiceSync';
 import { MACHINE_IDS } from '../src/types';
 
 const CLIPS = clips as unknown as VoiceClip[];
 const byText = new Map(CLIPS.map(c => [c.text, c]));
-/** Every message Ingenuity speaks in the radio bubble, as its lines. */
-const messages = MACHINE_IDS.flatMap(id => [
-  { id, kind: 'intro', lines: LEG_SCRIPTS[id].arrivalIntro },
-  { id, kind: 'inheritance', lines: [LEG_SCRIPTS[id].inheritance] },
-]);
+type Voice = VoiceClip['voice'];
+/** Every message spoken aloud, as its lines, and who says it. */
+const messages: { id: string; kind: string; voice: Voice; lines: string[] }[] = [
+  { id: 'prologue', kind: 'prologue', voice: 'ingenuity', lines: PROLOGUE.slice(0, PROLOGUE_TEST_AT) },
+  { id: 'prologue', kind: 'imagine', voice: 'ingenuity', lines: PROLOGUE.slice(PROLOGUE_TEST_AT) },
+  { id: 'home', kind: 'epilogue', voice: 'ingenuity', lines: EPILOGUE },
+  ...MACHINE_IDS.flatMap(id => [
+    { id, kind: 'intro', voice: 'ingenuity' as Voice, lines: LEG_SCRIPTS[id].arrivalIntro },
+    { id, kind: 'inheritance', voice: 'ingenuity' as Voice, lines: [LEG_SCRIPTS[id].inheritance] },
+    { id, kind: 'leg', voice: 'ingenuity' as Voice, lines: LEG_SCRIPTS[id].enRoute },
+    // A direct hop off the planned route (GuideBubble), from any other stop.
+    ...MACHINE_IDS.filter(from => from !== id).map(from => ({
+      id: `${from}→${id}`,
+      kind: 'hop',
+      voice: 'ingenuity' as Voice,
+      lines: [`Off the planned route: straight from ${MACHINE_BY_ID[from].shortName} to ${MACHINE_BY_ID[id].shortName}.`],
+    })),
+    // The story sections the auto tour reads (AutoTour), one sentence per line: each machine's own
+    // words in the narrator's voice, except Ingenuity's, which it tells itself.
+    ...STORY_KEYS.map(key => ({
+      id: `${id} ${key}`,
+      kind: 'story',
+      voice: (id === 'ingenuity' ? 'ingenuity' : 'narrator') as Voice,
+      lines: sentences(MACHINE_BY_ID[id].story[key]),
+    })),
+  ]),
+];
 
-describe("Ingenuity's voice clips", () => {
-  it('has a clip for every line it speaks, as the line reads now', () => {
-    // A failure here means a line in flight.ts changed: run scripts/voice/ingenuity_voice.py again.
-    for (const m of messages) expect(byText.has(m.lines.join('\n')), `${m.id} ${m.kind}`).toBe(true);
+describe('voice clips', () => {
+  it('has a clip for every line spoken, as the line reads now, in the right voice', () => {
+    // A failure here means a line changed: run scripts/voice/ingenuity_voice.py again.
+    for (const m of messages) {
+      const clip = byText.get(m.lines.join('\n'));
+      expect(clip, `${m.id} ${m.kind}`).toBeDefined();
+      expect(clip?.voice, `${m.id} ${m.kind}`).toBe(m.voice);
+    }
     expect(CLIPS.length).toBe(messages.length);
+  });
+
+  it('keeps the two voices apart: Ingenuity on the radio, the narrator in the clear', () => {
+    for (const c of CLIPS) expect(c.file.startsWith(`audio/${c.voice}/`), c.file).toBe(true);
   });
 
   it('ships every clip as a 16 kHz mono WAV of the stated length', () => {

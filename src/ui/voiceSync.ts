@@ -8,7 +8,12 @@ export type Span = readonly [number, number, number, number];
 
 export interface VoiceClip {
   stop: string;
-  kind: 'intro' | 'inheritance';
+  /** Which message: the prologue (and its "imagine" half), a leg's lines, a direct hop, an arrival
+   *  intro, an inheritance line, a story section (read by the auto tour), or the way home. */
+  kind: 'prologue' | 'imagine' | 'leg' | 'hop' | 'intro' | 'inheritance' | 'story' | 'epilogue';
+  /** Who says it: Ingenuity (the guide and the aircraft, a cool radio voice) or the narrator (a
+   *  clear, warm voice for the other machines' stories, in their own words). */
+  voice: 'ingenuity' | 'narrator';
   /** Path under the site's base URL. */
   file: string;
   /** The message as spoken: its lines joined with "\n". */

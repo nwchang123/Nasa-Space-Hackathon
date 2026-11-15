@@ -1,9 +1,18 @@
-"""Pre-render Ingenuity's radio voice for the guide bubble, timed for the typewriter.
+"""Pre-render every spoken line of Flight 73 in two voices, timed for the typewriter.
 
-The voice: Kokoro-82M (Apache-2.0, run locally) voice `af_aoede`, unhurried, lifted a touch, with a
-faint vocoder layer for a cool synthetic edge, a slow chorus shimmer, a cool EQ and a soft, wide
-radio band (the app adds its own squelch). One clip per message: each stop's arrival intro and its
-inheritance line, read from src/data/flight.ts.
+Ingenuity, the guide (and the aircraft): Kokoro-82M (Apache-2.0, run locally) voice `af_aoede`,
+unhurried, lifted a touch, with a faint vocoder layer for a cool synthetic edge, a slow chorus
+shimmer, a cool EQ and a soft, wide radio band (the app adds its own squelch). It says the prologue,
+each leg's lines (and a direct hop's), each stop's arrival intro and inheritance line, the way home,
+and its own story at its own stop.
+
+The machines' stories (each stop's four sections, which the auto tour reads aloud, in the machine's
+own words): one clear, warm male narrator voice, Kokoro `am_michael` by default (pass another as the
+second argument), with no radio treatment, matched in loudness to Ingenuity, so the two never blur.
+After changing the narrator voice, delete public/audio/narrator/*.wav so the stories are said again.
+
+All lines are read from the TypeScript (src/data/flight.ts, src/data/machines.ts). A clip whose
+message is unchanged and whose file exists is kept as it is; delete a file to render it again.
 
 For the typewriter, each clip carries spans [first char, end char, start s, end s] over the message
 text (lines joined with "\n"): one per sentence, split again at commas where the voice pauses. The
@@ -13,9 +22,10 @@ Needs Node (to read the TypeScript lines), and a Python with kokoro-onnx and num
 files kokoro-v1.0.onnx and voices-v1.0.bin from github.com/thewh1teagle/kokoro-onnx releases
 (model-files-v1.0). Run from the repository root:
 
-    python -I scripts/voice/ingenuity_voice.py <dir with the model files>
+    python -I scripts/voice/ingenuity_voice.py <dir with the model files> [narrator voice]
 
-Writes public/audio/ingenuity/<stop>-<intro|inheritance>.wav (16 kHz mono) and src/data/voiceClips.json.
+Writes public/audio/ingenuity/*.wav and public/audio/narrator/*.wav (16 kHz mono) and
+src/data/voiceClips.json.
 """
 import json
 import re
@@ -29,10 +39,13 @@ from kokoro_onnx import Kokoro
 
 ROOT = Path.cwd()
 MODELS = Path(sys.argv[1])
-AUDIO_DIR = ROOT / "public" / "audio" / "ingenuity"
+AUDIO = ROOT / "public"
 MANIFEST = ROOT / "src" / "data" / "voiceClips.json"
 
 VOICE, LANG = "af_aoede", "en-us"
+NARRATOR = sys.argv[2] if len(sys.argv) > 2 else "am_michael"
+NARRATOR_LANG = "en-gb" if NARRATOR.startswith("b") else "en-us"
+NARRATOR_PACE = 0.95
 PACE = 0.92  # unhurried
 LIFT, FORMANT = 1.08, 1.03  # a little lighter, not childish
 SHEEN, SHEEN_F0 = 0.12, 196  # share of the vocoder layer, and its fixed pitch
@@ -43,13 +56,38 @@ N, H = 1024, 256
 
 
 # ---------------------------------------------------------------- the lines
-def read_lines() -> dict:
-    js = (
-        "const m = await import('./src/data/flight.ts');"
-        "console.log(JSON.stringify(Object.fromEntries(Object.entries(m.LEG_SCRIPTS)"
-        ".map(([k, v]) => [k, { intro: v.arrivalIntro, inheritance: [v.inheritance] }]))));"
-    )
-    out = subprocess.run(["node", "--input-type=module", "-e", js], cwd=ROOT, capture_output=True, encoding="utf-8", check=True)
+READ_JS = r"""
+const f = await import('./src/data/flight.ts');
+const m = await import('./src/data/machines.ts');
+const { MACHINE_IDS } = await import('./src/types.ts');
+// As src/ui/tour.ts sentences(): a story section is spoken one sentence per line.
+const sentences = t => t.split(/(?<=[.!?…])\s+(?=[A-Z0-9“"‘'(])/).map(s => s.trim()).filter(Boolean);
+const out = [];
+const add = (voice, stop, kind, file, lines) => out.push({ voice, stop, kind, file, lines });
+add('ingenuity', 'ingenuity', 'prologue', 'prologue', f.PROLOGUE.slice(0, f.PROLOGUE_TEST_AT));
+add('ingenuity', 'ingenuity', 'imagine', 'prologue-imagine', f.PROLOGUE.slice(f.PROLOGUE_TEST_AT));
+add('ingenuity', 'ingenuity', 'epilogue', 'epilogue', f.EPILOGUE);
+for (const id of MACHINE_IDS) {
+  const s = f.LEG_SCRIPTS[id];
+  add('ingenuity', id, 'intro', `${id}-intro`, s.arrivalIntro);
+  add('ingenuity', id, 'inheritance', `${id}-inheritance`, [s.inheritance]);
+  add('ingenuity', id, 'leg', `leg-${id}`, s.enRoute);
+  for (const from of MACHINE_IDS) {
+    if (from === id) continue;
+    // As GuideBubble's direct hop (off the planned route).
+    add('ingenuity', id, 'hop', `hop-${from}-${id}`, [`Off the planned route: straight from ${m.MACHINE_BY_ID[from].shortName} to ${m.MACHINE_BY_ID[id].shortName}.`]);
+  }
+  for (const key of ['why', 'found', 'lastDay', 'stillHere']) {
+    // Ingenuity tells its own story; every other machine's is the narrator's.
+    add(id === 'ingenuity' ? 'ingenuity' : 'narrator', id, 'story', `story-${id}-${key}`, sentences(m.MACHINE_BY_ID[id].story[key]));
+  }
+}
+console.log(JSON.stringify(out));
+"""
+
+
+def read_lines() -> list[dict]:
+    out = subprocess.run(["node", "--input-type=module", "-e", READ_JS], cwd=ROOT, capture_output=True, encoding="utf-8", check=True)
     return json.loads(out.stdout)
 
 
@@ -232,14 +270,16 @@ def sentences(line: str) -> list[tuple[int, int]]:
     return [r for r in out if r[1] > r[0]]
 
 
-def speak_message(k: Kokoro, lines: list[str]) -> tuple[np.ndarray, list[list[float]]]:
+def speak_message(
+    k: Kokoro, lines: list[str], voice: str = VOICE, lang: str = LANG, pace: float = PACE, LIFT: float = LIFT
+) -> tuple[np.ndarray, list[list[float]]]:
     """The message as one clip (24 kHz, before effects) and its typing spans, times after the lift."""
     parts, spans, t = [np.zeros(int(LEAD_S * LIFT * SR))], [], LEAD_S * LIFT
     offset = 0
     for li, line in enumerate(lines):
         for si, (a, b) in enumerate(sentences(line)):
             text = line[a:b]
-            x, _ = k.create(text.replace("’", "'"), voice=VOICE, speed=PACE / LIFT, lang=LANG)
+            x, _ = k.create(text.replace("’", "'"), voice=voice, speed=pace / LIFT, lang=lang)
             x = trim(np.asarray(x, dtype=np.float64))
             dur = len(x) / SR
             edges = [(0, 0.0)]
@@ -268,28 +308,76 @@ def write_wav(path: Path, x: np.ndarray) -> None:
         w.writeframes((np.clip(x, -1, 1) * 32767).astype("<i2").tobytes())
 
 
+def read_wav(path: Path) -> np.ndarray:
+    with wave.open(str(path), "rb") as w:
+        return np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float64) / 32767
+
+
+def speech_rms_db(x: np.ndarray) -> float:
+    """Loudness of the speech in a clip (16 kHz): RMS over the 10 ms frames within 30 dB of the loudest."""
+    f = x[: len(x) // 160 * 160].reshape(-1, 160)
+    e = (f ** 2).mean(axis=1)
+    act = e[e > e.max() / 1000]
+    return float(10 * np.log10(act.mean() + 1e-20))
+
+
+def narrator_eq(x: np.ndarray) -> np.ndarray:
+    """Clear and warm, full band: no radio, no vocoder (the opposite of Ingenuity's treatment)."""
+    x = biquad(x, *rbj("hp", 70))
+    x = biquad(x, *rbj("peak", 260, q=0.8, gain_db=-1.5))
+    return biquad(x, *rbj("peak", 3000, q=1.0, gain_db=1.5))
+
+
+def level_to(x: np.ndarray, target_db: float) -> np.ndarray:
+    """Scale the speech to `target_db` (speech_rms_db), with a soft limit on the few peaks above 0.7."""
+    y = x * 10 ** ((target_db - speech_rms_db(x)) / 20)
+    a = np.abs(y)
+    return np.where(a < 0.7, y, np.sign(y) * (0.7 + 0.28 * np.tanh((a - 0.7) / 0.28)))
+
+
 def main() -> None:
-    k = Kokoro(str(MODELS / "kokoro-v1.0.onnx"), str(MODELS / "voices-v1.0.bin"))
-    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
-    manifest = []
-    for stop, msgs in read_lines().items():
-        for kind in ("intro", "inheritance"):
-            lines = msgs[kind]
-            raw, spans = speak_message(k, lines)
-            x = soft_radio(cool_eq(chorus(vocoder_layer(lift(raw)))))
-            x = norm(to_out_rate(x))
-            name = f"{stop}-{kind}.wav"
-            write_wav(AUDIO_DIR / name, x)
+    k = None
+    old = {}
+    if MANIFEST.exists():
+        old = {c["file"]: c for c in json.loads(MANIFEST.read_text(encoding="utf-8"))}
+    msgs = read_lines()
+    # Ingenuity first: the narrator is levelled to her speech.
+    msgs.sort(key=lambda m: m["voice"] != "ingenuity")
+    manifest, ingenuity_db = [], []
+    for m in msgs:
+        lines, voice = m["lines"], m["voice"]
+        rel = f"audio/{voice}/{m['file']}.wav"
+        path = AUDIO / rel
+        text = "\n".join(lines)
+        entry = {"stop": m["stop"], "kind": m["kind"], "voice": voice, "file": rel, "text": text}
+        prev = old.get(rel)
+        if prev and prev["text"] == text and path.exists():
+            # Unchanged: keep the clip as it is.
+            entry |= {"duration": prev["duration"], "spans": prev["spans"]}
+            x = read_wav(path)
+            note = "kept"
+        else:
+            if k is None:
+                k = Kokoro(str(MODELS / "kokoro-v1.0.onnx"), str(MODELS / "voices-v1.0.bin"))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if voice == "ingenuity":
+                raw, spans = speak_message(k, lines)
+                x = norm(to_out_rate(soft_radio(cool_eq(chorus(vocoder_layer(lift(raw)))))))
+            else:
+                raw, spans = speak_message(k, lines, NARRATOR, NARRATOR_LANG, NARRATOR_PACE, 1.0)
+                target = float(np.mean(ingenuity_db)) if ingenuity_db else -17.0
+                x = level_to(to_out_rate(narrator_eq(raw)), target)
+            write_wav(path, x)
             duration = len(x) / OUT_SR
-            manifest.append({
-                "stop": stop,
-                "kind": kind,
-                "file": f"audio/ingenuity/{name}",
-                "text": "\n".join(lines),
+            entry |= {
                 "duration": round(duration, 3),
                 "spans": [[s[0], s[1], round(s[2], 3), round(min(s[3], duration), 3)] for s in spans],
-            })
-            print(f"{name}: {duration:.1f} s, {len(spans)} spans")
+            }
+            note = f"{len(spans)} spans"
+        if voice == "ingenuity":
+            ingenuity_db.append(speech_rms_db(x))
+        manifest.append(entry)
+        print(f"{rel}: {entry['duration']:.1f} s, {note}, speech {speech_rms_db(x):.1f} dB", flush=True)
     MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{MANIFEST.relative_to(ROOT)}: {len(manifest)} clips")
 

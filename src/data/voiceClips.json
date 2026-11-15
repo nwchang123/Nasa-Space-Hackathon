@@ -1,7 +1,140 @@
 [
  {
+  "stop": "ingenuity",
+  "kind": "prologue",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/prologue.wav",
+  "text": "18 January 2024. Flight 72 was meant to be a short hop to check my systems.\nThe sand below was probably too smooth for my navigation camera to follow.\nI came down hard, and my rotor blades broke. My team said goodbye on 16 April 2024.",
+  "duration": 18.485,
+  "spans": [
+   [
+    0,
+    16,
+    0.12,
+    2.518
+   ],
+   [
+    17,
+    75,
+    2.818,
+    6.401
+   ],
+   [
+    76,
+    150,
+    6.881,
+    11.289
+   ],
+   [
+    151,
+    195,
+    11.769,
+    14.149
+   ],
+   [
+    196,
+    234,
+    14.449,
+    18.236
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "imagine",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/prologue-imagine.wav",
+  "text": "I will never fly again.\nBut let me imagine one last flight. Flight 73.",
+  "duration": 5.502,
+  "spans": [
+   [
+    0,
+    23,
+    0.12,
+    1.435
+   ],
+   [
+    24,
+    59,
+    1.915,
+    3.739
+   ],
+   [
+    60,
+    70,
+    4.039,
+    5.252
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "epilogue",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/epilogue.wav",
+  "text": "Home again, on my sand ripple at Valinor Hills.\nMy last software update tells me to wake up every day.\nI test my solar panel and batteries, take a photo, and log temperatures.\nMy memory could hold about 20 years of those days, for whoever visits next.\nSomeday SkyFall’s helicopters will fly in this sky. I will be right here. Still here.",
+  "duration": 21.705,
+  "spans": [
+   [
+    0,
+    11,
+    0.12,
+    0.685
+   ],
+   [
+    11,
+    47,
+    0.777,
+    2.685
+   ],
+   [
+    48,
+    102,
+    3.165,
+    6.146
+   ],
+   [
+    103,
+    175,
+    6.626,
+    10.913
+   ],
+   [
+    176,
+    226,
+    11.393,
+    14.171
+   ],
+   [
+    226,
+    251,
+    14.329,
+    15.634
+   ],
+   [
+    252,
+    303,
+    16.114,
+    19.096
+   ],
+   [
+    304,
+    325,
+    19.396,
+    20.414
+   ],
+   [
+    326,
+    337,
+    20.714,
+    21.455
+   ]
+  ]
+ },
+ {
   "stop": "viking-1",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/viking-1-intro.wav",
   "text": "We are on Chryse Planitia, the Golden Plain. Meet Viking 1.\nIn 1976 it became the first spacecraft to land safely on Mars and keep working.\nClick a numbered point on the lander, and I will fly over and scan it.",
   "duration": 14.528,
@@ -47,6 +180,7 @@
  {
   "stop": "viking-1",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/viking-1-inheritance.wav",
   "text": "Everyone on this flight landed after you. You showed it could be done.",
   "duration": 3.966,
@@ -66,8 +200,225 @@
   ]
  },
  {
+  "stop": "viking-1",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-viking-1.wav",
+  "text": "First stop is the oldest. Viking 1 landed in 1976, almost 45 years before I did.\nTime to meet my elders, one by one, in the order they landed.",
+  "duration": 11.178,
+  "spans": [
+   [
+    0,
+    25,
+    0.12,
+    1.37
+   ],
+   [
+    26,
+    50,
+    1.67,
+    4.3
+   ],
+   [
+    50,
+    80,
+    4.392,
+    7.253
+   ],
+   [
+    81,
+    116,
+    7.733,
+    9.706
+   ],
+   [
+    116,
+    142,
+    9.807,
+    10.928
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-viking-1.wav",
+  "text": "Off the planned route: straight from Viking 2 to Viking 1.",
+  "duration": 3.5,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.185,
+    3.25
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-viking-1.wav",
+  "text": "Off the planned route: straight from Pathfinder to Viking 1.",
+  "duration": 3.564,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.185,
+    3.314
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-viking-1.wav",
+  "text": "Off the planned route: straight from Spirit to Viking 1.",
+  "duration": 3.25,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    56,
+    1.194,
+    3.0
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-viking-1.wav",
+  "text": "Off the planned route: straight from Opportunity to Viking 1.",
+  "duration": 3.527,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.185,
+    3.277
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-viking-1.wav",
+  "text": "Off the planned route: straight from Phoenix to Viking 1.",
+  "duration": 3.25,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.185,
+    3.0
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-viking-1.wav",
+  "text": "Off the planned route: straight from InSight to Viking 1.",
+  "duration": 3.203,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.185,
+    2.953
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-viking-1.wav",
+  "text": "Off the planned route: straight from Backshell to Viking 1.",
+  "duration": 3.296,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.185,
+    3.046
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-viking-1.wav",
+  "text": "Off the planned route: straight from Ingenuity to Viking 1.",
+  "duration": 3.583,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.046
+   ],
+   [
+    22,
+    59,
+    1.185,
+    3.333
+   ]
+  ]
+ },
+ {
   "stop": "viking-2",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/viking-2-intro.wav",
   "text": "Utopia Planitia, a rocky plain nearer the polar ice. This is Viking 2.\nIt landed tilted among the boulders, then sent data home for more than three and a half years.\nClick a numbered point, and I will light up that part for you.",
   "duration": 14.241,
@@ -119,6 +470,7 @@
  {
   "stop": "viking-2",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/viking-2-inheritance.wav",
   "text": "You were moved north, toward the polar ice. Almost 32 years later, Phoenix went farther north and dug some up.",
   "duration": 6.568,
@@ -150,8 +502,207 @@
   ]
  },
  {
+  "stop": "viking-2",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-viking-2.wav",
+  "text": "The shortest way to Viking 2 runs almost over the north pole.\nFrom 1976 to 1980, the two Viking landers worked on Mars at the same time.",
+  "duration": 10.757,
+  "spans": [
+   [
+    0,
+    61,
+    0.12,
+    3.685
+   ],
+   [
+    62,
+    136,
+    4.165,
+    10.507
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-viking-2.wav",
+  "text": "Off the planned route: straight from Viking 1 to Viking 2.",
+  "duration": 3.546,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.185,
+    3.296
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-viking-2.wav",
+  "text": "Off the planned route: straight from Pathfinder to Viking 2.",
+  "duration": 3.453,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.185,
+    3.203
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-viking-2.wav",
+  "text": "Off the planned route: straight from Spirit to Viking 2.",
+  "duration": 3.231,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    56,
+    1.166,
+    2.981
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-viking-2.wav",
+  "text": "Off the planned route: straight from Opportunity to Viking 2.",
+  "duration": 3.574,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.194,
+    3.324
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-viking-2.wav",
+  "text": "Off the planned route: straight from Phoenix to Viking 2.",
+  "duration": 3.25,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.157,
+    3.0
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-viking-2.wav",
+  "text": "Off the planned route: straight from InSight to Viking 2.",
+  "duration": 3.231,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.194,
+    2.981
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-viking-2.wav",
+  "text": "Off the planned route: straight from Backshell to Viking 2.",
+  "duration": 3.342,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.194,
+    3.092
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-viking-2.wav",
+  "text": "Off the planned route: straight from Ingenuity to Viking 2.",
+  "duration": 3.62,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.194,
+    3.37
+   ]
+  ]
+ },
+ {
   "stop": "pathfinder-sojourner",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/pathfinder-sojourner-intro.wav",
   "text": "Ares Vallis. Pathfinder came down here wrapped in giant airbags, bouncing about 15 times.\nIts little rover, Sojourner, was the first ever to drive on Mars.\nClick a numbered point, and I will fly in close to scan it.",
   "duration": 14.269,
@@ -209,6 +760,7 @@
  {
   "stop": "pathfinder-sojourner",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/pathfinder-sojourner-inheritance.wav",
   "text": "Sojourner rolled first. Every NASA rover since has followed her, including the one that carried me here.",
   "duration": 6.263,
@@ -234,8 +786,213 @@
   ]
  },
  {
+  "stop": "pathfinder-sojourner",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-pathfinder-sojourner.wav",
+  "text": "NASA did not land on Mars again for almost 21 years after the Vikings.\nThen Pathfinder came, carrying the first rover ever to drive on Mars.",
+  "duration": 9.646,
+  "spans": [
+   [
+    0,
+    70,
+    0.12,
+    4.768
+   ],
+   [
+    71,
+    92,
+    5.248,
+    6.554
+   ],
+   [
+    92,
+    140,
+    6.794,
+    9.396
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Viking 1 to Pathfinder.",
+  "duration": 3.564,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.185,
+    3.314
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Viking 2 to Pathfinder.",
+  "duration": 3.5,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.185,
+    3.25
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Spirit to Pathfinder.",
+  "duration": 3.277,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.203,
+    3.027
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Opportunity to Pathfinder.",
+  "duration": 3.5,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    63,
+    1.185,
+    3.25
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Phoenix to Pathfinder.",
+  "duration": 3.259,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.194,
+    3.009
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from InSight to Pathfinder.",
+  "duration": 3.24,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.185,
+    2.99
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Backshell to Pathfinder.",
+  "duration": 3.314,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.194,
+    3.064
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-pathfinder-sojourner.wav",
+  "text": "Off the planned route: straight from Ingenuity to Pathfinder.",
+  "duration": 3.592,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.185,
+    3.342
+   ]
+  ]
+ },
+ {
   "stop": "spirit",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/spirit-intro.wav",
   "text": "Troy, beside Home Plate in Gusev crater. Spirit got stuck in soft soil here.\nDragging a dead wheel, it scraped up signs of ancient hot springs or steam vents.\nClick a numbered point on the rover, and let us take a closer look.",
   "duration": 13.797,
@@ -281,6 +1038,7 @@
  {
   "stop": "spirit",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/spirit-inheritance.wav",
   "text": "Stuck in soft soil, you kept working as a science station that could not move. Now I do the same.",
   "duration": 6.151,
@@ -306,8 +1064,225 @@
   ]
  },
  {
+  "stop": "spirit",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-spirit.wav",
+  "text": "We cross the equator. Spirit is our first stop in the southern hemisphere.\nIt landed in January 2004. Its twin, Opportunity, followed three weeks later.",
+  "duration": 10.126,
+  "spans": [
+   [
+    0,
+    21,
+    0.12,
+    1.268
+   ],
+   [
+    22,
+    74,
+    1.568,
+    4.087
+   ],
+   [
+    75,
+    101,
+    4.567,
+    6.956
+   ],
+   [
+    102,
+    124,
+    7.256,
+    8.515
+   ],
+   [
+    124,
+    152,
+    8.644,
+    9.876
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-spirit.wav",
+  "text": "Off the planned route: straight from Viking 1 to Spirit.",
+  "duration": 3.101,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    56,
+    1.194,
+    2.851
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-spirit.wav",
+  "text": "Off the planned route: straight from Viking 2 to Spirit.",
+  "duration": 3.055,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    56,
+    1.166,
+    2.805
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-spirit.wav",
+  "text": "Off the planned route: straight from Pathfinder to Spirit.",
+  "duration": 3.055,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.203,
+    2.805
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-spirit.wav",
+  "text": "Off the planned route: straight from Opportunity to Spirit.",
+  "duration": 3.074,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.203,
+    2.824
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-spirit.wav",
+  "text": "Off the planned route: straight from Phoenix to Spirit.",
+  "duration": 2.842,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    55,
+    1.185,
+    2.592
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-spirit.wav",
+  "text": "Off the planned route: straight from InSight to Spirit.",
+  "duration": 2.842,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    55,
+    1.176,
+    2.592
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-spirit.wav",
+  "text": "Off the planned route: straight from Backshell to Spirit.",
+  "duration": 2.916,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.166,
+    2.666
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-spirit.wav",
+  "text": "Off the planned route: straight from Ingenuity to Spirit.",
+  "duration": 3.148,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.203,
+    2.898
+   ]
+  ]
+ },
+ {
   "stop": "opportunity",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/opportunity-intro.wav",
   "text": "Perseverance Valley, on the rim of Endeavour crater. Here rests Opportunity.\nIt was built to drive one kilometre. It drove more than a marathon, and proved water once lasted here.\nClick a numbered point on the rover, and I will scan it with my light.",
   "duration": 14.93,
@@ -365,6 +1340,7 @@
  {
   "stop": "opportunity",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/opportunity-inheritance.wav",
   "text": "You showed that water once lasted here. Perseverance went to Jezero, once a lake, and found possible signs of ancient life.",
   "duration": 7.716,
@@ -390,8 +1366,213 @@
   ]
  },
  {
+  "stop": "opportunity",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-opportunity.wav",
+  "text": "The longest leg of all. The twins landed on opposite sides of Mars.\nThe shortest path between them passes close to the south pole.",
+  "duration": 8.002,
+  "spans": [
+   [
+    0,
+    23,
+    0.12,
+    1.287
+   ],
+   [
+    24,
+    67,
+    1.587,
+    4.151
+   ],
+   [
+    68,
+    130,
+    4.631,
+    7.752
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-opportunity.wav",
+  "text": "Off the planned route: straight from Viking 1 to Opportunity.",
+  "duration": 3.546,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.213,
+    3.296
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-opportunity.wav",
+  "text": "Off the planned route: straight from Viking 2 to Opportunity.",
+  "duration": 3.5,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.185,
+    3.25
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-opportunity.wav",
+  "text": "Off the planned route: straight from Pathfinder to Opportunity.",
+  "duration": 3.518,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    63,
+    1.213,
+    3.268
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-opportunity.wav",
+  "text": "Off the planned route: straight from Spirit to Opportunity.",
+  "duration": 3.277,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.194,
+    3.027
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-opportunity.wav",
+  "text": "Off the planned route: straight from Phoenix to Opportunity.",
+  "duration": 3.277,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.194,
+    3.027
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-opportunity.wav",
+  "text": "Off the planned route: straight from InSight to Opportunity.",
+  "duration": 3.25,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.194,
+    3.0
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-opportunity.wav",
+  "text": "Off the planned route: straight from Backshell to Opportunity.",
+  "duration": 3.361,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    62,
+    1.194,
+    3.111
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-opportunity.wav",
+  "text": "Off the planned route: straight from Ingenuity to Opportunity.",
+  "duration": 3.592,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    62,
+    1.222,
+    3.342
+   ]
+  ]
+ },
+ {
   "stop": "phoenix",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/phoenix-intro.wav",
   "text": "The Martian arctic. Phoenix landed farther north than any Mars mission before it.\nIt dug a trench here and found water ice, hiding just under the soil.\nClick a numbered point on the lander, and I will fly over to look.",
   "duration": 13.019,
@@ -437,6 +1618,7 @@
  {
   "stop": "phoenix",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/phoenix-inheritance.wav",
   "text": "You found ice hiding just under the soil. The helicopters coming after me are meant to look for more.",
   "duration": 6.003,
@@ -456,8 +1638,225 @@
   ]
  },
  {
+  "stop": "phoenix",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-phoenix.wav",
+  "text": "North again, to the Martian arctic. NASA’s plan back then was to “follow the water.”\nPhoenix reused a spacecraft built for a cancelled 2001 mission.\nIt also carries a DVD for future visitors, called “the first library on Mars.”",
+  "duration": 15.176,
+  "spans": [
+   [
+    0,
+    35,
+    0.12,
+    1.889
+   ],
+   [
+    36,
+    84,
+    2.189,
+    4.679
+   ],
+   [
+    85,
+    148,
+    5.159,
+    9.289
+   ],
+   [
+    149,
+    191,
+    9.769,
+    12.621
+   ],
+   [
+    191,
+    227,
+    12.861,
+    14.926
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-phoenix.wav",
+  "text": "Off the planned route: straight from Viking 1 to Phoenix.",
+  "duration": 3.268,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.203,
+    3.018
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-phoenix.wav",
+  "text": "Off the planned route: straight from Viking 2 to Phoenix.",
+  "duration": 3.231,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.166,
+    2.981
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-phoenix.wav",
+  "text": "Off the planned route: straight from Pathfinder to Phoenix.",
+  "duration": 3.203,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.203,
+    2.953
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-phoenix.wav",
+  "text": "Off the planned route: straight from Spirit to Phoenix.",
+  "duration": 2.824,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.064
+   ],
+   [
+    22,
+    55,
+    1.185,
+    2.574
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-phoenix.wav",
+  "text": "Off the planned route: straight from Opportunity to Phoenix.",
+  "duration": 3.213,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.203,
+    2.963
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-phoenix.wav",
+  "text": "Off the planned route: straight from InSight to Phoenix.",
+  "duration": 2.953,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.064
+   ],
+   [
+    22,
+    56,
+    1.185,
+    2.703
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-phoenix.wav",
+  "text": "Off the planned route: straight from Backshell to Phoenix.",
+  "duration": 3.0,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.185,
+    2.75
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-phoenix.wav",
+  "text": "Off the planned route: straight from Ingenuity to Phoenix.",
+  "duration": 3.259,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.203,
+    3.009
+   ]
+  ]
+ },
+ {
   "stop": "insight",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/insight-intro.wav",
   "text": "Elysium Planitia, a quiet plain. This is InSight, the lander that studied the inside of Mars.\nIts seismometer felt 1,319 marsquakes, and waves from two of them revealed a liquid iron core.\nClick a numbered point on the lander, and I will fly in to scan it.",
   "duration": 17.898,
@@ -509,6 +1908,7 @@
  {
   "stop": "insight",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/insight-inheritance.wav",
   "text": "You looked inside Mars, all the way down to its core. I only ever saw the surface, from 24 metres up.",
   "duration": 6.494,
@@ -540,8 +1940,219 @@
   ]
  },
  {
+  "stop": "insight",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-insight.wav",
+  "text": "InSight landed in November 2018, just over two years before I did.\nIt never drove anywhere. It sat still and listened to Mars shake.",
+  "duration": 9.511,
+  "spans": [
+   [
+    0,
+    32,
+    0.12,
+    2.99
+   ],
+   [
+    32,
+    66,
+    3.324,
+    5.259
+   ],
+   [
+    67,
+    91,
+    5.739,
+    6.998
+   ],
+   [
+    92,
+    132,
+    7.298,
+    9.261
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-insight.wav",
+  "text": "Off the planned route: straight from Viking 1 to InSight.",
+  "duration": 3.194,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.194,
+    2.944
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-insight.wav",
+  "text": "Off the planned route: straight from Viking 2 to InSight.",
+  "duration": 3.175,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.166,
+    2.926
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-insight.wav",
+  "text": "Off the planned route: straight from Pathfinder to InSight.",
+  "duration": 3.194,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.203,
+    2.944
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-insight.wav",
+  "text": "Off the planned route: straight from Spirit to InSight.",
+  "duration": 2.944,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    55,
+    1.185,
+    2.694
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-insight.wav",
+  "text": "Off the planned route: straight from Opportunity to InSight.",
+  "duration": 3.24,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.203,
+    2.99
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-insight.wav",
+  "text": "Off the planned route: straight from Phoenix to InSight.",
+  "duration": 2.898,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    56,
+    1.166,
+    2.648
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-insight.wav",
+  "text": "Off the planned route: straight from Backshell to InSight.",
+  "duration": 3.037,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.166,
+    2.787
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-insight.wav",
+  "text": "Off the planned route: straight from Ingenuity to InSight.",
+  "duration": 3.259,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.194,
+    3.009
+   ]
+  ]
+ },
+ {
   "stop": "mars2020-edl",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/mars2020-edl-intro.wav",
   "text": "Jezero crater, where Perseverance and I came down. Here lie the parachute and backshell that slowed us.\nThat parachute was the biggest ever used on Mars. Its panels hide a message in binary.\nClick a numbered point, and I will scan it again for you.",
   "duration": 14.8,
@@ -593,6 +2204,7 @@
  {
   "stop": "mars2020-edl",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/mars2020-edl-inheritance.wav",
   "text": "You brought Perseverance and me down safely. My photos of you may help future landers come down safer.",
   "duration": 6.161,
@@ -612,8 +2224,219 @@
   ]
  },
  {
+  "stop": "mars2020-edl",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-mars2020-edl.wav",
+  "text": "Back to Jezero crater. One stop before home, and I have been there before.\nIn April 2022, on Flight 26, I flew out to photograph it.",
+  "duration": 10.122,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.527
+   ],
+   [
+    23,
+    44,
+    1.827,
+    3.207
+   ],
+   [
+    44,
+    74,
+    3.318,
+    4.531
+   ],
+   [
+    75,
+    132,
+    5.011,
+    9.872
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Viking 1 to Backshell.",
+  "duration": 3.342,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.185,
+    3.092
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Viking 2 to Backshell.",
+  "duration": 3.277,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.166,
+    3.027
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Pathfinder to Backshell.",
+  "duration": 3.277,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.194,
+    3.027
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Spirit to Backshell.",
+  "duration": 3.083,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.166,
+    2.833
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Opportunity to Backshell.",
+  "duration": 3.259,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    62,
+    1.185,
+    3.009
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Phoenix to Backshell.",
+  "duration": 3.092,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.166,
+    2.842
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-mars2020-edl.wav",
+  "text": "Off the planned route: straight from InSight to Backshell.",
+  "duration": 3.064,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.166,
+    2.814
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-ingenuity-mars2020-edl.wav",
+  "text": "Off the planned route: straight from Ingenuity to Backshell.",
+  "duration": 3.342,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.185,
+    3.092
+   ]
+  ]
+ },
+ {
   "stop": "ingenuity",
   "kind": "intro",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/ingenuity-intro.wav",
   "text": "Home: Valinor Hills, in Jezero crater. That is the real me, resting with broken blades.\nI was meant to fly five times on Mars. I flew 72.\nClick a numbered point, and I will show you what is left of me.",
   "duration": 13.347,
@@ -665,6 +2488,7 @@
  {
   "stop": "ingenuity",
   "kind": "inheritance",
+  "voice": "ingenuity",
   "file": "audio/ingenuity/ingenuity-inheritance.wav",
   "text": "NASA’s SkyFall mission will build on what I proved. Three new helicopters will scout landing sites for astronauts and map buried ice.",
   "duration": 8.114,
@@ -680,6 +2504,1542 @@
     133,
     3.198,
     7.864
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "leg",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/leg-ingenuity.wav",
+  "text": "The last hop is the shortest of all.\nPerseverance once photographed a piece of my blade, 15 metres west of where I rest.",
+  "duration": 7.563,
+  "spans": [
+   [
+    0,
+    36,
+    0.12,
+    1.916
+   ],
+   [
+    37,
+    88,
+    2.396,
+    5.146
+   ],
+   [
+    88,
+    120,
+    5.489,
+    7.313
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-1-ingenuity.wav",
+  "text": "Off the planned route: straight from Viking 1 to Ingenuity.",
+  "duration": 3.546,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.046
+   ],
+   [
+    22,
+    59,
+    1.185,
+    3.296
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-viking-2-ingenuity.wav",
+  "text": "Off the planned route: straight from Viking 2 to Ingenuity.",
+  "duration": 3.481,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    59,
+    1.185,
+    3.231
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-pathfinder-sojourner-ingenuity.wav",
+  "text": "Off the planned route: straight from Pathfinder to Ingenuity.",
+  "duration": 3.583,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    61,
+    1.213,
+    3.333
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-spirit-ingenuity.wav",
+  "text": "Off the planned route: straight from Spirit to Ingenuity.",
+  "duration": 3.24,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    57,
+    1.194,
+    2.99
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-opportunity-ingenuity.wav",
+  "text": "Off the planned route: straight from Opportunity to Ingenuity.",
+  "duration": 3.546,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    62,
+    1.222,
+    3.296
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-phoenix-ingenuity.wav",
+  "text": "Off the planned route: straight from Phoenix to Ingenuity.",
+  "duration": 3.305,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.194,
+    3.055
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-insight-ingenuity.wav",
+  "text": "Off the planned route: straight from InSight to Ingenuity.",
+  "duration": 3.231,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    58,
+    1.194,
+    2.981
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "hop",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/hop-mars2020-edl-ingenuity.wav",
+  "text": "Off the planned route: straight from Backshell to Ingenuity.",
+  "duration": 3.435,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    1.055
+   ],
+   [
+    22,
+    60,
+    1.194,
+    3.185
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "story",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/story-ingenuity-why.wav",
+  "text": "I rode to Mars tucked under the belly of the Perseverance rover.\nThe air there is less than one percent as thick as Earth’s.\nNobody knew if a helicopter could fly in it, so I was sent to try.",
+  "duration": 11.191,
+  "spans": [
+   [
+    0,
+    64,
+    0.12,
+    3.648
+   ],
+   [
+    65,
+    124,
+    4.128,
+    6.785
+   ],
+   [
+    125,
+    169,
+    7.265,
+    9.561
+   ],
+   [
+    169,
+    191,
+    9.774,
+    10.941
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "story",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/story-ingenuity-found.wav",
+  "text": "On 19 April 2021 I lifted off: the first powered, controlled flight on another planet.\nI was meant to fly five times.\nI flew 72, scouting routes and science targets for the rover from above.",
+  "duration": 14.348,
+  "spans": [
+   [
+    0,
+    30,
+    0.12,
+    2.759
+   ],
+   [
+    30,
+    49,
+    2.861,
+    4.148
+   ],
+   [
+    49,
+    86,
+    4.24,
+    7.046
+   ],
+   [
+    87,
+    117,
+    7.526,
+    9.322
+   ],
+   [
+    118,
+    190,
+    9.802,
+    14.099
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "story",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/story-ingenuity-lastDay.wav",
+  "text": "On 18 January 2024 I made a hard landing that broke my rotor blades.\nI could never fly again.\nMy team gathered for one last downlink on 16 April 2024.",
+  "duration": 13.219,
+  "spans": [
+   [
+    0,
+    68,
+    0.12,
+    5.963
+   ],
+   [
+    69,
+    93,
+    6.443,
+    7.794
+   ],
+   [
+    94,
+    150,
+    8.274,
+    12.969
+   ]
+  ]
+ },
+ {
+  "stop": "ingenuity",
+  "kind": "story",
+  "voice": "ingenuity",
+  "file": "audio/ingenuity/story-ingenuity-stillHere.wav",
+  "text": "I stay at Valinor Hills as a stationary testbed.\nIn December 2024 I was still sending weather data to Perseverance about once a week.\nEven my crash is useful: what it taught should help future Mars helicopters.",
+  "duration": 14.45,
+  "spans": [
+   [
+    0,
+    48,
+    0.12,
+    2.926
+   ],
+   [
+    49,
+    133,
+    3.406,
+    9.146
+   ],
+   [
+    134,
+    158,
+    9.626,
+    11.043
+   ],
+   [
+    158,
+    210,
+    11.126,
+    14.2
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-1-why.wav",
+  "text": "I was the first spacecraft to land safely on Mars and keep working.\nI touched down on 20 July 1976, seven years to the day after Apollo 11 reached the Moon.\nMy mission was to look for life.",
+  "duration": 15.13,
+  "spans": [
+   [
+    0,
+    67,
+    0.12,
+    4.38
+   ],
+   [
+    68,
+    99,
+    4.86,
+    8.38
+   ],
+   [
+    99,
+    156,
+    8.52,
+    12.67
+   ],
+   [
+    157,
+    189,
+    13.15,
+    14.88
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-1-found.wav",
+  "text": "My arm scooped soil into a tiny biology lab inside me.\nSome tests gave a weak signal that looked like life.\nBut my chemistry instrument found no organic compounds, so the answer stayed inconclusive.",
+  "duration": 14.05,
+  "spans": [
+   [
+    0,
+    54,
+    0.12,
+    4.09
+   ],
+   [
+    55,
+    107,
+    4.57,
+    7.32
+   ],
+   [
+    108,
+    163,
+    7.8,
+    11.14
+   ],
+   [
+    163,
+    198,
+    11.61,
+    13.8
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-1-lastDay.wav",
+  "text": "Long after my main mission I kept sending weather reports, first daily, then weekly.\nOn 11 November 1982, a faulty command sent from Earth cut me off.\nEvery attempt to reach me again failed.",
+  "duration": 14.71,
+  "spans": [
+   [
+    0,
+    58,
+    0.12,
+    3.76
+   ],
+   [
+    58,
+    71,
+    4.05,
+    4.8
+   ],
+   [
+    71,
+    84,
+    5.07,
+    5.72
+   ],
+   [
+    85,
+    105,
+    6.2,
+    8.7
+   ],
+   [
+    105,
+    150,
+    9.35,
+    11.95
+   ],
+   [
+    151,
+    190,
+    12.43,
+    14.46
+   ]
+  ]
+ },
+ {
+  "stop": "viking-1",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-1-stillHere.wav",
+  "text": "In 1982 I was renamed the Thomas Mutch Memorial Station, after my imaging team’s leader.\nMy record of 6 years and 116 days on Mars stood until Opportunity passed it in 2010.\nThe question I came to ask is still open.",
+  "duration": 19.34,
+  "spans": [
+   [
+    0,
+    56,
+    0.12,
+    5.07
+   ],
+   [
+    56,
+    88,
+    5.66,
+    7.59
+   ],
+   [
+    89,
+    173,
+    8.07,
+    16.19
+   ],
+   [
+    174,
+    215,
+    16.67,
+    19.09
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-2-why.wav",
+  "text": "My twin landed first, so I was sent somewhere different.\nPhotos showed rough ground at my planned site.\nControllers moved me north to Utopia Planitia, nearer the polar ice, where life seemed likelier.",
+  "duration": 13.76,
+  "spans": [
+   [
+    0,
+    21,
+    0.12,
+    1.49
+   ],
+   [
+    21,
+    56,
+    1.89,
+    3.46
+   ],
+   [
+    57,
+    103,
+    3.94,
+    6.4
+   ],
+   [
+    104,
+    150,
+    6.88,
+    9.7
+   ],
+   [
+    150,
+    172,
+    10.14,
+    11.53
+   ],
+   [
+    172,
+    200,
+    11.94,
+    13.51
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-2-found.wav",
+  "text": "I landed on 3 September 1976, tilted 8.5 degrees on a rocky plain.\nMy biology tests on three soil samples matched my twin’s: puzzling, not proof.\nScientists suspected that sunlight-made chemicals in the soil were mimicking life.",
+  "duration": 18.93,
+  "spans": [
+   [
+    0,
+    29,
+    0.12,
+    3.37
+   ],
+   [
+    29,
+    66,
+    3.48,
+    7.36
+   ],
+   [
+    67,
+    124,
+    7.84,
+    11.38
+   ],
+   [
+    124,
+    134,
+    12.11,
+    12.57
+   ],
+   [
+    134,
+    145,
+    12.73,
+    13.33
+   ],
+   [
+    146,
+    228,
+    13.81,
+    18.68
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-2-lastDay.wav",
+  "text": "My orbiter went first, shut down in July 1978 after a series of leaks.\nI kept sending data from the ground until 12 April 1980.\nThen I fell silent.",
+  "duration": 14.17,
+  "spans": [
+   [
+    0,
+    22,
+    0.12,
+    2.22
+   ],
+   [
+    22,
+    70,
+    2.35,
+    6.58
+   ],
+   [
+    71,
+    127,
+    7.06,
+    12.21
+   ],
+   [
+    128,
+    147,
+    12.69,
+    13.92
+   ]
+  ]
+ },
+ {
+  "stop": "viking-2",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-viking-2-stillHere.wav",
+  "text": "In 2001 I was renamed the Gerald Soffen Memorial Station, after Viking’s project scientist.\nOur two orbiters sent back 52,663 images and mapped about 97 percent of Mars.\nMy twin and I added 4,500 photos from the ground.",
+  "duration": 22.23,
+  "spans": [
+   [
+    0,
+    57,
+    0.12,
+    5.0
+   ],
+   [
+    57,
+    91,
+    5.62,
+    7.87
+   ],
+   [
+    92,
+    169,
+    8.35,
+    16.82
+   ],
+   [
+    170,
+    219,
+    17.3,
+    21.98
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-pathfinder-sojourner-why.wav",
+  "text": "We were sent to test new ways to land on Mars and to drive there.\nInstead of rockets all the way down, I fell wrapped in giant airbags.\nOn 4 July 1997 I bounced about 15 times, up to 15 metres high.",
+  "duration": 17.23,
+  "spans": [
+   [
+    0,
+    65,
+    0.12,
+    4.21
+   ],
+   [
+    66,
+    102,
+    4.69,
+    6.54
+   ],
+   [
+    102,
+    135,
+    7.11,
+    9.29
+   ],
+   [
+    136,
+    176,
+    9.77,
+    13.94
+   ],
+   [
+    176,
+    198,
+    14.04,
+    16.98
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-pathfinder-sojourner-found.wav",
+  "text": "My rover, Sojourner, weighed 10.6 kilograms and rolled down my ramp on the second sol.\nShe studied rocks while I took more than 16,500 pictures.\nRounded pebbles here hinted at running water, back when Mars was warmer.",
+  "duration": 16.87,
+  "spans": [
+   [
+    0,
+    9,
+    0.12,
+    0.77
+   ],
+   [
+    9,
+    20,
+    1.02,
+    1.61
+   ],
+   [
+    20,
+    86,
+    2.14,
+    6.46
+   ],
+   [
+    87,
+    144,
+    6.94,
+    11.6
+   ],
+   [
+    145,
+    190,
+    12.08,
+    14.57
+   ],
+   [
+    190,
+    217,
+    15.09,
+    16.62
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-pathfinder-sojourner-lastDay.wav",
+  "text": "Sojourner was built for a seven-day mission and worked for 83.\nMy final data reached Earth at 10:23 UTC on 27 September 1997.\nEngineers kept trying for five months, then ended the mission on 10 March 1998.",
+  "duration": 19.56,
+  "spans": [
+   [
+    0,
+    62,
+    0.12,
+    4.29
+   ],
+   [
+    63,
+    125,
+    4.77,
+    12.46
+   ],
+   [
+    126,
+    164,
+    12.94,
+    16.06
+   ],
+   [
+    164,
+    205,
+    16.15,
+    19.31
+   ]
+  ]
+ },
+ {
+  "stop": "pathfinder-sojourner",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-pathfinder-sojourner-stillHere.wav",
+  "text": "I am the Carl Sagan Memorial Station, named after the astronomer who died the year before I landed.\nMy airbag landing worked so well that Spirit and Opportunity used the same kind.",
+  "duration": 12.79,
+  "spans": [
+   [
+    0,
+    37,
+    0.12,
+    2.55
+   ],
+   [
+    37,
+    99,
+    3.16,
+    6.89
+   ],
+   [
+    100,
+    180,
+    7.37,
+    12.54
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-spirit-why.wav",
+  "text": "My twin and I were sent to opposite sides of Mars to read its rocks for signs of past water.\nI landed in Gusev crater, which may once have held a lake.\nMy airbags bounced 28 times before I rolled to a stop.",
+  "duration": 14.96,
+  "spans": [
+   [
+    0,
+    92,
+    0.12,
+    6.42
+   ],
+   [
+    93,
+    118,
+    6.9,
+    8.67
+   ],
+   [
+    118,
+    151,
+    9.13,
+    10.45
+   ],
+   [
+    152,
+    206,
+    10.93,
+    14.71
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-spirit-found.wav",
+  "text": "In 2006 a front wheel stopped turning, so I drove backwards, dragging it.\nIn 2007 that dead wheel scraped up nearly pure silica.\nDeposits like that form in hot springs or steam vents, so ancient Mars was much wetter.",
+  "duration": 16.99,
+  "spans": [
+   [
+    0,
+    38,
+    0.12,
+    2.91
+   ],
+   [
+    38,
+    73,
+    3.44,
+    5.43
+   ],
+   [
+    74,
+    128,
+    5.91,
+    10.27
+   ],
+   [
+    129,
+    183,
+    10.75,
+    14.26
+   ],
+   [
+    183,
+    216,
+    14.72,
+    16.74
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-spirit-lastDay.wav",
+  "text": "On 1 May 2009 my wheels broke through a crust into soft soil at a place called Troy.\nEngineers tried for months to free me, then made me a stationary science station.\nMy last signal came on 22 March 2010, as winter cold set in.",
+  "duration": 17.94,
+  "spans": [
+   [
+    0,
+    84,
+    0.12,
+    6.23
+   ],
+   [
+    85,
+    123,
+    6.71,
+    8.82
+   ],
+   [
+    123,
+    166,
+    9.39,
+    11.76
+   ],
+   [
+    167,
+    204,
+    12.24,
+    15.59
+   ],
+   [
+    204,
+    227,
+    16.16,
+    17.69
+   ]
+  ]
+ },
+ {
+  "stop": "spirit",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-spirit-stillHere.wav",
+  "text": "NASA sent more than 1,300 commands before ending the search on 25 May 2011.\nI am still at Troy, where I could not tilt my panels toward the winter Sun.\nI worked more than 25 times longer than planned.",
+  "duration": 16.61,
+  "spans": [
+   [
+    0,
+    75,
+    0.12,
+    7.79
+   ],
+   [
+    76,
+    95,
+    8.27,
+    9.49
+   ],
+   [
+    95,
+    151,
+    10.05,
+    12.92
+   ],
+   [
+    152,
+    200,
+    13.4,
+    16.36
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-opportunity-why.wav",
+  "text": "I landed inside a small crater called Eagle on 25 January 2004, on the plains of Meridiani.\nOrbiters had spotted minerals there that hinted at a wet past.\nMy job was to drive to the rocks and test that idea up close.",
+  "duration": 17.62,
+  "spans": [
+   [
+    0,
+    63,
+    0.12,
+    5.9
+   ],
+   [
+    63,
+    91,
+    6.51,
+    8.07
+   ],
+   [
+    92,
+    154,
+    8.55,
+    12.46
+   ],
+   [
+    155,
+    216,
+    12.94,
+    17.37
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-opportunity-found.wav",
+  "text": "The rocks I studied confirmed that water had lasted on the surface of ancient Mars.\nI was built to drive one kilometre.\nI drove 45.16, and in 2015 I became the first to cover a marathon on another world.",
+  "duration": 16.32,
+  "spans": [
+   [
+    0,
+    83,
+    0.12,
+    5.51
+   ],
+   [
+    84,
+    119,
+    5.99,
+    8.02
+   ],
+   [
+    120,
+    134,
+    8.5,
+    10.51
+   ],
+   [
+    134,
+    203,
+    10.65,
+    16.07
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-opportunity-lastDay.wav",
+  "text": "In June 2018 a dust storm wrapped the whole planet.\nThe sky grew so dark that my solar panels could barely feed me.\nMy last signal reached Earth on 10 June 2018.",
+  "duration": 13.46,
+  "spans": [
+   [
+    0,
+    51,
+    0.12,
+    4.1
+   ],
+   [
+    52,
+    115,
+    4.58,
+    8.69
+   ],
+   [
+    116,
+    161,
+    9.17,
+    13.21
+   ]
+  ]
+ },
+ {
+  "stop": "opportunity",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-opportunity-stillHere.wav",
+  "text": "Engineers kept calling for months, then ended my mission on 13 February 2019.\nI rest on the slope of Perseverance Valley.\nOn 11 October 2026, a rover named Perseverance finally drove past my distance record.",
+  "duration": 18.18,
+  "spans": [
+   [
+    0,
+    34,
+    0.12,
+    2.98
+   ],
+   [
+    34,
+    77,
+    3.07,
+    6.61
+   ],
+   [
+    78,
+    121,
+    7.09,
+    9.67
+   ],
+   [
+    122,
+    141,
+    10.15,
+    11.72
+   ],
+   [
+    141,
+    207,
+    11.83,
+    17.93
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-phoenix-why.wav",
+  "text": "I landed farther north than any Mars mission before me, at a latitude like northern Alaska.\nWater ice was thought to hide just under the soil there.\nI brought a digging arm, tiny ovens and a chemistry lab to find out.",
+  "duration": 15.31,
+  "spans": [
+   [
+    0,
+    55,
+    0.12,
+    3.44
+   ],
+   [
+    55,
+    91,
+    4.05,
+    6.35
+   ],
+   [
+    92,
+    148,
+    6.83,
+    10.21
+   ],
+   [
+    149,
+    173,
+    10.69,
+    11.92
+   ],
+   [
+    173,
+    217,
+    12.49,
+    15.06
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-phoenix-found.wav",
+  "text": "My arm dug a trench, and bright clumps inside it turned out to be water ice.\nI also found perchlorate, a salt that could feed microbes or supply astronauts with oxygen.\nAnd I watched snow fall from Martian clouds.",
+  "duration": 15.2,
+  "spans": [
+   [
+    0,
+    20,
+    0.12,
+    1.34
+   ],
+   [
+    20,
+    76,
+    1.45,
+    5.1
+   ],
+   [
+    77,
+    102,
+    5.58,
+    7.09
+   ],
+   [
+    102,
+    168,
+    7.69,
+    11.93
+   ],
+   [
+    169,
+    213,
+    12.41,
+    14.95
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-phoenix-lastDay.wav",
+  "text": "Autumn came, and my solar power faded.\nOn 2 November 2008, sol 157, I sent my last signal from the Arctic.\nMy team’s final post for me online was the word “triumph”, written in binary.",
+  "duration": 15.83,
+  "spans": [
+   [
+    0,
+    12,
+    0.12,
+    0.82
+   ],
+   [
+    12,
+    38,
+    1.08,
+    2.55
+   ],
+   [
+    39,
+    106,
+    3.03,
+    10.1
+   ],
+   [
+    107,
+    165,
+    10.58,
+    13.98
+   ],
+   [
+    165,
+    184,
+    14.61,
+    15.58
+   ]
+  ]
+ },
+ {
+  "stop": "phoenix",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-phoenix-stillHere.wav",
+  "text": "Engineers listened for me after the polar winter, in 2010, but heard nothing.\nAn orbiter photographed me and saw damage, probably from heavy frost of frozen carbon dioxide.\nKnowing ice lies this close to the surface matters to anyone planning to live on Mars.",
+  "duration": 19.43,
+  "spans": [
+   [
+    0,
+    77,
+    0.12,
+    5.71
+   ],
+   [
+    78,
+    120,
+    6.19,
+    8.89
+   ],
+   [
+    120,
+    172,
+    9.37,
+    12.87
+   ],
+   [
+    173,
+    259,
+    13.35,
+    19.18
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-insight-why.wav",
+  "text": "Most Mars missions before me studied the surface and the air.\nI was sent to study the inside.\nMy arm placed a seismometer on the ground, to take the planet’s pulse.",
+  "duration": 11.39,
+  "spans": [
+   [
+    0,
+    61,
+    0.12,
+    3.93
+   ],
+   [
+    62,
+    93,
+    4.41,
+    6.14
+   ],
+   [
+    94,
+    136,
+    6.62,
+    9.07
+   ],
+   [
+    136,
+    164,
+    9.62,
+    11.14
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-insight-found.wav",
+  "text": "I felt 1,319 marsquakes, some set off by meteoroid impacts.\nWaves from two quakes on the far side of Mars travelled through its core.\nThey showed a liquid iron core, smaller and denser than scientists had thought.",
+  "duration": 16.75,
+  "spans": [
+   [
+    0,
+    24,
+    0.12,
+    3.17
+   ],
+   [
+    24,
+    59,
+    3.37,
+    6.4
+   ],
+   [
+    60,
+    133,
+    6.88,
+    11.35
+   ],
+   [
+    134,
+    165,
+    11.83,
+    13.47
+   ],
+   [
+    165,
+    213,
+    13.97,
+    16.5
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-insight-lastDay.wav",
+  "text": "Dust settled on my solar panels for four years, and my power slowly drained.\nMy seismometer was the last instrument still switched on.\nI last spoke with Earth on 15 December 2022.",
+  "duration": 13.87,
+  "spans": [
+   [
+    0,
+    47,
+    0.12,
+    2.86
+   ],
+   [
+    47,
+    76,
+    3.31,
+    5.05
+   ],
+   [
+    77,
+    134,
+    5.53,
+    8.95
+   ],
+   [
+    135,
+    179,
+    9.43,
+    13.62
+   ]
+  ]
+ },
+ {
+  "stop": "insight",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-insight-stillHere.wav",
+  "text": "In 2024 an orbiter photographed me, now the same reddish-brown as the ground.\nThose pictures help scientists learn how Martian dust moves.\nI also carry a small laser reflector, in case a future orbiter brings a laser.",
+  "duration": 16.77,
+  "spans": [
+   [
+    0,
+    35,
+    0.12,
+    3.14
+   ],
+   [
+    35,
+    77,
+    3.24,
+    6.28
+   ],
+   [
+    78,
+    138,
+    6.76,
+    10.45
+   ],
+   [
+    139,
+    176,
+    10.93,
+    13.36
+   ],
+   [
+    176,
+    217,
+    13.89,
+    16.52
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-mars2020-edl-why.wav",
+  "text": "We shielded Perseverance on its trip through deep space, with Ingenuity tucked under its belly.\nOn 18 February 2021 we hit the Martian air at nearly 20,000 km/h.\nOur job was to slow everyone down.",
+  "duration": 17.29,
+  "spans": [
+   [
+    0,
+    56,
+    0.12,
+    3.52
+   ],
+   [
+    56,
+    95,
+    4.02,
+    6.25
+   ],
+   [
+    96,
+    161,
+    6.73,
+    14.38
+   ],
+   [
+    162,
+    196,
+    14.86,
+    17.04
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-mars2020-edl-found.wav",
+  "text": "Our parachute burst open in less than a second, from a 46 by 66 cm bundle to 21.5 metres wide.\nIt was the biggest parachute ever used on Mars.\nIts orange and white panels hid “Dare Mighty Things” in binary, with JPL’s GPS coordinates around the edge.",
+  "duration": 21.59,
+  "spans": [
+   [
+    0,
+    47,
+    0.12,
+    2.76
+   ],
+   [
+    47,
+    94,
+    3.4,
+    8.98
+   ],
+   [
+    95,
+    142,
+    9.46,
+    12.5
+   ],
+   [
+    143,
+    206,
+    12.98,
+    17.15
+   ],
+   [
+    206,
+    250,
+    17.76,
+    21.34
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-mars2020-edl-lastDay.wav",
+  "text": "Partway down, Perseverance let go of us and flew on under rocket power.\nWe fell and hit the ground at about 126 km/h.\nOur work ended that day, 18 February 2021.",
+  "duration": 14.97,
+  "spans": [
+   [
+    0,
+    13,
+    0.12,
+    0.94
+   ],
+   [
+    13,
+    71,
+    1.53,
+    4.96
+   ],
+   [
+    72,
+    117,
+    5.44,
+    10.1
+   ],
+   [
+    118,
+    160,
+    10.58,
+    14.72
+   ]
+  ]
+ },
+ {
+  "stop": "mars2020-edl",
+  "kind": "story",
+  "voice": "narrator",
+  "file": "audio/narrator/story-mars2020-edl-stillHere.wav",
+  "text": "We still lie in Jezero crater, the backshell upright, the parachute spread out under dust.\nIn April 2022 Ingenuity flew over us and took 10 colour photos.\nEngineers planning Mars Sample Return had asked for them, to help make future landings safer.",
+  "duration": 19.16,
+  "spans": [
+   [
+    0,
+    30,
+    0.12,
+    2.06
+   ],
+   [
+    30,
+    53,
+    2.35,
+    3.31
+   ],
+   [
+    53,
+    90,
+    3.87,
+    5.8
+   ],
+   [
+    91,
+    154,
+    6.28,
+    12.37
+   ],
+   [
+    155,
+    212,
+    12.85,
+    16.27
+   ],
+   [
+    212,
+    248,
+    16.9,
+    18.91
    ]
   ]
  }

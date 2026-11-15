@@ -45,7 +45,8 @@ No NASA endorsement is implied. No new NASA logos or insignia were added to the 
 ## Voice
 
 - Ingenuity's spoken lines (`public/audio/ingenuity/`) were generated locally with the [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech model by hexgrad (Apache License 2.0), voice `af_aoede`, run through [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) (MIT) and ONNX Runtime (MIT). Its phonemizer, espeak-ng (GPL-3.0), was used only to make the clips and is not shipped. The radio treatment (a slight pitch lift, a faint vocoder layer, chorus, EQ and band limit) is this project's own Python/NumPy processing: `scripts/voice/ingenuity_voice.py`.
-- Without the clips (or for a line that has none), the voiceover falls back to the browser's own speech synthesis. Every other sound is synthesized in the browser.
+- The other machines' stories, which the auto tour reads aloud in each machine's own words (`public/audio/narrator/`), were generated the same way with the Kokoro-82M voice `am_michael`, with only a light EQ and no radio treatment, so the narrator and Ingenuity are always told apart.
+- Every spoken line has a clip; only a line without one would fall back to the browser's own speech synthesis. Every other sound is synthesized in the browser.
 
 ## Fonts
 
