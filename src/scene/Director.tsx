@@ -29,7 +29,13 @@ import {
   litYaw,
   siteFrame,
   SITE_SCALE,
+  slerpDir,
+  titleCamSun,
+  titleDragGoalCamSun,
   titleSunOffsetDeg,
+  titleWorldSun,
+  worldSunFromYaw,
+  type Vec3,
 } from './layout';
 import { MODEL_REGISTRY } from './models';
 import { DIRECTOR_PRIORITY, groups, live } from './registry';
@@ -49,6 +55,8 @@ const SWAY_RATE = 0.12;
 const SETTLE_RATE = 1.4;
 /** …and back onto it after the visitor double-clicks Mars on the title, 1/s. */
 const RESET_RATE = 2.4;
+/** While dragging Mars on the title, how quickly the camera-side Sun settles onto ±50°, 1/s. */
+const TITLE_SUN_SETTLE_RATE = 1.6;
 /**
  * "Begin Flight 73" with Mars turned by the visitor: it turns back to the title's own view (and the
  * camera to the title's elevation) over this long, ms, eased, while the opening descent (2800 ms)
@@ -98,7 +106,15 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
   const lastWarm = useRef(0);
   const lastPhase = useRef<string | null>(null);
   /** Turning a visitor-turned Mars back for the opening descent: from yaw0 by dYaw, from el0 to TITLE_EL. */
-  const launch = useRef<{ at: number; yaw0: number; dYaw: number; el0: number } | null>(null);
+  const launch = useRef<{ at: number; yaw0: number; dYaw: number; el0: number; sun0: Vec3 | null } | null>(null);
+  /** Camera-side Sun on the title while the visitor turns Mars (so any face turns through light and shadow). */
+  const titleSun = useRef<{ active: boolean; camSun: Vec3; lastWorld: Vec3; lastEl: number; hasLast: boolean }>({
+    active: false,
+    camSun: [0, 0, 1],
+    lastWorld: [1, 0, 0],
+    lastEl: TITLE_EL,
+    hasLast: false,
+  });
 
   /** Start loading a stop's model if nobody has yet. True if this call started it. */
   const warm = (id: MachineId): boolean => {
@@ -150,29 +166,46 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     // The visitor may turn Mars on the title (src/scene/TitleGlobeInput.tsx). Leaving the title
     // lets go of it; "Begin Flight 73" with Mars turned first turns it back for the opening descent.
     const td = live.titleDrag;
+    const ts = titleSun.current;
     if (s.phase !== lastPhase.current) {
       const from = lastPhase.current;
       lastPhase.current = s.phase;
-      if (from === 'title' && s.phase === 'flight' && (td.spun || td.reset || Math.abs(td.el - TITLE_EL) > 1e-3)) {
-        launch.current = { at: now, yaw0: live.yaw, dYaw: angleDelta(live.yaw, titleGoal()), el0: td.el };
+      if (
+        from === 'title' &&
+        s.phase === 'flight' &&
+        (td.spun || td.reset || Math.abs(td.el - TITLE_EL) > 1e-3 || ts.active)
+      ) {
+        launch.current = {
+          at: now,
+          yaw0: live.yaw,
+          dYaw: angleDelta(live.yaw, titleGoal()),
+          el0: td.el,
+          sun0: ts.active ? [...ts.camSun] : null,
+        };
       }
       if (from === 'title' || s.phase === 'title') {
         td.spun = false;
         td.reset = false;
         td.vy = 0;
         td.velEl = 0;
+        if (s.phase === 'title' && from === 'hangar' && ts.active) {
+          td.reset = true;
+        } else if (s.phase !== 'hangar') {
+          ts.active = false;
+        }
       }
     }
     const L = launch.current;
+    let launchK = 0;
     if (L && (s.phase !== 'flight' || s.flight.stage !== 'prologue')) launch.current = null;
     else if (L) {
       // (The diorama and Ingenuity follow the globe's matrix every frame, so turning it mid-dive is safe.)
       // Reduced motion: one step, taken under the dip to black (once the shot has switched).
       // On the opening's own clock where there is one (choreo.ts), like the dive it goes with.
-      const k = reduced ? (cur.siteId ? 1 : 0) : easeInOut((cur.opening ?? now - L.at) / LAUNCH_TURN_MS);
-      live.yaw = L.yaw0 + L.dYaw * k;
-      td.el = L.el0 + (TITLE_EL - L.el0) * k;
-      if (k >= 1) launch.current = null;
+      launchK = reduced ? (cur.siteId ? 1 : 0) : easeInOut((cur.opening ?? now - L.at) / LAUNCH_TURN_MS);
+      live.yaw = L.yaw0 + L.dYaw * launchK;
+      td.el = L.el0 + (TITLE_EL - L.el0) * launchK;
+      if (launchK >= 1) launch.current = null;
     }
 
     // The globe turns only when nothing is anchored to it. On the title and in the flight log it
@@ -180,15 +213,15 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     // unless the visitor has turned Mars on the title: then it stays where they left it.
     const free = cur.blend === 0 && !cur.arc;
     const held = s.phase === 'title' && td.spun;
+    const resetGoalYaw = s.phase === 'title' ? titleGoal() : 0;
     if (L) {
       // Turning back for the opening descent (above).
     } else if (free && !held && (s.phase === 'title' || s.phase === 'report')) {
-      const goal = s.phase === 'title' ? titleGoal() : litYaw(sun, REPORT_DIR, LIT_OFFSET_DEG) + sway;
+      const goal = s.phase === 'title' ? resetGoalYaw : litYaw(sun, REPORT_DIR, LIT_OFFSET_DEG) + sway;
       const d = angleDelta(live.yaw, goal);
       const rate = td.reset ? RESET_RATE : SETTLE_RATE;
       // Snap while the screen is still black at start-up; otherwise ease (no visible jump).
       live.yaw += !started.current || reduced ? d : d * (1 - Math.exp(-dt * rate));
-      if (td.reset && Math.abs(d) < 2e-3 && Math.abs(td.el - TITLE_EL) < 2e-3) td.reset = false;
     } else if (free && !reduced && s.phase === 'flight' && s.flight.stage === 'epilogue') {
       live.yaw += dt * 0.035;
     }
@@ -204,7 +237,42 @@ export function Director({ onSite }: { onSite: (id: MachineId | null) => void })
     }
     const gm = globe ? globe.matrixWorld : m4.identity();
 
-    live.sun.copy(sunBody).transformDirection(gm);
+    if (L?.sun0) {
+      // Ease the camera-side Sun back to Mars's real Sun at the launch target as Mars turns home.
+      const goalCam = titleCamSun(worldSunFromYaw(sun, L.yaw0 + L.dYaw), TITLE_EL);
+      live.sun.set(...titleWorldSun(slerpDir(L.sun0, goalCam, launchK), td.el));
+    } else if (s.phase === 'title' && td.spun) {
+      // While the visitor turns Mars on the title, keep the Sun on the camera's side so craters,
+      // canyons and the terminator respond as the globe turns, illuminating any side rotated into view.
+      if (!ts.active) {
+        ts.active = true;
+        const seedWorld = ts.hasLast ? ts.lastWorld : worldSunFromYaw(sun, live.yaw);
+        ts.camSun = titleCamSun(seedWorld, ts.hasLast ? ts.lastEl : td.el);
+      }
+      if (!reduced) {
+        const goalCam = titleDragGoalCamSun(sun, ts.camSun);
+        ts.camSun = slerpDir(ts.camSun, goalCam, 1 - Math.exp(-dt * TITLE_SUN_SETTLE_RATE));
+      }
+      live.sun.set(...titleWorldSun(ts.camSun, td.el));
+    } else if (s.phase === 'title' && td.reset && ts.active) {
+      const goalCam = titleCamSun(worldSunFromYaw(sun, resetGoalYaw), TITLE_EL);
+      ts.camSun = reduced ? goalCam : slerpDir(ts.camSun, goalCam, 1 - Math.exp(-dt * RESET_RATE));
+      live.sun.set(...titleWorldSun(ts.camSun, td.el));
+      const sunDiff = Math.hypot(ts.camSun[0] - goalCam[0], ts.camSun[1] - goalCam[1], ts.camSun[2] - goalCam[2]);
+      if (Math.abs(angleDelta(live.yaw, resetGoalYaw)) < 2e-3 && Math.abs(td.el - TITLE_EL) < 2e-3 && sunDiff < 2e-3) {
+        td.reset = false;
+        ts.active = false;
+      }
+    } else {
+      if (td.reset && s.phase === 'title' && Math.abs(angleDelta(live.yaw, resetGoalYaw)) < 2e-3 && Math.abs(td.el - TITLE_EL) < 2e-3) {
+        td.reset = false;
+      }
+      ts.active = false;
+      live.sun.copy(sunBody).transformDirection(gm);
+    }
+    ts.lastWorld = [live.sun.x, live.sun.y, live.sun.z];
+    ts.lastEl = td.el;
+    ts.hasLast = true;
 
     // The diorama's frame on the globe.
     if (cur.siteId) {

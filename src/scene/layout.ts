@@ -272,6 +272,55 @@ export function titleDirAt(el: number): Vec3 {
   return clampPolar([0, Math.sin(e), Math.cos(e)], Math.sin(TITLE_EL_MAX));
 }
 
+const rotateX = (v: Vec3, a: number): Vec3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [v[0], v[1] * c - v[2] * s, v[1] * s + v[2] * c];
+};
+
+/** Rotate a body-fixed unit vector around Mars's spin axis (+Y) by globe yaw `yaw` into world space. */
+export function worldSunFromYaw(sunBody: Vec3, yaw: number): Vec3 {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  return [sunBody[0] * c + sunBody[2] * s, sunBody[1], -sunBody[0] * s + sunBody[2] * c];
+}
+
+/** Express a world-space vector in the title camera's pitch frame at elevation `el` (un-pitched by +el about +X). */
+export const titleCamSun = (worldSun: Vec3, el: number): Vec3 => normalize(rotateX(worldSun, el));
+
+/** Turn a vector from the title camera's pitch frame at elevation `el` back to world space (pitched by -el about +X). */
+export const titleWorldSun = (camSun: Vec3, el: number): Vec3 => normalize(rotateX(camSun, -el));
+
+/**
+ * Preferred camera-frame Sun direction while spinning Mars on the title: keeps whichever side
+ * (left or right of the camera) the Sun was on and settles its azimuth to ±50° (TITLE_SUN_DEG)
+ * at Mars's real solar declination, so any longitude spun into view stays clearly three-quarter lit.
+ */
+export function titleDragGoalCamSun(sunBody: Vec3, camSun: Vec3): Vec3 {
+  const offsetDeg = (Math.atan2(camSun[0], camSun[2]) >= 0 ? 1 : -1) * Math.abs(TITLE_SUN_DEG);
+  const world = worldSunFromYaw(sunBody, litYaw(sunBody, TITLE_DIR, offsetDeg));
+  return titleCamSun(world, TITLE_EL);
+}
+
+/** Spherical interpolation between two unit directions, safe for collinear or opposite vectors. */
+export function slerpDir(a: Vec3, b: Vec3, t: number): Vec3 {
+  const k = clamp01(t);
+  const ua = normalize(a);
+  const ub = normalize(b);
+  if (k <= 0) return ua;
+  if (k >= 1) return ub;
+  const c = Math.max(-1, Math.min(1, dot(ua, ub)));
+  const om = Math.acos(c);
+  if (om < 1e-6) return ua;
+  if (Math.PI - om < 1e-4) {
+    const axis = normalize(cross(ua, Math.abs(ua[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]));
+    const ang = om * k;
+    return normalize(add(scale(ua, Math.cos(ang)), scale(cross(axis, ua), Math.sin(ang))));
+  }
+  const so = Math.sin(om);
+  return normalize(add(scale(ua, Math.sin((1 - k) * om) / so), scale(ub, Math.sin(k * om) / so)));
+}
+
 /**
  * Globe yaw (rotation about +Y, the spin axis) that puts the real Sun `offsetDeg` to one side of
  * the camera, so a globe shot shows mostly day side with the terminator in view. The lighting

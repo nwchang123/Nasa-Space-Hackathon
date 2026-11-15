@@ -2,8 +2,9 @@
 // to look over a pole; a flick coasts and slows to a stop; double-click (double-tap) eases back to
 // the title's own view (Jezero, lit by the real Sun). The camera never orbits freely here, so Mars
 // stays framed in the right-hand column (the CameraRig): a drag turns the globe about its spin
-// axis (live.yaw) and pitches the camera's elevation (live.titleDrag.el), so the Sun, the
-// terminator, the night-side rim and the markers all stay locked to the planet. The wheel is left
+// axis (live.yaw) and pitches the camera's elevation (live.titleDrag.el), while the Director
+// holds the Sun on the camera's side so Mars turns through light and shadow; the markers stay
+// locked to the planet. The wheel is left
 // alone (the title layer scrolls on short screens). Active only on the title, once the shot rests
 // on the globe; "Begin Flight 73" hands back to the Director, which turns Mars home for the dive.
 //
