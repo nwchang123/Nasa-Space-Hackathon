@@ -385,11 +385,12 @@ export function setVoiceSounding(on: boolean) {
 }
 
 /**
- * The typing ticks' level (1 = the original click). Quiet on their own; under Ingenuity's voice
- * they only keep time, so the voice leads.
+ * The typing ticks' level (1 = the original click). Quiet on their own (through the cue bus, about
+ * 15 dB under Ingenuity's voice, a few dB under the ambient pad: the clicks sit where the ear is
+ * keenest); under her voice they only keep time, about 28 dB under it, so the voice leads.
  */
 export function typeTickLevel(underVoice: boolean): number {
-  return underVoice ? 0.07 : 0.35;
+  return underVoice ? 0.035 : 0.18;
 }
 
 function voiceAudible(): boolean {
