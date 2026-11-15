@@ -4,6 +4,9 @@ import { FICTION_NOTE } from '../data/flight';
 import { MACHINES, MACHINE_BY_ID } from '../data/machines';
 import { HOME, LEGS, TOTAL_KM } from '../flight/route';
 import { HangarButton } from '../hangar/HangarEntry';
+import { titleColumns } from '../scene/layout';
+import { live } from '../scene/registry';
+import { pickTitleStop, useTitleFocus } from '../scene/TitleGlobeInput';
 import { useApp } from '../store';
 import { formatDuration, formatKm, formatSolarTime } from './callPlan';
 import { MachineGlyph } from './machineGlyphs';
@@ -48,26 +51,40 @@ const Reticle = memo(function Reticle() {
 /**
  * The nine stops, in the order they landed, as a quiet column of glyphs between the title and Mars:
  * the year, the machine, its short name; home (Ingenuity) in amber. Hovering one lights its marker
- * on the globe, as the top bar's route does in flight.
+ * on the globe, as the top bar's route does in flight; picking one turns Mars to it
+ * (src/scene/TitleGlobeInput.tsx), and it stays marked until Mars is turned again.
  */
 function TitleStops() {
   const hover = useApp(s => s.hover);
+  const lit = useApp(s => s.hoverId);
+  const picked = useTitleFocus(s => s.id);
   // Leaving the title mid-hover must not leave a marker lit.
   useEffect(() => () => useApp.getState().hover(null), []);
+  // Moving off a stop hands its marker back to the picked one, if any.
+  const unhover = () => hover(useTitleFocus.getState().id);
   return (
     <div className="title-stops-pos">
-      <ol className="title-stops reveal" style={{ animationDelay: '0.95s' }} aria-label="The nine stops of Flight 73, in the order they landed">
+      <ol className="title-stops reveal" style={{ animationDelay: '0.95s' }} aria-label="The nine stops of Flight 73, in the order they landed. Pick one to turn Mars to it.">
         {MACHINES.map(m => (
           <li
             key={m.id}
-            className={m.id === HOME ? 'ts-home' : undefined}
-            title={m.name}
-            onMouseEnter={() => hover(m.id)}
-            onMouseLeave={() => hover(null)}
+            className={[m.id === HOME ? 'ts-home' : '', m.id === lit || m.id === picked ? 'ts-lit' : ''].filter(Boolean).join(' ') || undefined}
           >
-            <span className="ts-year tabular">{m.arrived.slice(0, 4)}</span>
-            <MachineGlyph id={m.id} />
-            <span className="ts-name">{m.shortName}</span>
+            <button
+              type="button"
+              className="ts-stop"
+              title={`${m.name}: turn Mars to ${m.site.split(',')[0]}`}
+              aria-pressed={m.id === picked}
+              onClick={() => pickTitleStop(m.id)}
+              onMouseEnter={() => hover(m.id)}
+              onMouseLeave={unhover}
+              onFocus={() => hover(m.id)}
+              onBlur={unhover}
+            >
+              <span className="ts-year tabular">{m.arrived.slice(0, 4)}</span>
+              <MachineGlyph id={m.id} />
+              <span className="ts-name">{m.shortName}</span>
+            </button>
           </li>
         ))}
       </ol>
@@ -107,6 +124,47 @@ export function TitleScreen({ leaving = false }: { leaving?: boolean }) {
     return () => {
       window.removeEventListener('pointermove', move);
       cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  // Mars sits as near the middle as the text and the column of stops leave room for
+  // (layout.ts titleColumns): measure where the text ends, then place Mars (the CameraRig reads
+  // live.titleAnchorX), the stops and the drag hint under Mars.
+  useEffect(() => {
+    const el = screen.current;
+    if (!el) return;
+    const range = document.createRange();
+    const textRight = () => {
+      let right = 0;
+      // The words themselves, not their block boxes (the heading and the lede's lines span the column's width).
+      const rail = el.querySelector('.title-rail');
+      if (rail) {
+        const words = document.createTreeWalker(rail, NodeFilter.SHOW_TEXT);
+        while (words.nextNode()) {
+          if (!words.currentNode.textContent?.trim()) continue;
+          range.selectNodeContents(words.currentNode);
+          right = Math.max(right, range.getBoundingClientRect().right);
+        }
+      }
+      for (const n of el.querySelectorAll('.title-brief .title-actions')) right = Math.max(right, n.getBoundingClientRect().right);
+      return right;
+    };
+    const place = () => {
+      const w = window.innerWidth;
+      const stops = el.querySelector('.title-stops');
+      const { anchorX, stopsX } = titleColumns(w, window.innerHeight, textRight(), stops?.getBoundingClientRect().width ?? 0);
+      live.titleAnchorX = anchorX;
+      el.style.setProperty('--mars-x', `${(anchorX * w).toFixed(1)}px`);
+      el.style.setProperty('--stops-x', `${stopsX.toFixed(1)}px`);
+    };
+    place();
+    let alive = true;
+    // The serif title changes width once its font arrives.
+    document.fonts?.ready.then(() => alive && place());
+    window.addEventListener('resize', place);
+    return () => {
+      alive = false;
+      window.removeEventListener('resize', place);
     };
   }, []);
 

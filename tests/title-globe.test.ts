@@ -3,17 +3,23 @@ import {
   TITLE_DIR,
   TITLE_EL,
   TITLE_EL_MAX,
+  TITLE_MARS_X,
+  TITLE_MARS_X_MAX,
   TITLE_SUN_DEG,
   cameraGoal,
   litYaw,
   slerpDir,
   titleCamSun,
   titleDirAt,
+  titleColumns,
   titleDragGoalCamSun,
+  titleFacing,
+  titleMarsRadius,
   titleWorldSun,
   worldSunFromYaw,
   type Vec3,
 } from '../src/scene/layout';
+import { latLonToVec3 } from '../src/geo';
 
 const dot3 = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
@@ -36,9 +42,9 @@ describe('title globe pitch', () => {
   });
 
   it('keeps Mars in the right-hand column at any pitch', () => {
-    // The title framing (CameraRig): Mars centred 77.5 % from the left, the camera the same distance away.
+    // The title framing (CameraRig): Mars centred 70 % from the left, the camera the same distance away.
     const frame = (el: number) =>
-      cameraGoal({ center: [0, 0, 0], dir: titleDirAt(el), radius: 1, aspect: 16 / 9, fovDeg: 40, anchorX: 0.775, anchorY: 0.5, fillWidth: 0.56 });
+      cameraGoal({ center: [0, 0, 0], dir: titleDirAt(el), radius: 1, aspect: 16 / 9, fovDeg: 40, anchorX: TITLE_MARS_X, anchorY: 0.5, fillWidth: 0.56 });
     const base = frame(TITLE_EL);
     for (const el of [-TITLE_EL_MAX, 0, TITLE_EL_MAX]) {
       const g = frame(el);
@@ -51,6 +57,61 @@ describe('title globe pitch', () => {
       const mb = [-base.position[0], -base.position[1], -base.position[2]];
       const cosBase = (vb[0] * mb[0] + vb[1] * mb[1] + vb[2] * mb[2]) / (Math.hypot(...vb) * Math.hypot(...mb));
       expect(cos).toBeCloseTo(cosBase, 8);
+    }
+  });
+});
+
+describe('title columns: text, stops, Mars', () => {
+  const STOPS_W = 160;
+
+  it('puts Mars at 70 % where the text leaves room, the stops clear of both', () => {
+    for (const [w, h, text] of [
+      [1527, 661, 445],
+      [1920, 950, 640],
+      [1366, 650, 470],
+    ]) {
+      const { anchorX, stopsX } = titleColumns(w, h, text, STOPS_W);
+      expect(anchorX).toBeCloseTo(TITLE_MARS_X, 10);
+      const marsLeft = anchorX * w - titleMarsRadius(w, h);
+      expect(stopsX - STOPS_W / 2).toBeGreaterThan(text + 20);
+      expect(stopsX + STOPS_W / 2).toBeLessThan(marsLeft - 20);
+    }
+  });
+
+  it('moves Mars right only as far as the text needs, and never past 77.5 %', () => {
+    // A squarer window (16:10) with a wide title: Mars makes room.
+    const tight = titleColumns(1440, 900, 560, STOPS_W);
+    expect(tight.anchorX).toBeGreaterThan(TITLE_MARS_X);
+    expect(tight.anchorX).toBeLessThanOrEqual(TITLE_MARS_X_MAX);
+    const marsLeft = tight.anchorX * 1440 - titleMarsRadius(1440, 900);
+    expect(tight.stopsX - STOPS_W / 2).toBeGreaterThanOrEqual(560 + 24 - 1e-9);
+    expect(tight.stopsX + STOPS_W / 2).toBeLessThanOrEqual(marsLeft - 24 + 1e-9);
+    // Hopelessly crowded: capped.
+    expect(titleColumns(1200, 900, 900, STOPS_W).anchorX).toBe(TITLE_MARS_X_MAX);
+    // No stops (hidden on narrow windows): Mars only keeps clear of the text.
+    expect(titleColumns(1440, 900, 560, 0).anchorX).toBeLessThan(tight.anchorX);
+  });
+});
+
+describe('turning Mars to a stop picked on the title', () => {
+  it('puts the place on the line from Mars to the camera, so it sits mid-disc', () => {
+    for (const [lat, lon] of [
+      [22.27, -48.0],
+      [-14.57, 175.47],
+      [68.22, -125.75],
+      [18.44, 77.45],
+    ]) {
+      for (const aspect of [1527 / 661, 16 / 9, 1.6]) {
+        const { yaw, el } = titleFacing(lat, lon, aspect, 40, TITLE_MARS_X);
+        const place = latLonToVec3(lat, lon);
+        // The globe turns by yaw about +Y (three.js: x' = x cos + z sin, z' = −x sin + z cos).
+        const world: Vec3 = [place[0] * Math.cos(yaw) + place[2] * Math.sin(yaw), place[1], -place[0] * Math.sin(yaw) + place[2] * Math.cos(yaw)];
+        const cam = cameraGoal({ center: [0, 0, 0], dir: titleDirAt(el), radius: 1, aspect, fovDeg: 40, anchorX: TITLE_MARS_X, anchorY: 0.5, fillWidth: 0.56 }).position;
+        const l = Math.hypot(...cam);
+        // Exactly, unless the view stops at its pole limit (Phoenix, 68°N): then within a few degrees.
+        const tol = Math.abs(el) >= TITLE_EL_MAX - 1e-9 ? 6 : 0.2;
+        expect(dot3(world, [cam[0] / l, cam[1] / l, cam[2] / l])).toBeGreaterThan(Math.cos(tol * (Math.PI / 180)));
+      }
     }
   });
 });

@@ -1,10 +1,11 @@
 /* The nine stops on the title screen (TitleScreen.tsx): a quiet column of glyphs in the space between
-   the title and Mars, joined by the same dashed route as the top bar's. Landscape desktop windows
-   only: it is hidden wherever that space is not there. */
+   the title and Mars, joined by the same dashed route as the top bar's. Each is a button: picking one
+   turns Mars to it. TitleScreen measures the gap between the text and Mars and centres the column in
+   it (--stops-x). Landscape desktop windows only: it is hidden wherever that space is not there. */
 
 .title-stops-pos {
   position: fixed;
-  left: 45vw;
+  left: var(--stops-x, 45vw);
   top: 50%;
   transform: translate(-50%, -50%);
   pointer-events: auto;
@@ -28,14 +29,30 @@
 }
 .title-stops li {
   position: relative;
-  display: grid;
-  grid-template-columns: var(--ts-year) var(--ts-glyph) auto;
-  align-items: center;
-  column-gap: var(--ts-col);
   opacity: 0.7;
   transition:
     opacity 0.2s ease,
     color 0.2s ease;
+}
+.title-stops .ts-stop {
+  display: grid;
+  grid-template-columns: var(--ts-year) var(--ts-glyph) auto;
+  align-items: center;
+  column-gap: var(--ts-col);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.title-stops .ts-stop:focus-visible {
+  outline: 1px solid var(--ghost);
+  outline-offset: 4px;
 }
 /* The hop from one glyph to the next. */
 .title-stops li:not(:last-child)::after {
@@ -60,9 +77,14 @@
 .title-stops .ts-name {
   white-space: nowrap;
 }
-.title-stops li:hover {
+.title-stops li:hover,
+.title-stops li.ts-lit {
   opacity: 1;
   color: var(--bone);
+}
+/* The stop Mars is turned to, or whose marker is lit: its year brightens too. */
+.title-stops li.ts-lit .ts-year {
+  color: var(--bone-dim);
 }
 /* Home: Ingenuity, where the flight begins and ends, in the route's amber. */
 .title-stops li.ts-home,

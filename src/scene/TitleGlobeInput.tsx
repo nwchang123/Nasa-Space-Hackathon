@@ -11,14 +11,62 @@
 // Conventions follow the site orbit (src/scene/SiteOrbitInput.tsx): the surface under the pointer
 // moves with it, so dragging right turns Mars eastward toward the viewer's right (yaw grows), and
 // dragging down raises the camera over the north pole (el grows), as in three.js OrbitControls.
+//
+// Picking a stop from the title's list (pickTitleStop) turns Mars to face it, pitched to its
+// latitude, and lights its marker. Once Mars is left alone (RESUME_MS after a drag comes to rest,
+// FOCUS_HOLD_MS after a picked stop comes into view) it eases back into turning by itself, from
+// wherever it is, in the direction it was last spun; the view settles back to the title's own
+// elevation as it goes. Never with reduced motion.
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef } from 'react';
 import { Vector3, type PerspectiveCamera } from 'three';
+import { create } from 'zustand';
+import { MACHINE_BY_ID } from '../data/machines';
 import { useApp } from '../store';
-import { TITLE_EL_MAX } from './layout';
+import type { MachineId } from '../types';
+import { TITLE_EL, TITLE_EL_MAX, angleDelta, easeInOut, titleFacing } from './layout';
 import { DIRECTOR_PRIORITY, live } from './registry';
 import { useReducedMotion } from './useReducedMotion';
+
+/**
+ * The stop Mars is turned to from the title's list, or null. It stays picked (its marker lit, its
+ * line in the list marked) until the visitor turns Mars by hand or Mars starts turning by itself.
+ */
+export const useTitleFocus = create<{ id: MachineId | null }>(() => ({ id: null }));
+
+/** A stop the visitor picked from the list, for the next frame to turn Mars to. */
+let picked: MachineId | null = null;
+
+/** Turn Mars on the title to face a stop (the title screen's list of stops calls this). */
+export function pickTitleStop(id: MachineId): void {
+  if (useTitleFocus.getState().id !== id) dropFocus();
+  picked = id;
+  useTitleFocus.setState({ id });
+}
+
+/** Let go of the picked stop: its marker goes dark unless something else lit it. */
+function dropFocus(): void {
+  const id = useTitleFocus.getState().id;
+  if (!id) return;
+  useTitleFocus.setState({ id: null });
+  const app = useApp.getState();
+  if (app.hoverId === id) app.hover(null);
+}
+
+/** Left alone after a drag, Mars starts turning by itself again after this long, ms… */
+const RESUME_MS = 2500;
+/** …or after this long once a stop picked from the list is in view, ms. */
+const FOCUS_HOLD_MS = 7000;
+/** Its own turn, rad/s (about a minute and three quarters per turn), eased in over AUTO_EASE_S. */
+const AUTO_SPIN = 0.06;
+const AUTO_EASE_S = 2.5;
+/** While it turns by itself the view settles back to the title's elevation at this rate, 1/s. */
+const AUTO_EL_RATE = 0.5;
+/** Turning to a picked stop takes TURN_MS plus TURN_MS_PER_RAD for each radian of the way, ms (at most TURN_MAX_MS). */
+const TURN_MS = 800;
+const TURN_MS_PER_RAD = 600;
+const TURN_MAX_MS = 2400;
 
 /** Pixels the pointer must travel before a press becomes a drag (a click stays a click). */
 const DRAG_THRESHOLD_PX = 4;
@@ -79,6 +127,13 @@ export function TitleGlobeInput() {
   const cursor = useRef('');
   const lastTap = useRef({ t: -1e9, x: 0, y: 0 });
   const lastDragEnd = useRef(-1e9);
+  /** Turning to a picked stop: from yaw0 by dYaw and from el0 to el1, over ms from at (performance.now). */
+  const turn = useRef<{ at: number; ms: number; yaw0: number; dYaw: number; el0: number; el1: number } | null>(null);
+  /** When Mars, turned by the visitor, last came to rest (performance.now ms), or -1 while it is held or moving. */
+  const restAt = useRef(-1);
+  /** How far Mars has eased into turning by itself, 0..1, and which way it turns (+1: eastward). */
+  const auto = useRef(0);
+  const autoDir = useRef(1);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -96,15 +151,21 @@ export function TitleGlobeInput() {
       td.reset = true;
       td.vy = 0;
       td.velEl = 0;
+      turn.current = null;
+      dropFocus();
     };
 
     const down = (e: PointerEvent) => {
       if (!active.current || drag.current || !e.isPrimary || e.button !== 0) return;
       if (!onMars(local(e))) return;
       drag.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, t: performance.now(), gap: 0, accYaw: 0, accEl: 0, dragging: false };
-      // A press on Mars stops a coasting spin where it is (as a hand on a globe would).
+      // A press on Mars stops a coasting spin, its own turn or a turn to a stop where it is (as a hand on a globe would).
       live.titleDrag.vy = 0;
       live.titleDrag.velEl = 0;
+      if (turn.current) {
+        turn.current = null;
+        dropFocus();
+      }
     };
     const move = (e: PointerEvent) => {
       hoverAt.current = local(e);
@@ -116,6 +177,7 @@ export function TitleGlobeInput() {
         const td = live.titleDrag;
         td.spun = true;
         td.reset = false;
+        dropFocus();
         try {
           el.setPointerCapture(e.pointerId);
         } catch {
@@ -156,6 +218,8 @@ export function TitleGlobeInput() {
       const now = performance.now();
       if (d.dragging) {
         lastDragEnd.current = now;
+        // Left alone, Mars will turn on by itself the way it was last spun.
+        if (Math.abs(td.vy) > 0.05) autoDir.current = Math.sign(td.vy);
         // Let go while still moving: coast (never with reduced motion); held still first: stop.
         const flick = e.type === 'pointerup' && !reducedRef.current && now - d.t <= Math.max(STILL_MS, 2.5 * d.gap);
         td.vy = flick ? Math.max(-MAX_SPIN, Math.min(MAX_SPIN, td.vy)) : 0;
@@ -220,6 +284,43 @@ export function TitleGlobeInput() {
       drag.current = null;
       if (gl.domElement.hasPointerCapture?.(d.id)) gl.domElement.releasePointerCapture(d.id);
     }
+    const now = performance.now();
+    if (!on) {
+      // Off the title (or not yet on it): nothing is picked, turning or about to turn.
+      picked = null;
+      turn.current = null;
+      restAt.current = -1;
+      auto.current = 0;
+      dropFocus();
+    }
+
+    // A stop picked from the list: turn Mars (the short way round) and pitch the view until it sits
+    // in the middle of the disc.
+    if (on && picked && !drag.current?.dragging) {
+      const m = MACHINE_BY_ID[picked];
+      picked = null;
+      const goal = titleFacing(m.lat, m.lon, state.size.width / Math.max(1, state.size.height), cam.fov, live.titleAnchorX);
+      const dYaw = angleDelta(live.yaw, goal.yaw);
+      const el1 = goal.el;
+      const span = Math.max(Math.abs(dYaw), Math.abs(el1 - td.el));
+      turn.current = { at: now, ms: reducedRef.current ? 0 : Math.min(TURN_MAX_MS, TURN_MS + span * TURN_MS_PER_RAD), yaw0: live.yaw, dYaw, el0: td.el, el1 };
+      td.spun = true;
+      td.reset = false;
+      td.vy = 0;
+      td.velEl = 0;
+    }
+    const tw = turn.current;
+    if (tw) {
+      const k = tw.ms > 0 ? easeInOut((now - tw.at) / tw.ms) : 1;
+      live.yaw = tw.yaw0 + tw.dYaw * k;
+      td.el = tw.el0 + (tw.el1 - tw.el0) * k;
+      if (k >= 1) {
+        turn.current = null;
+        // In view now: light its marker and name it (the marker lets go of a hover while it faces away).
+        const id = useTitleFocus.getState().id;
+        if (id) useApp.getState().hover(id);
+      }
+    }
 
     // The coast after a flick, slowing exponentially.
     if (on && !drag.current?.dragging && td.spun && (td.vy !== 0 || td.velEl !== 0)) {
@@ -230,6 +331,21 @@ export function TitleGlobeInput() {
       td.el = clampEl(raw);
       // Stops dead at the pitch limit rather than pressing against it.
       td.velEl = td.el !== raw || Math.abs(td.velEl) < 0.005 ? 0 : td.velEl * k;
+    }
+
+    // Left alone (not held, turning to a stop or coasting), Mars turns on by itself after a while.
+    if (on && td.spun && !reducedRef.current && !drag.current && !turn.current && td.vy === 0 && td.velEl === 0) {
+      if (restAt.current < 0) restAt.current = now;
+      if (auto.current > 0 || now - restAt.current >= (useTitleFocus.getState().id ? FOCUS_HOLD_MS : RESUME_MS)) {
+        if (auto.current === 0) dropFocus();
+        auto.current = Math.min(1, auto.current + dt / AUTO_EASE_S);
+        const k = auto.current * auto.current * (3 - 2 * auto.current);
+        live.yaw += autoDir.current * AUTO_SPIN * k * dt;
+        td.el += (TITLE_EL - td.el) * (1 - Math.exp(-dt * AUTO_EL_RATE * k));
+      }
+    } else {
+      restAt.current = -1;
+      auto.current = 0;
     }
 
     // Cursor: an open hand over Mars, a closed one while turning it; a hovered marker keeps its pointer.

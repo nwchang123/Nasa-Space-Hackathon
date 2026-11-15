@@ -168,7 +168,8 @@ button:disabled {
 
 /* An observatory instrument frame over live Mars: one hairline frame with registration marks, a
    header and a footer bar locked to its edges, and the title column on a thin amber rail. Mars sits
-   inside the same frame on the right (CameraRig 'title' shot: ~57–98 % of the width). The brief is
+   inside the same frame on the right (CameraRig 'title' shot: centred 70–77.5 % across, as the text
+   leaves room; see layout.ts titleColumns), the column of stops between them. The brief is
    pushed down with margin-top: auto, so a short window scrolls instead of clipping the top. */
 .title-screen {
   --tf-inset: clamp(10px, 1.4vw, 20px);
@@ -354,7 +355,7 @@ button:disabled {
 .title-brief {
   flex: none;
   margin: auto 0 clamp(28px, 6vh, 64px) var(--tf-gutter);
-  /* Clear of Mars, which starts at ~57 % of the width. */
+  /* Clear of Mars, which starts at ~49 % of the width or further right (layout.ts titleColumns). */
   max-width: min(540px, 46vw);
   pointer-events: auto;
 }
@@ -2839,13 +2840,14 @@ button:disabled {
 
 /* ---------- Title: the drag hint under Mars (src/scene/TitleGlobeInput.tsx) ---------- */
 
-/* Mars is centred 77.5 % across with a radius of min(21vw, 36vh) (CameraRig 'title' framing): the
-   hint sits just under it, above the footer bar, in the footer's bracketed mono at a whisper. It
-   fades in after the title's own reveal and away once the visitor has turned Mars (TitleGlobeInput
-   sets body[data-mars-spun]). Never takes the pointer. */
+/* Mars is centred at --mars-x (70–77.5 % across, set by TitleScreen) with a radius of
+   min(21vw, 36vh) (CameraRig 'title' framing): the hint sits just under it, above the footer bar,
+   in the footer's bracketed mono at a whisper. It fades in after the title's own reveal and away
+   once the visitor has turned Mars (TitleGlobeInput sets body[data-mars-spun]). Never takes the
+   pointer. */
 .title-drag-hint {
   position: fixed;
-  left: 77.5vw;
+  left: var(--mars-x, 77.5vw);
   /* ×1.04: perspective draws the disk ~3.3 % larger than the framing radius. */
   top: min(calc(50vh + min(21vw, 36vh) * 1.04 + 14px), calc(100vh - 92px));
   transform: translateX(-50%);

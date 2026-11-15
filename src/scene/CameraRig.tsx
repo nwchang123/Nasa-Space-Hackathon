@@ -255,10 +255,11 @@ export function CameraRig() {
         break;
       }
       case 'title':
-        // The title text sits on the left (its column ends by ~54 % of the width): Mars large on
-        // the right, from ~57 % to ~98 % of the width, so the two never touch. The visitor may
-        // pitch the view toward a pole (live.titleDrag.el); the framing stays the same.
-        globe = orbitPose(titleDirAt(live.titleDrag.el), aspect, { anchorX: 0.775, anchorY: 0.5, fillWidth: 0.56 });
+        // The title text and the column of stops sit on the left: Mars large on the right, centred
+        // at 70 % of the width, or further right (to 77.5 %) when the text needs the room
+        // (live.titleAnchorX, measured by the title screen). The visitor may pitch the view
+        // toward a pole (live.titleDrag.el); the framing stays the same.
+        globe = orbitPose(titleDirAt(live.titleDrag.el), aspect, { anchorX: live.titleAnchorX, anchorY: 0.5, fillWidth: 0.56 });
         // The opening descent: first swing round until Jezero sits in the middle of the screen
         // (the title's view aims at empty space left of Mars), so the dive goes straight down
         // into it instead of lunging sideways across the globe.

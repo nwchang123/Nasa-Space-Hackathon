@@ -263,6 +263,54 @@ export const TITLE_EL = Math.atan2(TITLE_DIR[1], Math.hypot(TITLE_DIR[0], TITLE_
 /** How far the visitor may pitch the title view toward either pole, radians (±70°: the caps in full view). */
 export const TITLE_EL_MAX = 1.22;
 
+/** Mars's centre on the title, as a fraction of the width: here where there is room… */
+export const TITLE_MARS_X = 0.7;
+/** …and never further right than this, however little room the text column leaves. */
+export const TITLE_MARS_X_MAX = 0.775;
+
+/**
+ * Mars's radius on the title screen, px: the CameraRig 'title' framing fits it in 42 % of the
+ * width (fillWidth 0.56 at 75 %) or 72 % of the height, and perspective draws it ~4 % larger.
+ */
+export function titleMarsRadius(width: number, height: number): number {
+  return Math.min(0.21 * width, 0.36 * height) * 1.04;
+}
+
+/**
+ * The title's three columns, left to right: the text (ending at `textRight`, px), the stops
+ * (`stopsWidth` px wide, 0 when hidden) and Mars. Mars sits at TITLE_MARS_X of the width, moved
+ * right (up to TITLE_MARS_X_MAX) only when the text and the stops need the room; the stops sit
+ * halfway across the gap between the text and Mars. Returns Mars's anchorX (fraction of the
+ * width) and the stops' centre, px.
+ */
+export function titleColumns(width: number, height: number, textRight: number, stopsWidth: number): { anchorX: number; stopsX: number } {
+  const r = titleMarsRadius(width, height);
+  const gap = Math.max(24, 0.025 * width);
+  const needed = textRight + (stopsWidth > 0 ? stopsWidth + 2 * gap : gap) + r;
+  const cx = Math.min(TITLE_MARS_X_MAX * width, Math.max(TITLE_MARS_X * width, needed));
+  return { anchorX: cx / width, stopsX: (textRight + cx - r) / 2 };
+}
+
+/**
+ * Globe yaw and title elevation (radians) that put a place in the middle of Mars's disc on the
+ * title. Mars is drawn off the view axis (anchorX), so the camera sees it a little from the side:
+ * the middle of the disc is the point facing the camera's position, not the framing direction,
+ * which is up to ~20° away on a wide window. Same framing as the CameraRig's 'title' shot.
+ */
+export function titleFacing(latDeg: number, lonDeg: number, aspect: number, fovDeg: number, anchorX: number): { yaw: number; el: number } {
+  const lat = latDeg * DEG;
+  let el = lat;
+  let az = 0;
+  // The camera's own elevation seen from Mars differs a little from el (it is off to one side): a few corrections settle it.
+  for (let i = 0; i < 4; i++) {
+    const p = cameraGoal({ center: [0, 0, 0], dir: titleDirAt(el), radius: 1, aspect, fovDeg, anchorX, anchorY: 0.5, fillWidth: 0.56 }).position;
+    az = Math.atan2(p[0], p[2]);
+    const seen = Math.atan2(p[1], Math.hypot(p[0], p[2]));
+    el = Math.min(TITLE_EL_MAX, Math.max(-TITLE_EL_MAX, el + lat - seen));
+  }
+  return { yaw: yawFacing(lonDeg) + az, el };
+}
+
 /**
  * Title camera direction for an elevation `el` (radians; the visitor drags it to see the poles):
  * straight out along +Z tilted up by el, kept off the poles. titleDirAt(TITLE_EL) is TITLE_DIR.

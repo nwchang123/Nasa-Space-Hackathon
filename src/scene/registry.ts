@@ -3,7 +3,7 @@
 
 import { Box3, Matrix4, Quaternion, Vector3, type Group, type Object3D } from 'three';
 import type { Shot } from './choreo';
-import { HOME_YAW, TITLE_EL } from './layout';
+import { HOME_YAW, TITLE_EL, TITLE_MARS_X } from './layout';
 import type { SkyLook } from './sites';
 
 /** useFrame priorities: the Director runs first, then the camera, then OrbitControls (−1), then the rest (0). */
@@ -106,4 +106,9 @@ export const live = {
    * flick. `reset`: easing back to the title's own view (double-click), cleared once there.
    */
   titleDrag: { spun: false, vy: 0, el: TITLE_EL, velEl: 0, reset: false },
+  /**
+   * Mars's centre on the title, as a fraction of the width: the title screen measures its text
+   * column and writes this (layout.ts titleColumns); the CameraRig's 'title' framing reads it.
+   */
+  titleAnchorX: TITLE_MARS_X,
 };
